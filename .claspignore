@@ -1,0 +1,9 @@
+**/.git/**
+**/node_modules/**
+**/client/src/**
+build.js
+package.json
+package-lock.json
+.eslintrc.json
+.gitignore
+.claspignore

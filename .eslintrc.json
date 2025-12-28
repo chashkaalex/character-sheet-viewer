@@ -1,0 +1,128 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "script"
+  },
+  "globals": {
+    "Logger": "readonly",
+    "DocumentApp": "readonly",
+    "HtmlService": "readonly",
+    "PropertiesService": "readonly",
+    "Session": "readonly",
+    "SpreadsheetApp": "readonly",
+    "DriveApp": "readonly",
+    "Utilities": "readonly",
+    "UrlFetchApp": "readonly",
+    "CacheService": "readonly",
+    "ScriptApp": "readonly",
+    "console": "readonly",
+    //server-only types
+    "GDoc": "readonly",
+    //common types (used in both server and client)
+    "Character": "readonly",
+    "SlotData": "readonly",
+    "HpActionType": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
+    "no-undef": "error",
+    "no-redeclare": "error",
+    "no-var": "warn",
+    "prefer-const": "warn",
+    "no-console": "off",
+    "semi": [
+      "error",
+      "always"
+    ],
+    "quotes": [
+      "error",
+      "single"
+    ],
+    "indent": [
+      "error",
+      2
+    ],
+    "comma-dangle": [
+      "error",
+      "never"
+    ],
+    "object-curly-spacing": [
+      "error",
+      "always"
+    ],
+    "array-bracket-spacing": [
+      "error",
+      "never"
+    ],
+    "space-before-function-paren": [
+      "error",
+      "never"
+    ],
+    "keyword-spacing": [
+      "error",
+      {
+        "before": true,
+        "after": true
+      }
+    ],
+    "space-infix-ops": "error",
+    "no-trailing-spaces": "error",
+    "eol-last": "error",
+    "no-import-assign": "off",
+    "no-restricted-globals": [
+      "error",
+      {
+        "name": "window",
+        "message": "Use globalThis instead of window in Google Apps Script"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "server/**/*.js"
+      ],
+      "env": {
+        "browser": false,
+        "node": true
+      },
+      "rules": {
+        "no-global-assign": "error",
+        "no-implicit-globals": "error"
+      }
+    },
+    {
+      "files": [
+        "client/src/**/*.js"
+      ],
+      "env": {
+        "browser": true,
+        "node": false,
+        "googleappsscript/googleappsscript": true
+      },
+      "globals": {
+        "google": "readonly",
+        "character": "writable",
+        "onCharacterRepresentation": "readonly"
+      },
+      "rules": {
+        "no-implicit-globals": "off",
+        "no-unused-vars": "off"
+      }
+    }
+  ]
+}

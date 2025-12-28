@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Google Apps Script
+.clasp.json
+.google/
+
+# Build Output
+client/script/
+
+# IDE
+.vscode/
+.idea/
+
+# System
+thumbs.db
+.DS_Store

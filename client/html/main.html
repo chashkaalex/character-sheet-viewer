@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Sheet Viewer</title>
+    <base target="_top">
+    <?!= include('client/style/stylesheet'); ?>
+    <?!= include('client/style/landing_styles'); ?> 
+</head>
+<body>
+    <!-- Landing Page UI -->
+    <div id="landingPage" class="landing-container">
+        <h1 class="landing-title">Character Sheet Viewer</h1>
+        <p class="landing-subtitle">
+            Welcome! Enter your Google Docs document ID below to view your character sheet.
+        </p>
+        
+        <div class="landing-form-group">
+            <input 
+                type="text" 
+                id="docId" 
+                class="landing-input"
+                placeholder="Enter Document ID" 
+                autocomplete="off"
+            >
+            <button type="button" id="getButton" class="landing-button">Get</button>
+        </div>
+        
+        <div id="errorMessage" class="landing-error" style="display: none;"></div>
+        
+        <div class="landing-instructions">
+            <h3>How to get your Document ID:</h3>
+            <p>1. Open your character sheet in Google Docs</p>
+            <p>2. Look at the URL in your browser's address bar</p>
+            <p>3. Copy the long string of letters and numbers between "/d/" and "/edit"</p>
+            <p>4. Paste that ID into the field above and click "Get"</p>
+        </div>
+    </div>
+
+    <!-- Character Sheet Container -->
+    <div id="characterSheetContainer" class="character-sheet-container">
+        <div class="container">
+      <div class="header">
+        <h1 id="characterName">Loading...</h1>
+        <div class="section-titles">
+          <span class="section-title active" data-section="0">Dashboard</span>
+          <span class="section-title" data-section="1">Abilities</span>
+          <span class="section-title" data-section="2">Spells</span>
+          <span class="section-title" data-section="4">Inventory</span>
+        </div>
+      </div>
+      
+      <div id="dashboard" class="section active">
+        <div style="text-align: left;">
+            <div class="hp-container">
+              <label for="hpMeter">HP:</label>
+              <meter id="hpMeter" value="0" min="0" max="0"></meter>
+              <div class="hp-numbers">
+                <span id="hpCurrent">-</span>/<span id="hpMax">-</span>
+              </div>
+              <button class="hpbutton" onclick="cure()">Cure</button>
+              <button class="hpbutton" onclick="inflict()">Inflict</button>
+            </div>
+            
+            <div class="stats-container">
+              <div class="stat-group">
+                <h3>Combat Properties</h3>
+                <div class="saves-grid">
+                  <div class="save-item">
+                    <label>Armor Class:</label>
+                    <span id="acValue">-</span>
+                  </div>
+                  <div class="save-item">
+                    <label>Fortitude:</label>
+                    <span id="fortBonus">-</span>
+                  </div>
+                  <div class="save-item">
+                    <label>Reflex:</label>
+                    <span id="refBonus">-</span>
+                  </div>
+                  <div class="save-item">
+                    <label>Will:</label>
+                    <span id="willBonus">-</span>
+                  </div>
+                </div>
+                <div class="combat-grid">
+                  <div class="combat-item">
+                    <label>Speed:</label>
+                    <span id="speedValue">-</span>
+                  </div>
+                  <div class="combat-item">
+                    <label>Init Bonus:</label>
+                    <span id="initBonus">-</span>
+                  </div>
+                  <div class="combat-item">
+                    <label>Current Init:</label>
+                    <span id="currentInit">-</span>
+                  </div>
+                </div>
+                <div class="weapon-section">
+                  <div class="weapon-row">
+                    <label for="weaponSelect">Weapon:</label>
+                    <select id="weaponSelect" onchange="onWeaponChange()">
+                      <option value="">Loading weapons...</option>
+                    </select>
+                    <span class="weapon-bonus">
+                      <label>Attack Bonus:</label>
+                      <span id="weaponAttackBonus">-</span>
+                    </span>
+                    <span class="weapon-bonus">
+                      <label>Damage Bonus:</label>
+                      <span id="weaponDamageBonus">-</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="special-attack-section">
+                  <div class="special-attack-row">
+                    <label for="specialAttackSelect">Special Attack:</label>
+                    <select id="specialAttackSelect" onchange="onSpecialAttackChange()">
+                      <option value="">Loading special attacks...</option>
+                    </select>
+                    <span class="special-attack-bonus">
+                      <label>Bonus:</label>
+                      <span id="specialAttackBonus">-</span>
+                    </span>
+                    <span class="special-attack-bonus">
+                      <label>Attacks of Opportunity:</label>
+                      <span id="attacksOfOpportunity">-</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="dashboard-controls">
+              <button class="refresh-button" onclick="refreshCharacterData()">🔄 Refresh Data</button>
+              <div class="time-progression-controls">
+                <button class="passed-button" onclick="onTimePassed()">Passed</button>
+                <input type="number" class="time-amount-input" value="1" min="1" />
+                <select class="time-unit-select">
+                  <option value="rounds">Round(s)</option>
+                  <option value="minutes">Minute(s)</option>
+                  <option value="hours">Hour(s)</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="stat-group">
+              <h3>Statuses</h3>
+              <div id="statusesList">
+                <div id="emptyStatus" class="status-item">
+                    <input type="text" class="status-name-input" placeholder="Status Name" style="display:none;" />
+                    <span class="timed-controls" style="display:none;">
+                        <label>duration:</label>
+                        <input type="number" class="status-duration-input" value="1" min="1" />
+                        <select class="status-unit-select">
+                            <option value="rounds">Rounds</option>
+                            <option value="minutes">Minutes</option>
+                            <option value="hours">Hours</option>
+                        </select>
+                    </span>
+                    <button class="status-confirm-btn" style="display:none;" onclick="AddStatus(this)">✔</button>
+                    <button class="status-remove-btn" style="display:none;" onclick="RemoveStatus(this)">✖</button>
+                </div>
+                <div class="statuses-controls">
+                    <button id="addButton" onclick="NewStatus()">+</button>
+                </div>
+              </div>
+            </div>
+        </div>
+      </div>
+      <div class="section" id="section2">        
+        <div class="tables-container">
+          <table id="abilitiesTable" class="character-table">
+            <thead>
+              <tr>
+                <th class="row-style">Ability</th>
+                <th class="row-style">Permanent Score</th>
+                <th class="row-style">Current Score</th>
+                <th class="row-style">Modifier</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="row-style">Str</td>
+                <td class="row-style ability-score" data-ability="Str" data-field="score">-</td>
+                <td class="row-style ability-current" data-ability="Str" data-field="currentScore">-</td>
+                <td class="row-style ability-modifier" data-ability="Str" data-field="modifier">-</td>
+              </tr>
+              <tr>
+                <td class="row-style">Dex</td>
+                <td class="row-style ability-score" data-ability="Dex" data-field="score">-</td>
+                <td class="row-style ability-current" data-ability="Dex" data-field="currentScore">-</td>
+                <td class="row-style ability-modifier" data-ability="Dex" data-field="modifier">-</td>
+              </tr>
+              <tr>
+                <td class="row-style">Con</td>
+                <td class="row-style ability-score" data-ability="Con" data-field="score">-</td>
+                <td class="row-style ability-current" data-ability="Con" data-field="currentScore">-</td>
+                <td class="row-style ability-modifier" data-ability="Con" data-field="modifier">-</td>
+              </tr>
+              <tr>
+                <td class="row-style">Int</td>
+                <td class="row-style ability-score" data-ability="Int" data-field="score">-</td>
+                <td class="row-style ability-current" data-ability="Int" data-field="currentScore">-</td>
+                <td class="row-style ability-modifier" data-ability="Int" data-field="modifier">-</td>
+              </tr>
+              <tr>
+                <td class="row-style">Wis</td>
+                <td class="row-style ability-score" data-ability="Wis" data-field="score">-</td>
+                <td class="row-style ability-current" data-ability="Wis" data-field="currentScore">-</td>
+                <td class="row-style ability-modifier" data-ability="Wis" data-field="modifier">-</td>
+              </tr>
+              <tr>
+                <td class="row-style">Char</td>
+                <td class="row-style ability-score" data-ability="Char" data-field="score">-</td>
+                <td class="row-style ability-current" data-ability="Char" data-field="currentScore">-</td>
+                <td class="row-style ability-modifier" data-ability="Char" data-field="modifier">-</td>
+              </tr>
+            </tbody>
+          </table>
+          <table id="skillsTable" class="character-table">
+            <thead>
+              <tr>
+                <th class="row-style">Skill</th>
+                <th class="row-style">Rank</th>
+                <th class="row-style">Bonus</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Rows populated by the script -->				
+            </tbody>
+          </table>
+        </div>	        
+      </div>
+      <div class="section" id="section3">
+        <div class="spells-container" id="spellsDynamicContainer">
+          <!-- Spell levels will be rendered here dynamically -->
+        </div>
+      </div>
+      <div class="section" id="section4">
+        <!-- <h2>Inventory</h2> -->
+        <div class="inventory-container">
+          <div class="inventory-lists">
+            <div class="inventory-list">
+              <div class="inventory-header">
+                <h3>Battle Gear</h3>
+                <button class="filter-button" id="battleGearFilterBtn" onclick="toggleFilterDropdown('battleGear')" title="Filter items">🔽</button>
+                <div class="filter-dropdown" id="battleGearFilter">
+                  <div class="filter-option" onclick="filterItems('battleGear', 'all')">All</div>
+                  <div class="filter-option" onclick="filterItems('battleGear', 'equipment')">𐂫 Equipment</div>
+                  <div class="filter-option" onclick="filterItems('battleGear', 'weapons')">⚔ Weapons</div>
+                  <div class="filter-option" onclick="filterItems('battleGear', 'potions')">🧪 Potions</div>
+                  <div class="filter-option" onclick="filterItems('battleGear', 'scrolls')">📜 Scrolls</div>
+                </div>
+              </div>
+              <div class="item-list" id="battleGearList">
+                <!-- Items will be populated dynamically from character data -->
+              </div>
+            </div>
+            
+            <div class="inventory-controls">
+              <button class="move-button" onclick="moveItem('battleGear', 'possessions')" title="Move to Possessions">→</button>
+              <button class="move-button" onclick="moveItem('possessions', 'battleGear')" title="Move to Battle Gear">←</button>
+            </div>
+            
+            <div class="inventory-list">
+              <div class="inventory-header">
+                <h3>Possessions</h3>
+                <button class="filter-button" id="possessionsFilterBtn" onclick="toggleFilterDropdown('possessions')" title="Filter items">🔽</button>
+                <div class="filter-dropdown" id="possessionsFilter">
+                  <div class="filter-option" onclick="filterItems('possessions', 'all')">All</div>
+                  <div class="filter-option" onclick="filterItems('possessions', 'equipment')">𐂫 Equipment</div>
+                  <div class="filter-option" onclick="filterItems('possessions', 'weapons')">⚔ Weapons</div>
+                  <div class="filter-option" onclick="filterItems('possessions', 'potions')">🧪 Potions</div>
+                  <div class="filter-option" onclick="filterItems('possessions', 'scrolls')">📜 Scrolls</div>
+                </div>
+              </div>
+              <div class="item-list" id="possessionsList">
+                <!-- Items will be populated dynamically from character data -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="button left" onclick="prevSection()">⇐</button>
+      <button class="button right" onclick="nextSection()">⇒</button>
+        </div>
+    </div>
+
+    <?!= include('client/script/static_objects'); ?>
+    <?!= include('client/script/landing_script'); ?>
+    <?!= include('client/script/section_navigation_script'); ?>
+    <?!= include('client/script/character_script'); ?>
+    <?!= include('client/script/dashboard_script'); ?>
+    <?!= include('client/script/spells_script'); ?>
+    
+    <!-- Custom Tooltip Container -->
+    <div id="custom-tooltip" class="custom-tooltip"></div>
+
+</body>
+</html>
