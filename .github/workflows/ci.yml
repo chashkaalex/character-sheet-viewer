@@ -41,7 +41,21 @@ jobs:
         # Handle "tokens.default" structure (seen in some environments)
         if jq -e '.tokens.default' ~/.clasprc.json > /dev/null; then
           echo "Detected nested token structure. Reformatting to standard Clasp format..."
-          jq '{token: .tokens.default}' ~/.clasprc.json > ~/.clasprc.json.tmp && mv ~/.clasprc.json.tmp ~/.clasprc.json
+          jq '{
+            token: {
+              access_token: .tokens.default.access_token,
+              refresh_token: .tokens.default.refresh_token,
+              scope: "https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/script.webapp.deploy https://www.googleapis.com/auth/service.management https://www.googleapis.com/auth/logging.read https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/script.deployments https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/cloud-platform",
+              token_type: "Bearer",
+              expiry_date: 1
+            },
+            oauth2ClientSettings: {
+              clientId: .tokens.default.client_id,
+              clientSecret: .tokens.default.client_secret,
+              redirectUri: "http://localhost"
+            },
+            isLocalCreds: false
+          }' ~/.clasprc.json > ~/.clasprc.json.new && mv ~/.clasprc.json.new ~/.clasprc.json
         fi
 
     - name: Validate Clasp Credentials
