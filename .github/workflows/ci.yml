@@ -38,6 +38,11 @@ jobs:
         CLASP_SECRET: ${{ secrets.CLASP_SECRET }}
       run: |
         echo "$CLASP_SECRET" > ~/.clasprc.json
+        # Handle "tokens.default" structure (seen in some environments)
+        if jq -e '.tokens.default' ~/.clasprc.json > /dev/null; then
+          echo "Detected nested token structure. Reformatting to standard Clasp format..."
+          jq '{token: .tokens.default}' ~/.clasprc.json > ~/.clasprc.json.tmp && mv ~/.clasprc.json.tmp ~/.clasprc.json
+        fi
 
     - name: Validate Clasp Credentials
       run: |
