@@ -57,6 +57,9 @@ jobs:
             isLocalCreds: false
           }' ~/.clasprc.json > ~/.clasprc.json.new && mv ~/.clasprc.json.new ~/.clasprc.json
         fi
+        
+        # StackOverflow Fix: Clasp run might need local .clasprc.json too
+        cp ~/.clasprc.json ./.clasprc.json
 
     - name: Validate Clasp Credentials
       run: |
