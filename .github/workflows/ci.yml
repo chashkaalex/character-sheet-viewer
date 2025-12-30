@@ -29,3 +29,21 @@ jobs:
       
     - name: Run Unit Tests (Jest)
       run: npm test
+
+    - name: Setup Clasp
+      run: npm install -g @google/clasp
+
+    - name: Create Clasp Credentials
+      env:
+        CLASP_SECRET: ${{ secrets.CLASP_SECRET }}
+      run: |
+        echo "$CLASP_SECRET" > ~/.clasprc.json
+    
+    - name: Configure Test Environment
+      run: echo '{"scriptId":"1zbeOxqz_idbx9ngWy9wowUigNW94-G0o5FNWXRi-IJ3L35h7dCQpUicO","rootDir":""}' > .clasp.json
+
+    - name: Deploy to Test Script
+      run: clasp push --force
+
+    - name: Run Integration Test (Bess Sheet)
+      run: clasp run TestBessTAndASheet
