@@ -38,6 +38,16 @@ jobs:
         CLASP_SECRET: ${{ secrets.CLASP_SECRET }}
       run: |
         echo "$CLASP_SECRET" > ~/.clasprc.json
+
+    - name: Validate Clasp Credentials
+      run: |
+        if ! jq -e .token ~/.clasprc.json > /dev/null; then
+          echo "::error::Invalid Clasp Secret! The ~/.clasprc.json file is missing the 'token' property."
+          echo "Check that you copied the ENTIRE content of the file, starting with '{' and containing 'token': {...}'"
+          exit 1
+        fi
+
+
     
     - name: Configure Test Environment
       run: echo '{"scriptId":"1zbeOxqz_idbx9ngWy9wowUigNW94-G0o5FNWXRi-IJ3L35h7dCQpUicO","rootDir":""}' > .clasp.json
