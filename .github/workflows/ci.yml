@@ -40,10 +40,6 @@ jobs:
       run: |
         echo "$CLASP_SECRET" > ~/.clasprc.json
         
-        # DEBUG: Verify input structure (safe print)
-        echo "Input Secret Properties:" 
-        jq 'walk(if type == "string" then "REDACTED" else . end)' ~/.clasprc.json
-        
         # Handle "tokens.default" structure (seen in some environments)
         # Handle "tokens.default" structure (seen in some environments)
         if jq -e '.tokens.default' ~/.clasprc.json > /dev/null; then
