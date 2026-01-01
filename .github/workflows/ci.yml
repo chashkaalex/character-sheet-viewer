@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -77,5 +78,5 @@ jobs:
     - name: Deploy to Test Script
       run: clasp push --force
 
-    - name: Run Integration Test (Bess Sheet)
-      run: clasp run TestBessTAndASheet
+    - name: Run Integration Test (Thror Sheet)
+      run: clasp run TestThorsRealSheet
