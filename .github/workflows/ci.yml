@@ -55,7 +55,7 @@ jobs:
               clientSecret: .tokens.default.client_secret,
               redirectUri: "http://localhost"
             },
-            isLocalCreds: false
+            isLocalCreds: true
           }' ~/.clasprc.json > ~/.clasprc.json.new && mv ~/.clasprc.json.new ~/.clasprc.json
         fi
         
