@@ -39,6 +39,12 @@ jobs:
         CLASP_SECRET: ${{ secrets.CLASP_SECRET }}
       run: |
         echo "$CLASP_SECRET" > ~/.clasprc.json
+        
+        # DEBUG: Verify input structure (safe print)
+        echo "Input Secret Properties:" 
+        jq 'walk(if type == "string" then "REDACTED" else . end)' ~/.clasprc.json
+        
+        # Handle "tokens.default" structure (seen in some environments)
         # Handle "tokens.default" structure (seen in some environments)
         if jq -e '.tokens.default' ~/.clasprc.json > /dev/null; then
           echo "Detected nested token structure. Reformatting to standard Clasp format..."
@@ -48,7 +54,7 @@ jobs:
               refresh_token: .tokens.default.refresh_token,
               scope: "https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/script.webapp.deploy https://www.googleapis.com/auth/service.management https://www.googleapis.com/auth/logging.read https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/script.deployments https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/script.external_request",
               token_type: "Bearer",
-              expiry_date: 1
+              expiry_date: 1999999999999
             },
             oauth2ClientSettings: {
               clientId: .tokens.default.client_id,
@@ -57,6 +63,10 @@ jobs:
             },
             isLocalCreds: true
           }' ~/.clasprc.json > ~/.clasprc.json.new && mv ~/.clasprc.json.new ~/.clasprc.json
+          
+          # DEBUG: Verify output structure (safe print)
+          echo "Generated Clasprc Properties:"
+          jq 'walk(if type == "string" then "REDACTED" else . end)' ~/.clasprc.json
         fi
         
         # StackOverflow Fix: Clasp run might need local .clasprc.json too
