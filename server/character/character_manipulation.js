@@ -1,4 +1,10 @@
 
+const { GetCharacterByDocId, GetCharacterRepByDocId } = require('../server');
+const { Character, CharacterError } = require('./character');
+const { spellsData } = require('./spells');
+const { ParserUtils } = require('../parser');
+const { UpdateProperty, UpdateSection, RemoveLineFromSection } = require('../gdocs');
+
 /**
  * @param {string} docId - The document ID of the character
  * @param {number} amount - The amount of damage to inflict or cure
@@ -7,7 +13,7 @@
  */
 function UpdateHp(docId, amount, actionType) {
   const character = GetCharacterByDocId(docId);
-  if (character.error) {
+  if (character instanceof CharacterError) {
     return character;
   }
   if (actionType === 'inflict') {
@@ -72,7 +78,7 @@ function RemoveStatusLine(docId, statusName) {
  */
 function OnRoundsElapsed(docId, amount) {
   const character = GetCharacterByDocId(docId);
-  if (character.error) {
+  if (character instanceof CharacterError) {
     return character;
   }
 
@@ -103,7 +109,7 @@ function OnPrepareSpell(docId, slotData, selectedSpell) {
   console.log('OnPrepareSpell called with:', { docId, slotData, selectedSpell });
 
   //get all the spell slots with the correct hierarchy
-  const preparedSpells = ParserUtils.GetPreparedSpellsStructure(docId);
+  const preparedSpells = ParserUtils.GetPreparedSpellsStructure(docId, Character.ValidatePreparedSpell);
 
   //find the first available spell slot for the selected spell
   const spellSlot = preparedSpells[slotData.casterClassName][slotData.spellLevel].find(
@@ -121,54 +127,56 @@ function OnPrepareSpell(docId, slotData, selectedSpell) {
  * Casts a spell for a character
  * @param {string} docId - The document ID of the character
  * @param {SlotData} slotData - The data of the slot containing the spell to cast (includes spellName)
- * @returns {Character} The character representation
+ * @returns {Character|CharacterError} The character representation
  */
 function OnCastSpell(docId, slotData) {
   console.log('OnCastSpell called with:', { docId, slotData });
-  // TODO: Implement spell casting logic
 
   //get current character
   const character = GetCharacterByDocId(docId);
-  if (character.error) {
+  if (character instanceof CharacterError) {
     return character;
   }
 
   //calculate the duration.
   const spellObject = spellsData[slotData.spellName];
   if (!spellObject) {
-    return { error: 'Spell not found' };
+    return new CharacterError('Spell description was not found');
   }
 
-  //check if this spells'sstatus is already active
+  //check if this spells' status is already active 
+  //TODO: this check shoud be performed on spell's real target
   if (character.statuses && character.statuses.some(status => status.name === slotData.spellName)) {
-    return { error: 'Spell already active' };
+    return new CharacterError('Spell already active');
   }
 
   //check if the spell is available for the character
   if (!character.spellCasting.IsSpellPrepared(slotData.casterClassName, slotData.spellName, slotData.spellLevel)) {
-    return { error: 'Spell not prepared' };
+    return new CharacterError('Spell not prepared');
   }
 
 
   const spellCasterClassData = character.spellCasting.GetSpellCasterClassData(slotData.casterClassName);
   if (!spellCasterClassData) {
-    return { error: 'Spell caster class data not found' };
+    return new CharacterError(`${character.name} does not have a spell caster class data for ${slotData.casterClassName}`);
   }
 
   const duration = spellObject.calculateDuration(spellCasterClassData);
 
   //signify the spell as used
-  const preparedSpells = ParserUtils.GetPreparedSpellsStructure(docId);
+  const preparedSpells = ParserUtils.GetPreparedSpellsStructure(docId, Character.ValidatePreparedSpell);
   /**
-     * @type {PreparedSpellDocData[]}
-     */
+   * @type {PreparedSpellDocData[]}
+   */
   const classAndLevelSpells = preparedSpells[slotData.casterClassName][slotData.spellLevel];
   const availableToCastSpell = classAndLevelSpells.find(
     spellItem => spellItem.spell === slotData.spellName && !spellItem.used
   );
+
   if (availableToCastSpell) {
     availableToCastSpell.item.editAsText().setStrikethrough(true);
   }
 
+  //TODO: implement tatget logic, for now casting on self
   return AddStatusToCharacter(docId, slotData.spellName, duration);
 }

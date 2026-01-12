@@ -1,13 +1,15 @@
 
 // Calculate available spell slots based on spellcaster level
 
+const { Ability, ModifiableProperty } = require("./property");
+
 
 const ROUNDS = 1;
 const ROUNDS_PER_MINUTE = 10;
 /**
  * @typedef {Object} SpellData
  * @property {Effect[]} effects
- * @property {function(SpellCasting): number} calculateDuration
+ * @property {function(SpellCasterClassData): number} calculateDuration
  */
 
 /**
@@ -57,7 +59,17 @@ const spellsData = {
     ],
     calculateDuration: function (spellCasting) {
       // 1 min./level
-      return spellCasting.level * ROUNDS_PER_MINUTE;
+      return spellCasting.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+
+  "Bull's Strength": {
+    effects: [
+      { status: "Bull's Strength", property: 'Str', modifierType: 'Enhancement', value: 4 },
+    ],
+    calculateDuration: function (spellCasting) {
+      // 1 min./level
+      return spellCasting.level.currentScore * ROUNDS_PER_MINUTE;
     }
   },
 
@@ -69,7 +81,7 @@ const spellsData = {
     ],
     calculateDuration: function (spellCasting) {
       // TODO: implement duration calculation
-      return spellCasting.level * ROUNDS;
+      return spellCasting.level.currentScore * ROUNDS;
     }
   },
 
@@ -173,7 +185,7 @@ class SpellCasting {
      */
   addSpellCasterClass(className, level, ability, domains = null) {
     if (this.classSpellCastingData.has(className)) {
-      this.classSpellCastingData.get(className).level += level;
+      this.classSpellCastingData.get(className).level.applyPermanentEffect(level);
     } else {
       this.classSpellCastingData.set(className, new SpellCasterClassData(className, level, ability, domains));
     }
@@ -196,7 +208,7 @@ class SpellCasting {
       classSpellCastingData: Array.from(this.classSpellCastingData.entries())
         .map(([className, casterClassData]) => ({
           className: className,
-          level: casterClassData.level,
+          level: casterClassData.level.currentScore,
           domains: casterClassData.domains,
           spellSlots: casterClassData.spellSlots,
           availableSpells: casterClassData.availableSpells,
@@ -208,7 +220,7 @@ class SpellCasting {
   updateSpellsData() {
     this.classSpellCastingData.forEach((casterClassData, casterClassName) => {
       const classSpellcastingData = classesData.get(casterClassName).spellCastingData;
-      casterClassData.spellSlots = classSpellcastingData.spellSlots[casterClassData.level];
+      casterClassData.spellSlots = [...classSpellcastingData.spellSlots[casterClassData.level.score]];
       const bonusSpells = getBonusSpells(casterClassData.ability.modifier);
       casterClassData.spellSlots.forEach((spellSlot, index) => {
         casterClassData.spellSlots[index] += casterClassData.spellSlots[index] > 0 ? bonusSpells[index] : 0;
@@ -243,9 +255,9 @@ class SpellCasterClassData {
          */
     this.className = className;
     /**
-         * @type {number}
+         * @type {ModifiableProperty}
          */
-    this.level = level;
+    this.level = new ModifiableProperty(level);
     /**
          * @type {Ability}
          */
@@ -276,4 +288,11 @@ function getBonusSpells(modifier) {
   }
 
   return bonusSpells;
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    SpellCasting,
+    spellsData
+  };
 }

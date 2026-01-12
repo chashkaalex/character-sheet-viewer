@@ -1,13 +1,44 @@
+const { Character } = require("./character");
+
+
 /**
- * @typedef {import('./character.js').Character} Character
+ * @param {Character} character 
+ */
+/**
+ * @typedef {Object} CharacterRep
+ * @property {string} docId
+ * @property {string[]} parseWarnings
+ * @property {string[]} parseErrors
+ * @property {boolean} parseSuccess
+ * @property {string} name
+ * @property {string} race
+ * @property {Array<{name: string, level: number}>} classes
+ * @property {Object} initBonus
+ * @property {Object} damageBonus
+ * @property {Object} attacksOfOpportunity
+ * @property {{current: number, max: number}} hp
+ * @property {Object} ac
+ * @property {Object} speed
+ * @property {Object.<string, Object>} saves
+ * @property {Object} resistances
+ * @property {Object} preparedSpells
+ * @property {Object.<string, Object>} skills
+ * @property {Object.<string, Object>} abilities
+ * @property {Array<Object>} statuses
+ * @property {Object} [spellCasting]
+ * @property {Array<{name: string, attackBonus: Object, damageBonus: Object}>} weapons
+ * @property {Object.<string, Object>} specialAttacks
+ * @property {Array<Object>} battleGear
+ * @property {Array<Object>} possessions
  */
 
 /**
- * @param {Character} character
- * @returns {Object}
+ * @param {Character} character 
+ * @returns {CharacterRep}
  */
 function getCharacterRep(character) {
   //create character object for the client
+  /** @type {CharacterRep} */
   const characterObject = {
     docId: character.docId,
     parseWarnings: character.parseWarnings,
@@ -16,7 +47,6 @@ function getCharacterRep(character) {
     name: character.name,
     race: character.race,
     classes: character.classes,
-    spellcasterLevel: character.spellcasterLevel,
     initBonus: character.InitiativeBonus.state,
     damageBonus: character.damageBonus.state,
     attacksOfOpportunity: character.attacksOfOpportunity.state,
@@ -25,8 +55,14 @@ function getCharacterRep(character) {
     speed: character.speed.state,
     saves: {},
     resistances: character.resistances,
-    preparedSpells: {},  //parsed later
-    skills: {}  //parsed later
+    preparedSpells: {},
+    skills: {},
+    abilities: {},
+    specialAttacks: {},
+    weapons: [],
+    statuses: [],
+    battleGear: [],
+    possessions: []
   };
 
   // Add saves
@@ -82,4 +118,10 @@ function getCharacterRep(character) {
   }
 
   return characterObject;
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    getCharacterRep
+  };
 }

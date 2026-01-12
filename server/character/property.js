@@ -79,7 +79,7 @@ class Ability extends ModifiableProperty {
 }
 
 class AbilityBasedProperty extends ModifiableProperty {
-  constructor(name, ability) {
+  constructor(name,  /** @type {Ability} */ability) {
     super(0);
     this.name = name;
     this.ability = ability;
@@ -89,10 +89,14 @@ class AbilityBasedProperty extends ModifiableProperty {
     return this.ability.modifier + this.currentScore;
   }
 
+  get string() {
+    return `${this.bonus}: ${this.score} + ${this.ability.ModifierString} , ${this.EffectsString}`;
+  }
+
   get state() {
     return {
+      ...super.state,
       bonus: this.bonus,
-      string: `${this.bonus}: ${this.score} + ${this.ability.ModifierString} , ${this.EffectsString}`
     };
   }
 }
@@ -109,18 +113,19 @@ class Skill extends ModifiableProperty {
     return this.ability.modifier + this.currentScore + this.synergySkills.reduce((acc, skill) => acc + skill.currentScore >= 5 ? 2 : 0, 0);
   }
 
+  get string() {
+    const synergySkillsString = this.synergySkills.length > 0 ? `${this.synergySkills.map(s => `+2 ${s.name} synergy`).join(', ')}` : '';
+    return `${this.bonus}: ${this.score} rank + ${this.ability.ModifierString} ${synergySkillsString} ${this.EffectsString}`;
+  }
+
   // Extend base state with skill-specific properties
   get state() {
-    const synergySkillsString = this.synergySkills.length > 0 ? `${this.synergySkills.map(s => `+2 ${s.name} synergy`).join(', ')}` : '';
     return {
-      score: this.score,
-      currentScore: this.currentScore,
+      ...super.state,
       bonus: this.bonus,
-      string: `${this.bonus}: ${this.score} rank + ${this.ability.ModifierString} ${synergySkillsString} ${this.EffectsString}`
     };
   }
 }
-
 
 class CreatureSize {
   constructor(size) {
@@ -189,10 +194,14 @@ class SpecialAttackBonus extends ModifiableProperty {
     return score + strengthModifier + sizeBonus;
   }
 
+  get string() {
+    return `${this.bonus}: ${this.strength.ModifierString}, ${this.size.bonusString} ${this.EffectsString}`;
+  }
+
   get state() {
     return {
-      bonus: this.bonus,
-      string: `${this.bonus}: ${this.strength.ModifierString}, ${this.size.bonusString} ${this.EffectsString}`
+      ...super.state,
+      bonus: this.bonus
     };
   }
 }
@@ -232,13 +241,14 @@ class ArmorClass extends ModifiableProperty {
   }
 
   get string() {
-    return `${this.currentArmorClass} (base: ${this.score})  ${this.EffectsString}`;
+    const baseString = `${this.currentArmorClass} (base: ${this.score})  ${this.EffectsString}`;
+    return `${baseString} ${this.size.string} ${this.abilities.map(a => `+ ${a.ModifierString}`).join(', ')}`;
   }
 
   get state() {
     return {
+      ...super.state,
       bonus: this.currentArmorClass,
-      string: `${this.string} ${this.size.string} ${this.abilities.map(a => `+ ${a.ModifierString}`).join(', ')}`
     };
   }
 }

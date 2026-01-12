@@ -4,6 +4,7 @@ node_modules/
 # Google Apps Script
 .clasp.json
 .google/
+creds.json
 
 # Build Output
 client/script/

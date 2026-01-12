@@ -1,3 +1,6 @@
+const { ModifiableProperty } = require("./character/property");
+const { GetDocRawLines } = require("./gdocs");
+
 /**
  * Parser utility functions for character sheet processing
  * @namespace ParserUtils
@@ -13,6 +16,7 @@ const ParserUtils = {
     'Languages',
     'Spells',
     'Skills',
+    'Skill Tricks',
     'Battle Gear',
     'Possessions',
     'Personal Information'
@@ -216,7 +220,7 @@ const ParserUtils = {
 
     classesStrings.forEach(classesString => {
       const num = this.GetFirstNumberFromALine(classesString);
-      let name = classesString.substring(0, classesString.indexOf(num)).trim();
+      let name = classesString.substring(0, classesString.indexOf(String(num))).trim();
 
       if (name.includes('Cleric')) {
         name = name.substring(0, name.indexOf('of')).trim();
@@ -325,7 +329,8 @@ const ParserUtils = {
 
       try {
         if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
-          elementText = element.getText().trim();
+          const textElement = /** @type {GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem} */ (element);
+          elementText = textElement.getText().trim();
         }
       } catch (e) {
         // Ignore complex elements
@@ -374,54 +379,96 @@ const ParserUtils = {
     return results;
   },
 
-  /**
-   * @typedef {Object} PreparedSpellDocData
-   * @property {GoogleAppsScript.Document.ListItem} item - The list item data
-   * @property {string} spell - The spell name
-   * @property {boolean} used - Whether the spell is used
-   * @property {boolean} isValid - Whether the spell is valid
-   */
+
 
   /**
-     * Gets the spells structure from a document
-     * @param {string} docId - The Google Document ID
-     * @typedef {Object.<string, Object.<number, PreparedSpellDocData[]>>} PreparedSpellsStructure
-     * @returns {PreparedSpellsStructure}
-     */
-  GetPreparedSpellsStructure(docId) {
-    const doc = DocumentApp.openById(docId);
-    const listItems = this.ExtractListItemsArray(doc, 'Prepared Spells', 'Skills');
-
+    * Parses the prepared spells structure from list items
+    * @param {Array<GoogleAppsScript.Document.ListItem | {text: string, isStrikeThrough: boolean}>} listItems - The list items to parse
+    * @param {string[]} domains - The domains of the character
+    * @param {function(string, number, string, string, string[]): boolean} validatorFn - The validator function
+    * @returns {PreparedSpellsStructure}
+    */
+  ParsePreparedSpellsStructure(listItems, domains, validatorFn) {
     /**
      * @type {PreparedSpellsStructure}
      */
     const preparedSpells = {};
-    const lines = GetDocRawLines(doc);
-    let domains;
-    const domainLine = ParserUtils.GetLineThatContainsOneOfTheseTokens(lines, ['Domain', 'domains']);
-    if (domainLine) {
-      domains = ParserUtils.GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
-    }
     let currentSpellLevel = 0;
-    let currentCasterClassName = 0;
+    let currentCasterClassName = "";
+    let currentSpellLevelName = "";
+
     listItems.forEach(listItem => {
-      const line = listItem.getText().trim().replaceAll('’', '\'');
+      let line = "";
+      let isStrikeThrough = false;
+      let itemRef = null;
+
+      // Check if it's a Google Doc ListItem (has getText method)
+      if (typeof listItem['getText'] === 'function') {
+        const item = /** @type {GoogleAppsScript.Document.ListItem} */ (listItem);
+        line = item.getText();
+        // Check strikethrough on the first character
+        isStrikeThrough = item.editAsText().isStrikethrough(0) || false;
+        itemRef = item;
+      } else {
+        // It's our extracted object
+        const item = /** @type {{text: string, isStrikeThrough: boolean}} */ (listItem);
+        line = item.text;
+        isStrikeThrough = item.isStrikeThrough;
+      }
+
+      line = line.trim().replaceAll('’', '\'');
+
       if (spellcasterClasses.includes(line.trim())) {  //new caster class
         currentCasterClassName = line.trim();
         preparedSpells[currentCasterClassName] = {};
       } else if (line.includes('level')) {  //new spell level
         currentSpellLevel = ParserUtils.GetFirstNumberFromALine(line);
+        currentSpellLevelName = String(currentSpellLevel); // Ensure string key
         if (currentCasterClassName == 'Cleric' && line.toLowerCase().includes('domain')) {
-          currentSpellLevel += ' - domain';
+          currentSpellLevelName += ' - domain';
         }
-        preparedSpells[currentCasterClassName][currentSpellLevel] = [];
+        preparedSpells[currentCasterClassName][currentSpellLevelName] = [];
       } else {  //new spell
-        preparedSpells[currentCasterClassName][currentSpellLevel]
-          .push({ item: listItem, spell: line, used: listItem.isStrikeThrough, isValid: Character.ValidatePreparedSpell(currentCasterClassName, currentSpellLevel, line, domains) });
+        // Only add if we are inside a valid block
+        if (currentCasterClassName && preparedSpells[currentCasterClassName][currentSpellLevelName]) {
+          const isValid = validatorFn ? validatorFn(currentCasterClassName, currentSpellLevel, currentSpellLevelName, line, domains) : true;
+          preparedSpells[currentCasterClassName][currentSpellLevelName].push({
+            item: itemRef,
+            spell: line,
+            used: isStrikeThrough,
+            isValid: isValid
+          });
+        }
       }
     });
     return preparedSpells;
+  },
+
+  /**
+     * Gets the spells structure from a document
+     * @param {string} docId - The Google Document ID
+     * @param {function(string, number, string, string, string[]): boolean} validatorFn - The validator function
+     * @returns {PreparedSpellsStructure}
+     */
+  GetPreparedSpellsStructure(docId, validatorFn) {
+    const doc = DocumentApp.openById(docId);
+    // Get raw items with potentially method access if they are ListItems
+    const listItems = this.ExtractListItemsArray(doc, 'Prepared Spells', 'Skills');
+
+    const lines = GetDocRawLines(doc);
+    let domains = [];
+    const domainLine = ParserUtils.GetLineThatContainsOneOfTheseTokens(lines, ['Domain', 'domains']);
+    if (domainLine) {
+      domains = ParserUtils.GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
+    }
+
+    return this.ParsePreparedSpellsStructure(listItems, domains, validatorFn);
   }
+};
+
+//exports
+module.exports = {
+  ParserUtils,
 };
 
 

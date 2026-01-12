@@ -50,7 +50,7 @@ function onCharacterRepresentation(response) {
   //render hp
   document.getElementById('hpCurrent').innerHTML = character.hp.current;
   document.getElementById('hpMax').innerHTML = character.hp.max;
-  const hpMeter = document.getElementById('hpMeter');
+  const hpMeter = /** @type {HTMLMeterElement} */ (document.getElementById('hpMeter'));
   hpMeter.value = character.hp.current;
   hpMeter.max = character.hp.max;
 
@@ -83,19 +83,26 @@ function onCharacterRepresentation(response) {
   UpdateValueAndTooltip('attacksOfOpportunity', character.attacksOfOpportunity);
 
   //populate abilities table
-  abilityNames.forEach((abilityName) => {
-    const ability = character.abilities[abilityName];
-    const scoreElement = document.querySelector(`[data-ability="${abilityName}"][data-field="score"]`);
-    const currentScoreElement = document.querySelector(`[data-ability="${abilityName}"][data-field="currentScore"]`);
-    const modifierElement = document.querySelector(`[data-ability="${abilityName}"][data-field="modifier"]`);
+  //populate abilities table
+  const abilitiesTableBody = document.querySelector('#abilitiesTable tbody');
+  abilitiesTableBody.innerHTML = '';
 
-    scoreElement.textContent = ability.score;
-    currentScoreElement.textContent = ability.currentScore;
-    modifierElement.textContent = ability.modifier;
+  if (character.abilities) {
+    Object.entries(character.abilities).forEach(([abilityName, ability]) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td class="row-style">${abilityName}</td>
+        <td class="row-style ability-score" data-ability="${abilityName}" data-field="score">${ability.score}</td>
+        <td class="row-style ability-current" data-ability="${abilityName}" data-field="currentScore">${ability.currentScore}</td>
+        <td class="row-style ability-modifier" data-ability="${abilityName}" data-field="modifier">${ability.modifier}</td>
+      `;
+      abilitiesTableBody.appendChild(row);
 
-    // Add tooltips to ability properties
-    addTooltip(currentScoreElement, ability.string);
-  });
+      // Add tooltips to ability properties
+      const currentScoreElement = row.querySelector('.ability-current');
+      addTooltip(currentScoreElement, ability.string);
+    });
+  }
 
   //populate skills table
   const skillsTableBody = document.querySelector('#skillsTable tbody');
@@ -536,7 +543,8 @@ function updateFilterButtonAppearance(listType, filterType) {
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function (event) {
-  if (!event.target.closest('.inventory-header')) {
+  const target = /** @type {HTMLElement} */ (event.target);
+  if (!target.closest('.inventory-header')) {
     document.querySelectorAll('.filter-dropdown').forEach(dd => {
       dd.classList.remove('show');
     });

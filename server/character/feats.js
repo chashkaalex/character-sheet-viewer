@@ -1,19 +1,22 @@
+const StatusRelatedValue = (character, statusName, value) => {
+  return character.statuses && character.statuses.some(s => s.name === statusName) ? value : 0;
+}
 const FeatEffects = {
   'Acrobatic': [
-    { status: 'Acrobatic', property: 'Jump', modifierType: 'Generic', value: 2 }, // TODO: define a property
-    { status: 'Acrobatic', property: 'Tumble', modifierType: 'Generic', value: 2 } // TODO: define a property
+    { status: 'Acrobatic', property: 'Jump', modifierType: 'Generic', value: 2 },
+    { status: 'Acrobatic', property: 'Tumble', modifierType: 'Generic', value: 2 }
   ],
   'Agile': [
-    { status: 'Agile', property: 'Balance', modifierType: 'Generic', value: 2 }, // TODO: define a property
-    { status: 'Agile', property: 'Escape Artist', modifierType: 'Generic', value: 2 } // TODO: define a property
+    { status: 'Agile', property: 'Balance', modifierType: 'Generic', value: 2 },
+    { status: 'Agile', property: 'Escape Artist', modifierType: 'Generic', value: 2 }
   ],
   'Alertness': [
-    { status: 'Alertness', property: 'Listen', modifierType: 'Generic', value: 2 }, // TODO: define a property
-    { status: 'Alertness', property: 'Spot', modifierType: 'Generic', value: 2 } // TODO: define a property
+    { status: 'Alertness', property: 'Listen', modifierType: 'Generic', value: 2 },
+    { status: 'Alertness', property: 'Spot', modifierType: 'Generic', value: 2 }
   ],
   'Animal Affinity': [
-    { status: 'Animal Affinity', property: 'Handle Animal', modifierType: 'Generic', value: 2 }, // TODO: define a property
-    { status: 'Animal Affinity', property: 'Ride', modifierType: 'Generic', value: 2 } // TODO: define a property
+    { status: 'Animal Affinity', property: 'Handle Animal', modifierType: 'Generic', value: 2 },
+    { status: 'Animal Affinity', property: 'Ride', modifierType: 'Generic', value: 2 }
   ],
   'Armor Proficiency (Light)': [
     { status: 'Armor Proficiency (Light)', property: 'Special', description: 'Allows use of light armor without incurring nonproficiency penalties on attack rolls and all Strength-based and Dexterity-based ability and skill checks [1, 2].' }
@@ -43,7 +46,9 @@ const FeatEffects = {
       status: 'Combat Casting',
       property: 'Concentration',
       modifierType: 'Generic',
-      value: function (character) { return character.statuses && character.statuses.some(s => s.name === 'Casting Defensively') ? 4 : 0; }
+      value: function (character) {
+        return StatusRelatedValue(character, 'Casting Defensively', 4);
+      }
     }
   ],
   'Combat Expertise': [
@@ -74,6 +79,17 @@ const FeatEffects = {
   ],
   'Dodge': [
     { status: 'Dodge', property: 'AC (against selected opponent)', modifierType: 'Dodge', value: 1 } // TODO: define a property
+  ],
+
+  'Dragon Hunter': [
+    {
+      status: 'Dragon Hunter',
+      property: 'ac',
+      modifierType: "Dodge",
+      value: function (character) {
+        return StatusRelatedValue(character, 'Fighting Dragon', 2);
+      }
+    }
   ],
   'Endurance': [
     { status: 'Endurance', property: 'Checks/Saves (resist nonlethal damage)', modifierType: 'Generic', value: 4 } // TODO: define a property
@@ -230,7 +246,13 @@ const FeatEffects = {
       modifierType: 'Competence',
       value: function (character) {
         //TODO: get the related class on which the feat is gained and return the level of the class
-        const classLevel = character.GetPracticedSpellcasterClassLevel() || 0;
+        //find the feat which has effect with the status: 'Practiced Spellcaster':
+        const practicedSpellcasterFeat = character.feats.find(feat => {
+          return feat.some(effect => effect.status === 'Practiced Spellcaster');
+        });
+        const practicedSpellcasterClassName = practicedSpellcasterFeat.casterClassName;
+
+        const classLevel = character.classes.find(cls => cls.className === practicedSpellcasterClassName).level;
         if (classLevel + 4 >= character.HD) {
           return (character.HD - classLevel);
         }

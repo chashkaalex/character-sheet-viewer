@@ -1,8 +1,7 @@
-const LOG_DEBUG = false;
+const { Character, CharacterError } = require("./character/character");
+const { getCharacterRep } = require("./character/character_rep");
 
-/**
- * @typedef {import('./character/character.js').Character} Character
- */
+const LOG_DEBUG = false;
 
 function doGet(e) {
   if (LOG_DEBUG) {
@@ -69,7 +68,7 @@ function include(filename) {
 /**
  * Retrieves a character object by document ID.
  * @param {string} docId The ID of the document containing the character data.
- * @returns {Character} Either a Character object or an error object
+ * @returns {Character | CharacterError} Either a Character object or an error object
  */
 function GetCharacterByDocId(docId) {
   console.log('docId is ' + docId);
@@ -80,21 +79,28 @@ function GetCharacterByDocId(docId) {
   const character = new Character(doc);
   character.ParseCharacter();
   if (!character.parseSuccess) {
-    return {
-      error: true,
-      parseErrors: character.parseErrors,
-      errorMessage: 'Failed to parse character'
-    };
+    return new CharacterError('Failed to parse character', character.parseErrors);
   }
   return character;
 }
 
+/**
+ * Retrieves a character representation by document ID.
+ * @param {string} docId The ID of the document containing the character data.
+ * @returns {import("./character/character_rep").CharacterRep | CharacterError} Either a CharacterRep object or an error object
+   */
 function GetCharacterRepByDocId(docId) {
 
   const currentCharacter = GetCharacterByDocId(docId);
-  if (currentCharacter.error) {
+  if (currentCharacter instanceof CharacterError) {
     return currentCharacter;
   }
   return getCharacterRep(currentCharacter);
 }
 
+if (typeof module !== 'undefined') {
+  module.exports = {
+    GetCharacterByDocId,
+    GetCharacterRepByDocId
+  };
+}

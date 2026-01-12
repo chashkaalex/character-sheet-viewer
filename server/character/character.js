@@ -1,7 +1,11 @@
 /**
  * @typedef {GoogleAppsScript.Document.Document} GDoc
- * @typedef {typeof ParserUtils} ParserUtils
  */
+
+const { GetDocRawLines } = require("../gdocs");
+const { ParserUtils } = require("../parser");
+const { ModifiableProperty, CreatureSize, Ability, SpecialAttackBonus, ListOfSpecialProperties, AbilityBasedProperty, ArmorClass, Skill } = require("./property");
+const { SpellCasting } = require("./spells");
 
 /**
  *@class Character
@@ -51,7 +55,7 @@ class Character {
 
     this.classes = [];
 
-    this.domains = null;
+    this.domains = [''];
 
     /**
      * @type {ModifiableProperty}
@@ -59,7 +63,7 @@ class Character {
     this.bab = new ModifiableProperty(0);
 
     /**
-     * @type {Object.<string, SpecialAttackBonus>}
+     * @type {Object.<string, ModifiableProperty>}
      */
     this.specialAttacks = {};
 
@@ -418,7 +422,7 @@ class Character {
       status.elapsed = ParserUtils.GetFirstNumberFromALine(line);
       if (status.name && status.name.trim() !== '' && status.duration && status.elapsed) {
         statuses.push(status);
-      } else if (line.empty()) {
+      } else if (line.trim() === '') {
         this.parseWarnings.push(`Status ${line} - empty line, skipping`);
       } else {
         this.parseWarnings.push(`Status ${line} - name or duration or elapsed not found`);
@@ -456,67 +460,58 @@ class Character {
    * @typedef {Object.<string, Object.<number|string, PreparedSpellData[]>>} PreparedSpellsStructure
    */
   ParsePreparedSpells() {
-    /**
-     * @type {PreparedSpellsStructure}
-     */
-    const preparedSpells = {};
     //const preparedSpellsLines = ParserUtils.GetLinesBetweenTwoTokens(this.lines, "Prepared Spells", "Skills");
     const preparedSpellsItemsData = ParserUtils.ExtractListItemsBetweenMarkers(this.document, 'Prepared Spells', 'Skills');
 
-    let currentSpellLevel = 0;
-    let currentCasterClassName = 0;
     if (preparedSpellsItemsData && this.spellCasting.isActive()) {
-      preparedSpellsItemsData.forEach(item => {
-        const line = item.text;
-        if (spellcasterClasses.includes(line.trim())) {
-          currentCasterClassName = line.trim();
-          currentSpellLevel = 0;
-          preparedSpells[currentCasterClassName] = {};
-        }
-        else if (line.includes('level')) {
-          currentSpellLevel = ParserUtils.GetFirstNumberFromALine(line);
-          if (currentCasterClassName == 'Cleric' && line.toLowerCase().includes('domain')) {
-            currentSpellLevel += ' - domain';
-          }
-          preparedSpells[currentCasterClassName][currentSpellLevel] = [];
-        }
-        else {
-          if (Character.ValidatePreparedSpell(currentCasterClassName, currentSpellLevel, line, this.domains)) {
-            preparedSpells[currentCasterClassName][currentSpellLevel].push({ spell: line, used: item.isStrikeThrough });
-          } else {
-            let warningMessage = `Spell ${line} is not available for ${currentCasterClassName} at level ${currentSpellLevel}`;
-            if (typeof currentSpellLevel === 'string' && currentSpellLevel.includes('domain')) {
-              warningMessage += `s: ${this.domains.join(' or ')}`;
+      /**
+       * @type {PreparedSpellsStructure}
+       */
+      const preparedSpells = ParserUtils.ParsePreparedSpellsStructure(
+        preparedSpellsItemsData,
+        this.domains,
+        Character.ValidatePreparedSpell
+      );
+
+      // Log warnings for invalid spells
+      Object.keys(preparedSpells).forEach(casterClass => {
+        Object.keys(preparedSpells[casterClass]).forEach(level => {
+          preparedSpells[casterClass][level].forEach(spellData => {
+            if (!spellData.isValid) {
+              let warningMessage = `Spell ${spellData.spell} is not available for ${casterClass} at level ${level}`;
+              if (level.includes('domain')) {
+                warningMessage += `s: ${this.domains.join(' or ')}`;
+              }
+              this.parseWarnings.push(warningMessage);
             }
-            this.parseWarnings.push(warningMessage);
-          }
-        }
+          });
+        });
       });
+
+      return preparedSpells;
     } else {
       if (!this.spellCasting.isActive()) {
         this.parseWarnings.push('Spell casting data not found, prepared spells will not be updated');
       }
       return null;
     }
-    return preparedSpells;
   }
 
   /**
    * Validates if a spell is prepared for a given caster class and spell level
    * @param {string} casterClassName - The name of the caster class
-   * @param {number|string} spellLevel - The level of the spell
+   * @param {number} spellLevel - The level of the spell
+   * @param {string} spellLevelName - The name of the spell level
    * @param {string} spellName - The name of the spell
-   * @param {string[]} domains - The domains of the caster class
    * @returns {boolean} - Whether the spell is prepared
    */
-  static ValidatePreparedSpell(casterClassName, spellLevel, spellName, domains) {
+  static ValidatePreparedSpell(casterClassName, spellLevel, spellLevelName, spellName, domains) {
     //correct spells are all the spells of the same level or lower
     const casterClassSpells = classesData.get(casterClassName).spellCastingData.spells;
     const correctSpells = [];
-    if (typeof spellLevel === 'string' && spellLevel.includes('domain')) {
-      const domainLevel = ParserUtils.GetFirstNumberFromALine(spellLevel);
+    if (spellLevelName.includes('domain')) {
       domains.forEach(domain => {
-        correctSpells.push(...casterClassSpells.domainSpells[domain].slice(0, domainLevel));
+        correctSpells.push(...casterClassSpells.domainSpells[domain].slice(0, spellLevel));
       });
     } else {
       for (let level = 0; level <= spellLevel; level++) {
@@ -564,10 +559,29 @@ class Character {
     this.parseSuccess = false;
   }
 
-
 }
 
+/**
+ * @class CharacterError
+ * @property {boolean} error
+ */
+class CharacterError {
+  /**
+   * @param {string} errorMessage 
+   * @param {string[]} parseErrors 
+   * @param {string[]} parseWarnings 
+   */
+  constructor(errorMessage, parseErrors = [], parseWarnings = []) {
+    this.error = true;
+    this.errorMessage = errorMessage;
+    this.parseErrors = parseErrors;
+    this.parseWarnings = parseWarnings;
+  }
+}
 
-
-
-
+if (typeof module !== 'undefined') {
+  module.exports = {
+    Character,
+    CharacterError
+  };
+}

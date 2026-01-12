@@ -1,5 +1,7 @@
 //google document editing functions
 
+const { ParserUtils } = require("./parser");
+
 /**
    * Normalizes a string by replacing common Google Docs "smart" characters
    * with their standard ASCII equivalents for reliable processing in code.
@@ -45,16 +47,31 @@ function GetDocRawLines(doc) {
   /**@type {string[]}*/
   const lines = [];
   doc.getTabs().forEach(
-    tab => { lines.push(...tab.asDocumentTab().getBody().getText().replaceAll('’', '\'').split('\n')); }
+    tab => {
+      lines.push(...tab.asDocumentTab().getBody().getText()
+        .replaceAll('’', '\'')        //replace smart quotes with standard quotes
+        .replace(/\r/g, '\n')         //replace line breaks with newlines
+        .replace(/\u000b/g, '\n')     //replace form feeds with newlines
+        .split('\n')
+        .filter(line => line.trim() !== ''));
+    }
   );
   return lines;
+}
+
+class ParagraphResult {
+  constructor(success, paragraph = null, error = null) {
+    this.success = success;
+    this.paragraph = paragraph;
+    this.error = error;
+  }
 }
 
 /**
  * Gets the paragraph object that contains the specified text
  * @param {GoogleAppsScript.Document.Document} doc The Google Doc object.
  * @param {string} searchText - The text to search for
- * @returns {GoogleAppsScript.Document.Paragraph} - Object containing paragraph info or error
+ * @returns {ParagraphResult} - Object containing paragraph info or error
  */
 function GetParagraphThatContainsText(doc, searchText) {
   const paragraphs = doc.getBody().getParagraphs();
@@ -63,16 +80,10 @@ function GetParagraphThatContainsText(doc, searchText) {
   const targetParagraphIndex = paragraphs.findIndex(paragraph => paragraph.getText().includes(searchText));
 
   if (targetParagraphIndex === -1) {
-    return {
-      success: false,
-      error: `Text '${searchText}' not found in document`
-    };
+    return new ParagraphResult(false, null, `Text '${searchText}' not found in document`);
   }
 
-  return {
-    success: true,
-    paragraph: paragraphs[targetParagraphIndex]
-  };
+  return new ParagraphResult(true, paragraphs[targetParagraphIndex]);
 }
 
 /**
@@ -257,4 +268,9 @@ function RemoveLineFromSection(docId, sectionName, lineToRemove) {
   }
 }
 
-
+module.exports = {
+  GetDocRawLines,
+  UpdateProperty,
+  UpdateSection,
+  RemoveLineFromSection
+};
