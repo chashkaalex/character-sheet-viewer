@@ -1,6 +1,6 @@
 const StatusRelatedValue = (character, statusName, value) => {
   return character.statuses && character.statuses.some(s => s.name === statusName) ? value : 0;
-}
+};
 const FeatEffects = {
   'Acrobatic': [
     { status: 'Acrobatic', property: 'Jump', modifierType: 'Generic', value: 2 },
@@ -85,7 +85,7 @@ const FeatEffects = {
     {
       status: 'Dragon Hunter',
       property: 'ac',
-      modifierType: "Dodge",
+      modifierType: 'Dodge',
       value: function (character) {
         return StatusRelatedValue(character, 'Fighting Dragon', 2);
       }
@@ -223,6 +223,14 @@ const FeatEffects = {
   'Nimble Fingers': [
     { status: 'Nimble Fingers', property: 'Disable Device', modifierType: 'Generic', value: 2 }, // TODO: define a property
     { status: 'Nimble Fingers', property: 'Open Lock', modifierType: 'Generic', value: 2 } // TODO: define a property
+  ],
+  'Nymph\'s Kiss': [
+    { status: 'Nymph\'s Kiss', property: 'Diplomacy', modifierType: 'Circumstance', value: 2 },
+    { status: 'Nymph\'s Kiss', property: 'Intimidate', modifierType: 'Circumstance', value: 2 },
+    { status: 'Nymph\'s Kiss', property: 'Gather Information', modifierType: 'Circumstance', value: 2 },
+    { status: 'Nymph\'s Kiss', property: 'Bluff', modifierType: 'Circumstance', value: 2 },
+    { status: 'Nymph\'s Kiss', property: 'Use Magic Device', modifierType: 'Circumstance', value: 2 },
+    { status: 'Nymph\'s Kiss', property: 'Disguise', modifierType: 'Circumstance', value: 2 }
   ],
   'Persuasive': [
     { status: 'Persuasive', property: 'Bluff', modifierType: 'Generic', value: 2 }, // TODO: define a property
@@ -400,3 +408,9 @@ const FeatEffects = {
     { status: 'Scribe Scroll', property: 'Special', description: 'You can create a scroll of any spell that you know or have in your spellbook (Caster Level 1st prerequisite) [32, 35].' }
   ]
 };
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    FeatEffects
+  };
+}

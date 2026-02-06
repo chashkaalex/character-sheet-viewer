@@ -1,9 +1,13 @@
 /**
  * Map of classes data
- * @type {Map<string, ClassData>}
+ * @type {Map<string, Object>}
  */
 
-const classesData = new Map();
+const ClassesData = new Map();
+
+if (typeof module !== 'undefined') {
+  module.exports = { ClassesData };
+}
 
 // class ClassData {
 //     constructor(name, HD, skills, levelTable, spellCasting) {

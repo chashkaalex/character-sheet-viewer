@@ -1,24 +1,29 @@
-
-let character;
+/* eslint-disable no-unused-vars */
+/* global RemoveStatus */
+let characterRep; // Defined in globals
 
 function onCharacterRepresentation(response) {
-  console.log("char response handler called!!!");
+  console.log('char response handler called!!!');
 
   if (response.error) {
-    alert(response.errorMessage);
+    let errorMessage = response.errorMessage;
+    if (response.parseErrors && response.parseErrors.length > 0) {
+      errorMessage += '\n\nDetails:\n' + response.parseErrors.join('\n');
+    }
+    alert(errorMessage);
     return;
   }
 
   if (!response.parseSuccess) {
-    alert("Parse errors:\n" + response.parseErrors.join("\n"));
+    alert('Parse errors:\n' + response.parseErrors.join('\n'));
     return;
   }
 
   if (response.parseWarnings.length > 0) {
-    alert("Parse warnings:\n" + response.parseWarnings.join("\n"));
+    alert('Parse warnings:\n' + response.parseWarnings.join('\n'));
   }
 
-  character = response;
+  characterRep = response;
 
   // for (const [key, value] of Object.entries(character)) {
   //   console.log(`${key}: ${value}`);
@@ -29,49 +34,49 @@ function onCharacterRepresentation(response) {
   // }
 
   // Always render statuses from server (this will clear existing ones and show only server statuses)
-  renderServerStatuses(character.statuses || []);
+  renderServerStatuses(characterRep.statuses || []);
 
   //parsing and rendering
   // Format: Name, race classname1 classlevel1/classname2 classlevel2 etc.
-  let nameDisplay = character.name;
+  let nameDisplay = characterRep.name;
 
-  if (character.race) {
-    nameDisplay += ` ( ${character.race}`;
+  if (characterRep.race) {
+    nameDisplay += ` ( ${characterRep.race}`;
   }
 
-  if (character.classes && character.classes.length > 0) {
-    const classStrings = character.classes.map(c => `${c.name} ${c.level}`);
+  if (characterRep.classes && characterRep.classes.length > 0) {
+    const classStrings = characterRep.classes.map(c => `${c.name} ${c.level}`);
     nameDisplay += ` ${classStrings.join('/')}`;
-    nameDisplay += ` )`;
+    nameDisplay += ' )';
   }
 
   document.getElementById('characterName').innerHTML = nameDisplay;
 
   //render hp
-  document.getElementById('hpCurrent').innerHTML = character.hp.current;
-  document.getElementById('hpMax').innerHTML = character.hp.max;
+  document.getElementById('hpCurrent').innerHTML = characterRep.hp.current;
+  document.getElementById('hpMax').innerHTML = characterRep.hp.max;
   const hpMeter = /** @type {HTMLMeterElement} */ (document.getElementById('hpMeter'));
-  hpMeter.value = character.hp.current;
-  hpMeter.max = character.hp.max;
+  hpMeter.value = characterRep.hp.current;
+  hpMeter.max = characterRep.hp.max;
 
 
   //render saves
-  if (character.saves) {
-    UpdateValueAndTooltip('fortBonus', character.saves.Fort);
-    UpdateValueAndTooltip('refBonus', character.saves.Ref);
-    UpdateValueAndTooltip('willBonus', character.saves.Will);
+  if (characterRep.saves) {
+    UpdateValueAndTooltip('fortBonus', characterRep.saves.Fort);
+    UpdateValueAndTooltip('refBonus', characterRep.saves.Ref);
+    UpdateValueAndTooltip('willBonus', characterRep.saves.Will);
   }
   //render initiative and AC
-  UpdateValueAndTooltip('initBonus', character.initBonus);
+  UpdateValueAndTooltip('initBonus', characterRep.initBonus);
 
   //render speed
-  document.getElementById('speedValue').innerHTML = character.speed?.currentScore || '-';
-  if (character.speed) {
-    addTooltip('speedValue', character.speed.string);
+  document.getElementById('speedValue').innerHTML = characterRep.speed?.currentScore || '-';
+  if (characterRep.speed) {
+    addTooltip('speedValue', characterRep.speed.string);
   }
 
 
-  UpdateValueAndTooltip('acValue', character.ac);
+  UpdateValueAndTooltip('acValue', characterRep.ac);
 
   // Populate weapon dropdown and display weapon stats
   populateWeaponDropdown();
@@ -80,15 +85,15 @@ function onCharacterRepresentation(response) {
   populateSpecialAttackDropdown();
 
   // Update attacks of opportunity
-  UpdateValueAndTooltip('attacksOfOpportunity', character.attacksOfOpportunity);
+  UpdateValueAndTooltip('attacksOfOpportunity', characterRep.attacksOfOpportunity);
 
   //populate abilities table
   //populate abilities table
   const abilitiesTableBody = document.querySelector('#abilitiesTable tbody');
   abilitiesTableBody.innerHTML = '';
 
-  if (character.abilities) {
-    Object.entries(character.abilities).forEach(([abilityName, ability]) => {
+  if (characterRep.abilities) {
+    Object.entries(characterRep.abilities).forEach(([abilityName, ability]) => {
       const row = document.createElement('tr');
       row.innerHTML = `
         <td class="row-style">${abilityName}</td>
@@ -108,8 +113,8 @@ function onCharacterRepresentation(response) {
   const skillsTableBody = document.querySelector('#skillsTable tbody');
   // Clear previous rows before repopulating to avoid duplicates
   skillsTableBody.innerHTML = '';
-  if (character.skills) {
-    Object.entries(character.skills).forEach(([skillName, skill]) => {
+  if (characterRep.skills) {
+    Object.entries(characterRep.skills).forEach(([skillName, skill]) => {
       const row = document.createElement('tr');
       row.innerHTML = `
               <td class="row-style">${skillName}</td>
@@ -142,8 +147,8 @@ function UpdateValueAndTooltip(element, property) {
 }
 
 function renderServerStatuses(statuses) {
-  const statusesList = document.getElementById("statusesList");
-  const emptyStatus = document.getElementById("emptyStatus");
+  const statusesList = document.getElementById('statusesList');
+  const emptyStatus = document.getElementById('emptyStatus');
 
   // Clear any existing statuses (except the empty template)
   const existingStatuses = statusesList.querySelectorAll('.status-item:not(#emptyStatus)');
@@ -182,7 +187,7 @@ function formatRoundsToReadable(rounds) {
     }
     const minutes = Math.floor(remainingRounds / 6);
     const finalRounds = remainingRounds % 6;
-    let parts = [`${hours} hour${hours !== 1 ? 's' : ''}`];
+    const parts = [`${hours} hour${hours !== 1 ? 's' : ''}`];
     if (minutes > 0) parts.push(`${minutes} min${minutes !== 1 ? 's' : ''}`);
     if (finalRounds > 0) parts.push(`${finalRounds} round${finalRounds !== 1 ? 's' : ''}`);
     return parts.join(', ');
@@ -336,8 +341,8 @@ function populateInventory() {
   const battleGearList = document.getElementById('battleGearList');
   const possessionsList = document.getElementById('possessionsList');
 
-  populateInventoryList(battleGearList, character.battleGear, 'battleGear');
-  populateInventoryList(possessionsList, character.possessions, 'possessions');
+  populateInventoryList(battleGearList, characterRep.battleGear, 'battleGear');
+  populateInventoryList(possessionsList, characterRep.possessions, 'possessions');
 
   // Update filter button appearances based on current filters
   updateFilterButtonAppearance('battleGear', currentFilters.battleGear);
@@ -381,20 +386,20 @@ function filterItemsByType(items, filterType) {
 
   return items.filter(item => {
     switch (filterType) {
-      case 'equipment':
-        // Items with bodySlot not being null (equipment that can be worn)
-        return item.bodySlot !== null && item.bodySlot !== undefined;
-      case 'weapons':
-        // Items that are weapons
-        return item.isWeapon === true;
-      case 'potions':
-        // Items that are potions
-        return item.isPotion === true;
-      case 'scrolls':
-        // Items that are scrolls
-        return item.isScroll === true;
-      default:
-        return true;
+    case 'equipment':
+      // Items with bodySlot not being null (equipment that can be worn)
+      return item.bodySlot !== null && item.bodySlot !== undefined;
+    case 'weapons':
+      // Items that are weapons
+      return item.isWeapon === true;
+    case 'potions':
+      // Items that are potions
+      return item.isPotion === true;
+    case 'scrolls':
+      // Items that are scrolls
+      return item.isScroll === true;
+    default:
+      return true;
     }
   });
 }
@@ -488,7 +493,7 @@ function moveItem(fromList, toList) {
 }
 
 // Filter functionality
-let currentFilters = {
+const currentFilters = {
   battleGear: 'all',
   possessions: 'all'
 };
@@ -520,7 +525,7 @@ function filterItems(listType, filterType) {
   // Re-populate the inventory with the current filter
   populateInventoryList(
     document.getElementById(listType + 'List'),
-    character[listType],
+    characterRep[listType],
     listType
   );
 }

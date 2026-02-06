@@ -1,3 +1,5 @@
+const { ClassesData } = require('./_classes_general_data');
+
 const Cleric = {
   name: 'Cleric',
   HD: '1d8',
@@ -575,4 +577,4 @@ const Cleric = {
   }
 };
 
-classesData.set('Cleric', Cleric);
+ClassesData.set('Cleric', Cleric);

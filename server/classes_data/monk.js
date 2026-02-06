@@ -1,3 +1,5 @@
+const { ClassesData } = require('./_classes_general_data');
+
 const Monk = {
   name: 'Monk',
   HD: '1d8',
@@ -47,4 +49,11 @@ const Monk = {
 
 };
 
-classesData.set('Monk', Monk);
+
+ClassesData.set('Monk', Monk);
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    Monk
+  };
+}

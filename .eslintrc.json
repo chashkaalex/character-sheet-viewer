@@ -29,7 +29,25 @@
     //common types (used in both server and client)
     "Character": "readonly",
     "SlotData": "readonly",
-    "HpActionType": "readonly"
+    "HpActionType": "readonly",
+    // Constants
+    "AbilityNames": "readonly",
+    "Races": "readonly",
+    "SaveNames": "readonly",
+    "SkillsAbilities": "readonly",
+    "SpecialAttackNames": "readonly",
+    "SkillsSynergyReversed": "readonly",
+    "SpellcasterClasses": "readonly",
+    "recordUserLog": "readonly",
+    "ModifiableProperty": "readonly",
+    "CreatureSize": "readonly",
+    "Ability": "readonly",
+    "SpecialAttackBonus": "readonly",
+    "ListOfSpecialProperties": "readonly",
+    "AbilityBasedProperty": "readonly",
+    "ArmorClass": "readonly",
+    "Skill": "readonly",
+    "GetRaceSpeed": "readonly"
   },
   "rules": {
     "no-unused-vars": [
@@ -70,7 +88,11 @@
     ],
     "space-before-function-paren": [
       "error",
-      "never"
+      {
+        "anonymous": "always",
+        "named": "never",
+        "asyncArrow": "always"
+      }
     ],
     "keyword-spacing": [
       "error",
@@ -111,17 +133,43 @@
       ],
       "env": {
         "browser": true,
-        "node": false,
-        "googleappsscript/googleappsscript": true
+        "node": false
       },
       "globals": {
         "google": "readonly",
         "character": "writable",
-        "onCharacterRepresentation": "readonly"
+        "onCharacterRepresentation": "readonly",
+        "UpdateValueAndTooltip": "readonly",
+        "addTooltip": "readonly",
+        "RemoveStatus": "readonly",
+        "characterRep": "writable",
+        "populateWeaponDropdown": "readonly",
+        "populateSpecialAttackDropdown": "readonly",
+        "PrepareSpellsUI": "readonly"
       },
       "rules": {
         "no-implicit-globals": "off",
-        "no-unused-vars": "off"
+        "no-unused-vars": "off",
+        "no-redeclare": "off",
+        "no-restricted-globals": "off"
+      }
+    },
+    {
+      "files": [
+        "**/tests/**/*.js",
+        "**/*.test.js"
+      ],
+      "env": {
+        "jest": true
+      }
+    },
+    {
+      "files": [
+        "server/gas_tests/**/*.js"
+      ],
+      "rules": {
+        "no-unused-vars": "off",
+        "no-undef": "off"
       }
     }
   ]

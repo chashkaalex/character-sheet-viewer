@@ -1,5 +1,9 @@
-const bodySlots = [
+const { Monk } = require('../classes_data/monk');
+const { IsAWeapon, GetSpecialWeaponMaterial } = require('./weapons');
+
+const BodySlots = [
   { slotName: 'Head', names: ['headband', 'hat', 'helmet', 'phylactery'], possibleAmount: 1 },
+
   { slotName: 'Eyes', names: ['eye lenses', 'goggles'], possibleAmount: 1 },
   { slotName: 'Neck', names: ['amulet', 'brooch', 'medallion', 'necklace', 'periapt', 'scarab'], possibleAmount: 1 },
   { slotName: 'Torso', names: ['vest', 'vestment', 'shirt'], possibleAmount: 1 },
@@ -72,9 +76,9 @@ function GetItemEffects(itemName) {
 }
 
 function GetBodySlot(itemName) {
-  itemNameWords = itemName.toLowerCase().split(' ');
+  const itemNameWords = itemName.toLowerCase().split(' ');
   for (let i = 0; i < itemNameWords.length; i++) {
-    const bodySlot = bodySlots.find(slot => slot.names.includes(itemNameWords[i]));
+    const bodySlot = BodySlots.find(slot => slot.names.includes(itemNameWords[i]));
     if (bodySlot) {
       return bodySlot.slotName;
     }
@@ -113,4 +117,14 @@ class Item {
   IsUsable() {
     return this.isPotion || this.isScroll;
   }
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    Item,
+    GetBodySlot,
+    GetItemEffects,
+    ItemEffects,
+    BodySlots
+  };
 }

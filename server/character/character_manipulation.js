@@ -1,7 +1,7 @@
 
 const { GetCharacterByDocId, GetCharacterRepByDocId } = require('../server');
 const { Character, CharacterError } = require('./character');
-const { spellsData } = require('./spells');
+const { SpellsData } = require('./spells');
 const { ParserUtils } = require('../parser');
 const { UpdateProperty, UpdateSection, RemoveLineFromSection } = require('../gdocs');
 
@@ -139,12 +139,12 @@ function OnCastSpell(docId, slotData) {
   }
 
   //calculate the duration.
-  const spellObject = spellsData[slotData.spellName];
+  const spellObject = SpellsData[slotData.spellName];
   if (!spellObject) {
     return new CharacterError('Spell description was not found');
   }
 
-  //check if this spells' status is already active 
+  //check if this spells' status is already active
   //TODO: this check shoud be performed on spell's real target
   if (character.statuses && character.statuses.some(status => status.name === slotData.spellName)) {
     return new CharacterError('Spell already active');
@@ -179,4 +179,16 @@ function OnCastSpell(docId, slotData) {
 
   //TODO: implement tatget logic, for now casting on self
   return AddStatusToCharacter(docId, slotData.spellName, duration);
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    UpdateHp,
+    AddStatusToCharacter,
+    RemoveStatusFromCharacter,
+    RemoveStatusLine,
+    OnRoundsElapsed,
+    OnPrepareSpell,
+    OnCastSpell
+  };
 }

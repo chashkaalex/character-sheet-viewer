@@ -6,123 +6,123 @@
  * @returns {number} - Duration in rounds
  */
 function convertToRounds(duration, unit) {
-    switch (unit) {
-        case 'rounds':
-            return duration;
-        case 'minutes':
-            return duration * 6; // 1 minute = 6 rounds
-        case 'hours':
-            return duration * 360; // 1 hour = 60 minutes = 360 rounds
-        default:
-            return duration; // Default to rounds if unknown unit
-    }
+  switch (unit) {
+  case 'rounds':
+    return duration;
+  case 'minutes':
+    return duration * 6; // 1 minute = 6 rounds
+  case 'hours':
+    return duration * 360; // 1 hour = 60 minutes = 360 rounds
+  default:
+    return duration; // Default to rounds if unknown unit
+  }
 }
 
 function NewStatus() {
-    console.log("NewStatus for " + character.name);
-    const statusesList = document.getElementById("statusesList");
-    const emptyStatus = document.getElementById("emptyStatus");
-    const clone = emptyStatus.cloneNode(true);
-    clone.id = ""; // Clear the ID to avoid duplicates
-    statusesList.insertBefore(clone, emptyStatus);
+  console.log('NewStatus for ' + characterRep.name);
+  const statusesList = document.getElementById('statusesList');
+  const emptyStatus = document.getElementById('emptyStatus');
+  const clone = emptyStatus.cloneNode(true);
+  clone.id = ''; // Clear the ID to avoid duplicates
+  statusesList.insertBefore(clone, emptyStatus);
 
-    clone.querySelector('.status-name-input').style.display = 'inline-block';
-    clone.querySelector('.timed-controls').style.display = 'inline-flex';
-    clone.querySelector('.status-confirm-btn').style.display = 'inline-block';
-    clone.querySelector('.status-remove-btn').style.display = 'inline-block'; // Show remove for cancelling
+  clone.querySelector('.status-name-input').style.display = 'inline-block';
+  clone.querySelector('.timed-controls').style.display = 'inline-flex';
+  clone.querySelector('.status-confirm-btn').style.display = 'inline-block';
+  clone.querySelector('.status-remove-btn').style.display = 'inline-block'; // Show remove for cancelling
 
-    // Disable add button to prevent multiple new statuses
-    document.getElementById("addButton").disabled = true;
+  // Disable add button to prevent multiple new statuses
+  document.getElementById('addButton').disabled = true;
 }
 
 function AddStatus(button) {
-    console.log("AddStatus for " + character.name);
-    const statusDiv = button.closest('.status-item');
-    const inputElem = statusDiv.querySelector('.status-name-input');
+  console.log('AddStatus for ' + characterRep.name);
+  const statusDiv = button.closest('.status-item');
+  const inputElem = statusDiv.querySelector('.status-name-input');
 
-    if (inputElem.value.trim() === "") {
-        alert("Please enter a valid status.");
-        return; // Exit if the input is empty
+  if (inputElem.value.trim() === '') {
+    alert('Please enter a valid status.');
+    return; // Exit if the input is empty
+  }
+
+  const statusName = inputElem.value.trim();
+
+  // Check if a status with this name already exists
+  if (characterRep.statuses) {
+    const existingStatus = characterRep.statuses.find(status =>
+      status.name.toLowerCase() === statusName.toLowerCase()
+    );
+
+    if (existingStatus) {
+      alert(`A status with the name "${statusName}" already exists.`);
+      return; // Exit if duplicate found
     }
+  }
 
-    const statusName = inputElem.value.trim();
+  // Get the duration value and unit
+  const durationInput = statusDiv.querySelector('.status-duration-input');
+  const unitSelect = statusDiv.querySelector('.status-unit-select');
+  const durationValue = durationInput ? parseInt(durationInput.value) || 1 : 1;
+  const unit = unitSelect ? unitSelect.value : 'rounds';
 
-    // Check if a status with this name already exists
-    if (character.statuses) {
-        const existingStatus = character.statuses.find(status =>
-            status.name.toLowerCase() === statusName.toLowerCase()
-        );
+  // Convert duration to rounds
+  const durationInRounds = convertToRounds(durationValue, unit);
 
-        if (existingStatus) {
-            alert(`A status with the name "${statusName}" already exists.`);
-            return; // Exit if duplicate found
-        }
-    }
+  // Call server function to add status
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error('Error adding status:', error);
+      alert('Error adding status: ' + error.message);
+    })
+    .AddStatusToCharacter(characterRep.docId, statusName, durationInRounds);
 
-    // Get the duration value and unit
-    const durationInput = statusDiv.querySelector('.status-duration-input');
-    const unitSelect = statusDiv.querySelector('.status-unit-select');
-    const durationValue = durationInput ? parseInt(durationInput.value) || 1 : 1;
-    const unit = unitSelect ? unitSelect.value : 'rounds';
-
-    // Convert duration to rounds
-    const durationInRounds = convertToRounds(durationValue, unit);
-
-    // Call server function to add status
-    google.script.run
-        .withSuccessHandler(onCharacterRepresentation)
-        .withFailureHandler(function (error) {
-            console.error("Error adding status:", error);
-            alert("Error adding status: " + error.message);
-        })
-        .AddStatusToCharacter(character.docId, statusName, durationInRounds);
-
-    document.getElementById('addButton').disabled = false;
+  document.getElementById('addButton').disabled = false;
 }
 
 function RemoveStatus(button, statusName) {
-    const statusDiv = button.closest('.status-item');
-    const confirmButton = statusDiv.querySelector('.status-confirm-btn');
+  const statusDiv = button.closest('.status-item');
+  const confirmButton = statusDiv.querySelector('.status-confirm-btn');
 
-    // If the confirm button exists and is visible, it's an unconfirmed row, so re-enable the add button.
-    // If there's no confirm button, it means the status was already added, so we don't need to re-enable the add button.
-    if (confirmButton && confirmButton.style.display !== 'none') {
-        document.getElementById('addButton').disabled = false;
-        statusDiv.remove();
-        console.log("RemoveStatus for unconfirmed status");
-        return;
-    }
+  // If the confirm button exists and is visible, it's an unconfirmed row, so re-enable the add button.
+  // If there's no confirm button, it means the status was already added, so we don't need to re-enable the add button.
+  if (confirmButton && confirmButton.style.display !== 'none') {
+    document.getElementById('addButton').disabled = false;
+    statusDiv.remove();
+    console.log('RemoveStatus for unconfirmed status');
+    return;
+  }
 
-    // If we have a status name, call the server to remove it
-    if (statusName) {
-        google.script.run
-            .withSuccessHandler(onCharacterRepresentation)
-            .withFailureHandler(function (error) {
-                console.error("Error removing status:", error);
-                alert("Error removing status: " + error.message);
-            })
-            .RemoveStatusFromCharacter(character.docId, statusName);
-    } else {
-        // Fallback for cases where statusName is not provided
-        statusDiv.remove();
-        console.log("RemoveStatus for " + character.name);
-    }
+  // If we have a status name, call the server to remove it
+  if (statusName) {
+    google.script.run
+      .withSuccessHandler(onCharacterRepresentation)
+      .withFailureHandler(function (error) {
+        console.error('Error removing status:', error);
+        alert('Error removing status: ' + error.message);
+      })
+      .RemoveStatusFromCharacter(characterRep.docId, statusName);
+  } else {
+    // Fallback for cases where statusName is not provided
+    statusDiv.remove();
+    console.log('RemoveStatus for ' + characterRep.name);
+  }
 }
 
 function PromprForPositiveInteger(message) {
-    const amount = prompt(message, "1");
+  const amount = prompt(message, '1');
 
-    // Check if user cancelled or entered invalid input
-    if (amount === null || amount === "") {
-        return { error: true, message: "User cancelled" };
-    }
-    const result = parseInt(amount);
-    if (isNaN(amount) || amount <= 0) {
-        alert("Please enter a valid positive integer.");
-        return { error: true, message: "invalid input" };
-    }
+  // Check if user cancelled or entered invalid input
+  if (amount === null || amount === '') {
+    return { error: true, message: 'User cancelled' };
+  }
+  const result = parseInt(amount);
+  if (isNaN(amount) || amount <= 0) {
+    alert('Please enter a valid positive integer.');
+    return { error: true, message: 'invalid input' };
+  }
 
-    return { error: false, result: result };
+  return { error: false, result: result };
 }
 
 /**
@@ -130,155 +130,155 @@ function PromprForPositiveInteger(message) {
  * Prompts user for damage amount and calls server function
  */
 function inflict() {
-    // Prompt user for damage amount
-    const promptResult = PromprForPositiveInteger(`How much damage to inflict on ${character.name}?`);
+  // Prompt user for damage amount
+  const promptResult = PromprForPositiveInteger(`How much damage to inflict on ${characterRep.name}?`);
 
-    if (promptResult.error) {
-        alert(promptResult.message);
-        return;
-    }
-    let damageAmount = promptResult.result;
+  if (promptResult.error) {
+    alert(promptResult.message);
+    return;
+  }
+  const damageAmount = promptResult.result;
 
-    console.log(`Inflicting ${damageAmount} damage to ${character.name}`);
+  console.log(`Inflicting ${damageAmount} damage to ${characterRep.name}`);
 
-    // Call server-side function to inflict damage
-    google.script.run
-        .withSuccessHandler(onCharacterRepresentation)
-        .withFailureHandler(function (error) {
-            console.error("Error calling server function:", error);
-            alert("Error inflicting damage: " + error.message);
-        })
-        .UpdateHp(character.docId, damageAmount, "inflict");
+  // Call server-side function to inflict damage
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error('Error calling server function:', error);
+      alert('Error inflicting damage: ' + error.message);
+    })
+    .UpdateHp(characterRep.docId, damageAmount, 'inflict');
 }
 
 function cure() {
-    const promptResult = PromprForPositiveInteger(`How much damage to cure on ${character.name}?`);
-    if (promptResult.error) {
-        alert(promptResult.message);
-        return;
-    }
-    let damageAmount = promptResult.result;
+  const promptResult = PromprForPositiveInteger(`How much damage to cure on ${characterRep.name}?`);
+  if (promptResult.error) {
+    alert(promptResult.message);
+    return;
+  }
+  const damageAmount = promptResult.result;
 
-    console.log(`Curing ${damageAmount} damage to ${character.name}`);
+  console.log(`Curing ${damageAmount} damage to ${characterRep.name}`);
 
-    // Call server-side function to inflict damage
-    google.script.run
-        .withSuccessHandler(onCharacterRepresentation)
-        .withFailureHandler(function (error) {
-            console.error("Error calling server function:", error);
-            alert("Error curing damage: " + error.message);
-        })
-        .UpdateHp(character.docId, damageAmount, "cure");
+  // Call server-side function to inflict damage
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error('Error calling server function:', error);
+      alert('Error curing damage: ' + error.message);
+    })
+    .UpdateHp(characterRep.docId, damageAmount, 'cure');
 }
 
 function refreshCharacterData() {
-    google.script.run
-        .withSuccessHandler(onCharacterRepresentation)
-        .withFailureHandler(function (error) {
-            console.error("Error refreshing character data:", error);
-        })
-        .GetCharacterRepByDocId(character.docId);
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error('Error refreshing character data:', error);
+    })
+    .GetCharacterRepByDocId(characterRep.docId);
 
-    // Update initiative, AC, attack bonus, and damage bonus
-    document.getElementById('initBonus').innerHTML = character.initBonus || '-';
-    document.getElementById('acValue').innerHTML = character.ac.currentScore || '-';
+  // Update initiative, AC, attack bonus, and damage bonus
+  document.getElementById('initBonus').innerHTML = characterRep.initBonus || '-';
+  document.getElementById('acValue').innerHTML = characterRep.ac.currentScore || '-';
 
-    console.log("Character data refreshed successfully");
+  console.log('Character data refreshed successfully');
 }
 
 /**
  * Handles the time passed button click
  */
 function onTimePassed() {
-    const amountInput = document.querySelector('.time-amount-input');
-    const unitSelect = document.querySelector('.time-unit-select');
+  const amountInput = document.querySelector('.time-amount-input');
+  const unitSelect = document.querySelector('.time-unit-select');
 
-    const amount = amountInput ? parseInt(amountInput.value) || 1 : 1;
-    const unit = unitSelect ? unitSelect.value : 'rounds';
+  const amount = amountInput ? parseInt(amountInput.value) || 1 : 1;
+  const unit = unitSelect ? unitSelect.value : 'rounds';
 
-    // Convert to rounds before sending to server
-    const roundsElapsed = convertToRounds(amount, unit);
+  // Convert to rounds before sending to server
+  const roundsElapsed = convertToRounds(amount, unit);
 
-    console.log(`Time passing: ${amount} ${unit} (${roundsElapsed} rounds)`);
+  console.log(`Time passing: ${amount} ${unit} (${roundsElapsed} rounds)`);
 
-    // Call server function to handle time elapsed
-    google.script.run
-        .withSuccessHandler(onCharacterRepresentation)
-        .withFailureHandler(function (error) {
-            console.error("Error processing time elapsed:", error);
-            alert("Error processing time elapsed: " + error.message);
-        })
-        .OnRoundsElapsed(character.docId, roundsElapsed);
+  // Call server function to handle time elapsed
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error('Error processing time elapsed:', error);
+      alert('Error processing time elapsed: ' + error.message);
+    })
+    .OnRoundsElapsed(characterRep.docId, roundsElapsed);
 
-    // Reset the input fields to default values
-    if (amountInput) {
-        amountInput.value = 1;
-    }
-    if (unitSelect) {
-        unitSelect.value = 'rounds';
-    }
+  // Reset the input fields to default values
+  if (amountInput) {
+    amountInput.value = 1;
+  }
+  if (unitSelect) {
+    unitSelect.value = 'rounds';
+  }
 }
 
 /**
  * Populates the weapon dropdown with available weapons
  */
 function populateWeaponDropdown() {
-    const weaponSelect = document.getElementById('weaponSelect');
-    const weapons = character.weapons || [];
+  const weaponSelect = document.getElementById('weaponSelect');
+  const weapons = characterRep.weapons || [];
 
-    // Clear existing options
-    weaponSelect.innerHTML = '';
+  // Clear existing options
+  weaponSelect.innerHTML = '';
 
-    if (weapons.length === 0) {
-        weaponSelect.innerHTML = '<option value="">No weapons available</option>';
-        return;
+  if (weapons.length === 0) {
+    weaponSelect.innerHTML = '<option value="">No weapons available</option>';
+    return;
+  }
+
+  // Add default option
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Select a weapon...';
+  weaponSelect.appendChild(defaultOption);
+
+  // Add weapon options
+  weapons.forEach((weapon, index) => {
+    if (weapon && weapon.name) {
+      const option = document.createElement('option');
+      option.value = index;
+      option.textContent = weapon.name;
+      weaponSelect.appendChild(option);
     }
+  });
 
-    // Add default option
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = 'Select a weapon...';
-    weaponSelect.appendChild(defaultOption);
-
-    // Add weapon options
-    weapons.forEach((weapon, index) => {
-        if (weapon && weapon.name) {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = weapon.name;
-            weaponSelect.appendChild(option);
-        }
-    });
-
-    // Select first weapon by default if available
-    if (weapons.length > 0) {
-        weaponSelect.value = '0';
-        onWeaponChange();
-    }
+  // Select first weapon by default if available
+  if (weapons.length > 0) {
+    weaponSelect.value = '0';
+    onWeaponChange();
+  }
 }
 
 /**
  * Handles weapon selection change and updates the displayed bonuses
  */
 function onWeaponChange() {
-    const weaponSelect = document.getElementById('weaponSelect');
-    const selectedIndex = weaponSelect.value;
+  const weaponSelect = document.getElementById('weaponSelect');
+  const selectedIndex = weaponSelect.value;
 
-    console.log('Weapon changed to index:', selectedIndex);
+  console.log('Weapon changed to index:', selectedIndex);
 
-    if (selectedIndex === '' || !character.weapons || !character.weapons[selectedIndex]) {
-        document.getElementById('weaponAttackBonus').innerHTML = '-';
-        document.getElementById('weaponDamageBonus').innerHTML = '-';
-        return;
-    }
+  if (selectedIndex === '' || !characterRep.weapons || !characterRep.weapons[selectedIndex]) {
+    document.getElementById('weaponAttackBonus').innerHTML = '-';
+    document.getElementById('weaponDamageBonus').innerHTML = '-';
+    return;
+  }
 
-    const selectedWeapon = character.weapons[selectedIndex];
+  const selectedWeapon = characterRep.weapons[selectedIndex];
 
-    // Update attack bonus
-    UpdateValueAndTooltip('weaponAttackBonus', selectedWeapon.attackBonus);
+  // Update attack bonus
+  UpdateValueAndTooltip('weaponAttackBonus', selectedWeapon.attackBonus);
 
-    // Update damage bonus
-    UpdateValueAndTooltip('weaponDamageBonus', selectedWeapon.damageBonus);
+  // Update damage bonus
+  UpdateValueAndTooltip('weaponDamageBonus', selectedWeapon.damageBonus);
 
 }
 
@@ -286,57 +286,57 @@ function onWeaponChange() {
  * Populates the special attack dropdown with available special attacks
  */
 function populateSpecialAttackDropdown() {
-    const specialAttackSelect = document.getElementById('specialAttackSelect');
-    const specialAttacks = character.specialAttacks || {};
+  const specialAttackSelect = document.getElementById('specialAttackSelect');
+  const specialAttacks = characterRep.specialAttacks || {};
 
-    console.log('Populating special attack dropdown with attacks:', specialAttacks);
+  console.log('Populating special attack dropdown with attacks:', specialAttacks);
 
-    // Clear existing options
-    specialAttackSelect.innerHTML = '';
+  // Clear existing options
+  specialAttackSelect.innerHTML = '';
 
-    const attackNames = Object.keys(specialAttacks);
-    if (attackNames.length === 0) {
-        specialAttackSelect.innerHTML = '<option value="">No special attacks available</option>';
-        return;
-    }
+  const attackNames = Object.keys(specialAttacks);
+  if (attackNames.length === 0) {
+    specialAttackSelect.innerHTML = '<option value="">No special attacks available</option>';
+    return;
+  }
 
-    // Add default option
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = 'Select a special attack...';
-    specialAttackSelect.appendChild(defaultOption);
+  // Add default option
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Select a special attack...';
+  specialAttackSelect.appendChild(defaultOption);
 
-    // Add special attack options
-    attackNames.forEach(attackName => {
-        const option = document.createElement('option');
-        option.value = attackName;
-        option.textContent = attackName;
-        specialAttackSelect.appendChild(option);
-    });
+  // Add special attack options
+  attackNames.forEach(attackName => {
+    const option = document.createElement('option');
+    option.value = attackName;
+    option.textContent = attackName;
+    specialAttackSelect.appendChild(option);
+  });
 
-    // Select first special attack by default if available
-    if (attackNames.length > 0) {
-        specialAttackSelect.value = attackNames[0];
-        onSpecialAttackChange();
-    }
+  // Select first special attack by default if available
+  if (attackNames.length > 0) {
+    specialAttackSelect.value = attackNames[0];
+    onSpecialAttackChange();
+  }
 }
 
 /**
  * Handles special attack selection change and updates the displayed bonus
  */
 function onSpecialAttackChange() {
-    const specialAttackSelect = document.getElementById('specialAttackSelect');
-    const selectedAttack = specialAttackSelect.value;
+  const specialAttackSelect = document.getElementById('specialAttackSelect');
+  const selectedAttack = specialAttackSelect.value;
 
-    console.log('Special attack changed to:', selectedAttack);
+  console.log('Special attack changed to:', selectedAttack);
 
-    if (selectedAttack === '' || !character.specialAttacks || !character.specialAttacks[selectedAttack]) {
-        document.getElementById('specialAttackBonus').innerHTML = '-';
-        return;
-    }
+  if (selectedAttack === '' || !characterRep.specialAttacks || !characterRep.specialAttacks[selectedAttack]) {
+    document.getElementById('specialAttackBonus').innerHTML = '-';
+    return;
+  }
 
-    const selectedSpecialAttack = character.specialAttacks[selectedAttack];
+  const selectedSpecialAttack = characterRep.specialAttacks[selectedAttack];
 
-    // Update bonus
-    UpdateValueAndTooltip('specialAttackBonus', selectedSpecialAttack);
+  // Update bonus
+  UpdateValueAndTooltip('specialAttackBonus', selectedSpecialAttack);
 }

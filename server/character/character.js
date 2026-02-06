@@ -2,31 +2,53 @@
  * @typedef {GoogleAppsScript.Document.Document} GDoc
  */
 
-const { GetDocRawLines } = require("../gdocs");
-const { ParserUtils } = require("../parser");
-const { ModifiableProperty, CreatureSize, Ability, SpecialAttackBonus, ListOfSpecialProperties, AbilityBasedProperty, ArmorClass, Skill } = require("./property");
-const { SpellCasting } = require("./spells");
+
+const { ParserUtils } = require('../parser');
+/**
+ * @typedef {import('./property').Ability} Ability
+ */
+const { ModifiableProperty, CreatureSize, SpecialAttackBonus, ListOfSpecialProperties, AbilityBasedProperty, ArmorClass, Skill } = require('./property');
+const { SpellCasting } = require('./spells');
+
+const { ParseAbilities } = require('./parsers/abilities');
+const { Sizes, Races, AbilityNames, SaveNames, SkillsAbilities, SpecialAttackNames, SkillsSynergyReversed, SpellcasterClasses } = require('../_constants');
+const { BodySlots } = require('./items');
+const { Weapon } = require('./weapons');
+const { FeatEffects } = require('./feats');
+//const { Effect, registerStatusEffects } = require("./_general_effects");
+
+const { StatusesEffects } = require('./_general_effects');
+const { ClassesData } = require('../classes_data/_classes_general_data');
+const { GetRaceSpeed } = require('../races_data/_races_general_data');
+
+// Also ensure we load the class definitions so they populate classesData
+if (typeof require !== 'undefined') {
+  require('../classes_data/cleric');
+  require('../classes_data/bard');
+  require('../classes_data/monk');
+  require('../classes_data/sacred_fist');
+}
+
+// Attach parser methods to Character prototype
+
 
 /**
  *@class Character
 */
 class Character {
   /**
-   * @param {GDoc} document The document containing the character data.
+   * @param {string[]} lines The lines of the character data.
+   * @param {string} docId The document ID.
   */
-  constructor(document) {
-    /**
-     * @type {GDoc}
-     */
-    this.document = document;
+  constructor(lines, docId = 'unknown') {
     /**
      * @type {string}
      */
-    this.docId = document.getId();
+    this.docId = docId;
     /**
      * @type {string[]}
      */
-    this.lines = GetDocRawLines(document);
+    this.lines = lines;
 
     /**
      * @type {boolean}
@@ -34,6 +56,21 @@ class Character {
     this.parseSuccess = true;
     this.parseErrors = [];
     this.parseWarnings = [];
+
+    // Parse sections by heading
+    const parseResult = ParserUtils.ParseDocLines(this.lines);
+
+    /** @type {Object.<string, string[]>} */
+    this.sectionLines = parseResult.sectionLines;
+    this.attackLine = parseResult.attackLine;
+    this.resistanceLine = parseResult.resistanceLine;
+    this.abilitiesLines = parseResult.abilitiesLines;
+    this.parseSuccess = parseResult.success;
+
+    if (parseResult.errors && parseResult.errors.length > 0) {
+      this.parseErrors.push(...parseResult.errors);
+    }
+
     this.name = this.lines[0];
 
     /**
@@ -46,7 +83,7 @@ class Character {
      */
     this.abilities = {};
 
-    this.bodySlots = new Map(bodySlots.map(slot => [slot.slotName, slot.possibleAmount]));
+    this.bodySlots = new Map(BodySlots.map(slot => [slot.slotName, slot.possibleAmount]));
 
     /**
      * @type {SpellCasting}
@@ -75,7 +112,7 @@ class Character {
 
     /**
      * @type {Number}
-    */
+     */
     this.HD = 0;
 
     this.temporaryHp = 0;
@@ -85,24 +122,18 @@ class Character {
     this.weapons = [];
 
     this.Special = new ListOfSpecialProperties();
+
+    // speed initialization
+    this.speed = new ModifiableProperty(0); // will be updated later
   }
   ParseCharacter() {
 
     //Parsing Abilities
-    abilityNames.forEach(abilityName => {
-      const abiliryScore = ParserUtils.GetFirstNumberFromLineThatStartsWithToken(this.lines, abilityName);
-      if (abiliryScore) {
-        this.abilities[abilityName] = new Ability(abiliryScore, abilityName);
-      } else {
-        this.parseErrors.push(`abilities@ [${abilityName}] parsing failed`);
-        this.parseSuccess = false;
-      }
-    });
+    this.abilities = ParseAbilities(this.abilitiesLines);
 
     //Parsing Resistances
-    const resistances = this.lines.find(line => line.includes('Resistance'));
-    if (resistances) {
-      this.resistances = resistances.split(':')[1].trim();
+    if (this.resistanceLine) {
+      this.resistances = this.resistanceLine.split(':')[1].trim();
     }
 
     //Saves
@@ -121,7 +152,7 @@ class Character {
     this.specialAttacks['Disarm'] = new ModifiableProperty(0); //disarm depends on the specific weapon
 
     //Parsing Race and Classes
-    const raceAndClassesLine = ParserUtils.GetLineThatContainsOneOfTheseTokens(this.lines, races);
+    const raceAndClassesLine = ParserUtils.GetLineThatContainsOneOfTheseTokens(this.lines, Races);
     if (raceAndClassesLine) {
       const parsed = ParserUtils.ParseRaceAndClasses(raceAndClassesLine);
       if (!parsed || !parsed.race || !parsed.classes || parsed.classes.length === 0) {
@@ -151,10 +182,10 @@ class Character {
 
       //apply class effects
       this.classes.forEach(c => {
-        const classData = classesData.get(c.name);
+        const classData = ClassesData.get(c.name);
         if (classData) {
           this.HD += c.level;
-          if (spellcasterClasses.includes(c.name)) {
+          if (SpellcasterClasses.includes(c.name)) {
             const classSpellCastingData = classData.spellCastingData;
             if (!classSpellCastingData) {
               this.LogParseError(`${c.name} - the class is listed as a spellcaster, but no spell casting data found`);
@@ -198,25 +229,26 @@ class Character {
     }
 
     //Parsing Skills (must be done after abilities are parsed)
-    const skillsSectionLines = ParserUtils.GetSectionLines(this.lines, 'Skills');
+    // Use pre-parsed section lines
+    const skillsSectionLines = this.sectionLines['Skills'];
     if (skillsSectionLines) {
       this.skills = this.ParseSkills(skillsSectionLines);
     }
 
     //Parsing Attack and Damage Bonus
-    const attackLine = this.lines.find(line => line.includes('Attack'));
-    if (attackLine) {
-      this.weapons = this.ParseWeapons(attackLine);
+    if (this.attackLine) {
+      this.weapons = this.ParseWeapons(this.attackLine);
       if (this.weapons.length === 0) {
         this.parseWarnings.push('No weapons found');
       }
     } else {
+      // Should have been caught by validation, but safe to keep
       this.LogParseError('Attack - no line found');
     }
 
 
     //Parsing Items
-    const battleGearLines = ParserUtils.GetSectionLines(this.lines, 'Battle Gear');
+    const battleGearLines = this.sectionLines['Battle Gear'];
     if (battleGearLines) {
       this.battleGear = ParserUtils.ParseItems(battleGearLines);
       this.battleGear.forEach(item => {
@@ -249,21 +281,42 @@ class Character {
       this.spellCasting.updateSpellsData();
     }
 
-    const preparedSpells = this.ParsePreparedSpells();
-    if (preparedSpells) {
-      if (this.spellCasting.isActive()) {
+    // Determine caster types
+    let hasInAdvance = false;
+    let hasSpontaneous = false;
+
+    this.classes.forEach(c => {
+      const classData = ClassesData.get(c.name);
+      if (classData && classData.spellCastingData) {
+        if (classData.spellCastingData.preparation === 'In Advance') {
+          hasInAdvance = true;
+        } else if (classData.spellCastingData.preparation === 'Spontaneous') {
+          hasSpontaneous = true;
+        }
+      }
+    });
+
+    if (hasInAdvance) {
+      const preparedSpells = this.ParsePreparedSpells();
+      if (preparedSpells) {
         this.spellCasting.updatePreparedSpells(preparedSpells);
-      } else {
-        this.parseWarnings.push('Spell casting data not found, prepared spells will not be updated');
+      }
+    }
+
+    //Parsing Known Spells (for spontaneous casters)
+    if (hasSpontaneous) {
+      const knownSpells = this.ParseKnownSpells();
+      if (knownSpells) {
+        this.spellCasting.updateKnownSpells(knownSpells);
       }
     }
 
     //Parsing Statuses
-    const statusesSectionLines = ParserUtils.GetSectionLines(this.lines, 'Statuses');
+    const statusesSectionLines = this.sectionLines['Statuses'];
     if (statusesSectionLines) {
       this.statuses = this.ParseStatuses(statusesSectionLines);
       this.statuses.forEach(status => {
-        const statusEffects = statusesEffects[status.name];
+        const statusEffects = StatusesEffects[status.name];
         if (statusEffects) {
           console.log(`Applying effects for status ${status.name}`);
           statusEffects.forEach(effect => { this.ApplyEffect(effect); });
@@ -272,7 +325,7 @@ class Character {
     }
 
     //Parsing Feats (must be done after statuses and items are parsed, some feats depend on statuses and items)
-    const featsSectionLines = ParserUtils.GetSectionLines(this.lines, 'Feats');
+    const featsSectionLines = this.sectionLines['Feats'];
     if (featsSectionLines) {
       this.feats = this.ParseFeats(featsSectionLines);
       this.feats.forEach(feat => {
@@ -284,7 +337,7 @@ class Character {
       this.parseWarnings.push('Character has no feats');
     }
 
-    const possessionsLines = ParserUtils.GetSectionLines(this.lines, 'Possessions');
+    const possessionsLines = this.sectionLines['Possessions'];
     if (possessionsLines) {
       this.possessions = ParserUtils.ParseItems(possessionsLines);
     }
@@ -319,14 +372,14 @@ class Character {
   GetNamedProperty(propertyName) {
     if (this[propertyName]) {
       return this[propertyName];
-    } else if (abilityNames.includes(propertyName)) {
+    } else if (AbilityNames.includes(propertyName)) {
       return this.abilities[propertyName];
-    } else if (saveNames.includes(propertyName)) {
+    } else if (SaveNames.includes(propertyName)) {
       return this.saves[propertyName];
     }
-    else if (skillsAbilities[propertyName]) {
+    else if (SkillsAbilities[propertyName]) {
       return this.skills.find(s => s.name === propertyName);
-    } else if (specialAttackNames.includes(propertyName)) {
+    } else if (SpecialAttackNames.includes(propertyName)) {
       return this.specialAttacks[propertyName];
     } else if (propertyName.includes('casterLevel')) {
       const casterClassName = propertyName.split(' ')[1];
@@ -344,12 +397,12 @@ class Character {
     skillsLines.forEach(line => {
       const name = ParserUtils.GetSkillNameFromLine(line);
       const rank = ParserUtils.GetFirstNumberFromALine(line);
-      const thisSkillRelatedAbilityName = skillsAbilities[name];
+      const thisSkillRelatedAbilityName = SkillsAbilities[name];
       skills.push(new Skill(name, rank, this.abilities[thisSkillRelatedAbilityName]));
     });
 
     skills.forEach(skill => {
-      const synergySkillsNames = skillsSynergyReversed[skill.name];
+      const synergySkillsNames = SkillsSynergyReversed[skill.name];
       if (synergySkillsNames) {
         synergySkillsNames.forEach(synergySkillName => {
           const synergySkill = skills.find(s => s.name === synergySkillName);
@@ -447,7 +500,7 @@ class Character {
         }
         feats.push(featEffects);
       } else {
-        console.warn(`Feat ${featLine} not found`);
+        this.parseWarnings.push(`Feat ${featLine} not found`);
       }
     });
     return feats;
@@ -461,14 +514,16 @@ class Character {
    */
   ParsePreparedSpells() {
     //const preparedSpellsLines = ParserUtils.GetLinesBetweenTwoTokens(this.lines, "Prepared Spells", "Skills");
-    const preparedSpellsItemsData = ParserUtils.ExtractListItemsBetweenMarkers(this.document, 'Prepared Spells', 'Skills');
+    const preparedSpellsLines = ParserUtils.GetLinesBetweenTwoTokens(this.lines, 'Prepared Spells', 'Skills');
 
-    if (preparedSpellsItemsData && this.spellCasting.isActive()) {
+    const preparedSpellsItems = preparedSpellsLines.map(line => ({ text: line, item: null }));
+
+    if (preparedSpellsLines && preparedSpellsLines.length > 0 && this.spellCasting.isActive()) {
       /**
        * @type {PreparedSpellsStructure}
        */
       const preparedSpells = ParserUtils.ParsePreparedSpellsStructure(
-        preparedSpellsItemsData,
+        preparedSpellsItems,
         this.domains,
         Character.ValidatePreparedSpell
       );
@@ -503,11 +558,12 @@ class Character {
    * @param {number} spellLevel - The level of the spell
    * @param {string} spellLevelName - The name of the spell level
    * @param {string} spellName - The name of the spell
+   * @param {string[]} domains - The domains of the cleric
    * @returns {boolean} - Whether the spell is prepared
    */
   static ValidatePreparedSpell(casterClassName, spellLevel, spellLevelName, spellName, domains) {
     //correct spells are all the spells of the same level or lower
-    const casterClassSpells = classesData.get(casterClassName).spellCastingData.spells;
+    const casterClassSpells = ClassesData.get(casterClassName).spellCastingData.spells;
     const correctSpells = [];
     if (spellLevelName.includes('domain')) {
       domains.forEach(domain => {
@@ -519,6 +575,30 @@ class Character {
       }
     }
     return correctSpells.includes(spellName);
+  }
+
+  /**
+   * Parses the known spells from the document
+   * @returns {PreparedSpellsStructure} The known spells
+   */
+  ParseKnownSpells() {
+    const knownSpellsLines = ParserUtils.GetLinesBetweenTwoTokens(this.lines, 'Spells Known', 'Skills');
+
+    const knownSpellsItems = knownSpellsLines.map(line => ({ text: line, item: null }));
+
+    if (knownSpellsLines && knownSpellsLines.length > 0 && this.spellCasting.isActive()) {
+      // Reuse the same structure parser as for prepared spells
+      // We don't really need validation against "class list" here because for spontaneous casters,
+      // the known list IS the authority. But we could validate against the full potential list if we had it.
+      // For now, let's assume valid.
+      const knownSpells = ParserUtils.ParsePreparedSpellsStructure(
+        knownSpellsItems,
+        this.domains,
+        () => true // validation always passes for known spells
+      );
+      return knownSpells;
+    }
+    return null;
   }
 
   //manipulation methods
@@ -567,9 +647,9 @@ class Character {
  */
 class CharacterError {
   /**
-   * @param {string} errorMessage 
-   * @param {string[]} parseErrors 
-   * @param {string[]} parseWarnings 
+   * @param {string} errorMessage
+   * @param {string[]} parseErrors
+   * @param {string[]} parseWarnings
    */
   constructor(errorMessage, parseErrors = [], parseWarnings = []) {
     this.error = true;

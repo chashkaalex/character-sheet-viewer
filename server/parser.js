@@ -1,5 +1,7 @@
-const { ModifiableProperty } = require("./character/property");
-const { GetDocRawLines } = require("./gdocs");
+const { ModifiableProperty } = require('./character/property');
+const { AbilityNames, SkillsAbilities, SpellcasterClasses } = require('./_constants');
+const { Item } = require('./character/items');
+
 
 /**
  * Parser utility functions for character sheet processing
@@ -14,11 +16,24 @@ const ParserUtils = {
     'Bonus Abilities',
     'Flaws, Traits, Quirks',
     'Languages',
+    'Prepared Spells',
+    'Spells Known',
     'Spells',
+    'Skills Synergy',
     'Skills',
     'Skill Tricks',
     'Battle Gear',
     'Possessions',
+    'Personal Information'
+  ],
+
+  mustHaveSectionNames: [
+    'Statuses',
+    'Feats',
+    'Special Abilities',
+    'Racial Traits',
+    'Bonus Abilities',
+    'Skills',
     'Personal Information'
   ],
 
@@ -116,7 +131,7 @@ const ParserUtils = {
    * @returns {boolean} True if it's a section line
    */
   IsSectionLine(line) {
-    return this.sectionNames.some(sectionName => line.includes(sectionName));
+    return this.sectionNames.some(sectionName => line.startsWith(sectionName));
   },
 
   /**
@@ -177,7 +192,7 @@ const ParserUtils = {
    */
   GetSkillNameFromLine(line) {
     let skillName = null;
-    for (const key of Object.keys(skillsAbilities)) {
+    for (const key of Object.keys(SkillsAbilities)) {
       if (line.toLowerCase().includes(key.toLowerCase())) {
         skillName = key;
         break;
@@ -297,144 +312,49 @@ const ParserUtils = {
   },
 
   /**
-   * Extracts list items between two markers from a Google Document
-   * @param {GoogleAppsScript.Document.Document} doc - The Google Document object
-   * @param {string} fromText - The start marker text
-   * @param {string} toText - The end marker text
-   * @returns {{text: string, isStrikeThrough: boolean}[]} Array of list item data
-   */
-  ExtractListItemsBetweenMarkers(doc, fromText, toText) {
-    const listItems = this.ExtractListItemsArray(doc, fromText, toText);
-    return this.ParseListItemsTextAndStrikethrough(listItems);
-  },
-
-
-  /**
-   * Extracts list items from a Google Document
-   * @param {GoogleAppsScript.Document.Document} doc - The Google Document object
-   * @param {string} fromText - The start marker text
-   * @param {string} toText - The end marker text
-   * @returns { GoogleAppsScript.Document.ListItem[]} Array of list item data
-   */
-  ExtractListItemsArray(doc, fromText, toText) {
-    const body = doc.getBody();
-    const listItems = [];
-    let startParsing = false;
-
-    for (let i = 0; i < body.getNumChildren(); i++) {
-      const element = body.getChild(i);
-      const type = element.getType();
-
-      let elementText = '';
-
-      try {
-        if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
-          const textElement = /** @type {GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem} */ (element);
-          elementText = textElement.getText().trim();
-        }
-      } catch (e) {
-        // Ignore complex elements
-      }
-
-      if (startParsing && elementText.startsWith(toText)) {
-        startParsing = false;
-        break;
-      }
-
-      if (elementText.startsWith(fromText)) {
-        startParsing = true;
-        continue;
-      }
-
-      if (startParsing) {
-        if (type === DocumentApp.ElementType.LIST_ITEM) {
-          const listItem = element.asListItem();
-          listItems.push(listItem);
-        }
-      }
-    }
-
-    return listItems;
-  },
-
-  /**
-   * Parses the text and strikethrough of a list of items
-   * @param {GoogleAppsScript.Document.ListItem[]} listItems - Array of list item data
-   * @returns {{text: string, isStrikeThrough: boolean}[]} Array of list item data
-   */
-  ParseListItemsTextAndStrikethrough(listItems) {
-    const results = [];
-
-    listItems.forEach(listItem => {
-      const textElement = listItem.editAsText();
-      const itemText = textElement.getText().trim().replaceAll('’', '\'');
-      const isStruckThrough = textElement.isStrikethrough(0) || false;  //may be null if the item is not strikethrough
-
-      results.push({
-        text: itemText,
-        isStrikeThrough: isStruckThrough
-      });
-    });
-
-    return results;
-  },
-
-
-
-  /**
     * Parses the prepared spells structure from list items
-    * @param {Array<GoogleAppsScript.Document.ListItem | {text: string, isStrikeThrough: boolean}>} listItems - The list items to parse
+    * @param {Array<{text: string, item: any, isStrikeThrough?: boolean}>} items - The items to parse
     * @param {string[]} domains - The domains of the character
     * @param {function(string, number, string, string, string[]): boolean} validatorFn - The validator function
     * @returns {PreparedSpellsStructure}
     */
-  ParsePreparedSpellsStructure(listItems, domains, validatorFn) {
+  ParsePreparedSpellsStructure(items, domains, validatorFn) {
     /**
      * @type {PreparedSpellsStructure}
      */
     const preparedSpells = {};
     let currentSpellLevel = 0;
-    let currentCasterClassName = "";
-    let currentSpellLevelName = "";
+    let currentCasterClassName = '';
+    let currentSpellLevelName = '';
 
-    listItems.forEach(listItem => {
-      let line = "";
-      let isStrikeThrough = false;
-      let itemRef = null;
+    items.forEach(entry => {
+      let text = entry.text.trim().replaceAll('’', '\'');
+      let isStrikeThrough = entry.isStrikeThrough || false;
+      const itemRef = entry.item;
 
-      // Check if it's a Google Doc ListItem (has getText method)
-      if (typeof listItem['getText'] === 'function') {
-        const item = /** @type {GoogleAppsScript.Document.ListItem} */ (listItem);
-        line = item.getText();
-        // Check strikethrough on the first character
-        isStrikeThrough = item.editAsText().isStrikethrough(0) || false;
-        itemRef = item;
-      } else {
-        // It's our extracted object
-        const item = /** @type {{text: string, isStrikeThrough: boolean}} */ (listItem);
-        line = item.text;
-        isStrikeThrough = item.isStrikeThrough;
+      // Check for used marker (override or additive)
+      if (text.startsWith('[x] ')) {
+        isStrikeThrough = true;
+        text = text.substring(4).trim();
       }
 
-      line = line.trim().replaceAll('’', '\'');
-
-      if (spellcasterClasses.includes(line.trim())) {  //new caster class
-        currentCasterClassName = line.trim();
+      if (SpellcasterClasses.includes(text)) {  //new caster class
+        currentCasterClassName = text;
         preparedSpells[currentCasterClassName] = {};
-      } else if (line.includes('level')) {  //new spell level
-        currentSpellLevel = ParserUtils.GetFirstNumberFromALine(line);
+      } else if (text.includes('level')) {  //new spell level
+        currentSpellLevel = ParserUtils.GetFirstNumberFromALine(text);
         currentSpellLevelName = String(currentSpellLevel); // Ensure string key
-        if (currentCasterClassName == 'Cleric' && line.toLowerCase().includes('domain')) {
+        if (currentCasterClassName == 'Cleric' && text.toLowerCase().includes('domain')) {
           currentSpellLevelName += ' - domain';
         }
         preparedSpells[currentCasterClassName][currentSpellLevelName] = [];
       } else {  //new spell
         // Only add if we are inside a valid block
         if (currentCasterClassName && preparedSpells[currentCasterClassName][currentSpellLevelName]) {
-          const isValid = validatorFn ? validatorFn(currentCasterClassName, currentSpellLevel, currentSpellLevelName, line, domains) : true;
+          const isValid = validatorFn ? validatorFn(currentCasterClassName, currentSpellLevel, currentSpellLevelName, text, domains) : true;
           preparedSpells[currentCasterClassName][currentSpellLevelName].push({
             item: itemRef,
-            spell: line,
+            spell: text,
             used: isStrikeThrough,
             isValid: isValid
           });
@@ -444,31 +364,106 @@ const ParserUtils = {
     return preparedSpells;
   },
 
-  /**
-     * Gets the spells structure from a document
-     * @param {string} docId - The Google Document ID
-     * @param {function(string, number, string, string, string[]): boolean} validatorFn - The validator function
-     * @returns {PreparedSpellsStructure}
-     */
-  GetPreparedSpellsStructure(docId, validatorFn) {
-    const doc = DocumentApp.openById(docId);
-    // Get raw items with potentially method access if they are ListItems
-    const listItems = this.ExtractListItemsArray(doc, 'Prepared Spells', 'Skills');
 
-    const lines = GetDocRawLines(doc);
-    let domains = [];
-    const domainLine = ParserUtils.GetLineThatContainsOneOfTheseTokens(lines, ['Domain', 'domains']);
-    if (domainLine) {
-      domains = ParserUtils.GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
+
+  /**
+   * @typedef {Object} ParseDocResult
+   * @property {Object.<string, string[]>} sectionLines - Lines for each section
+   * @property {string|null} attackLine - The attack line
+   * @property {string|null} resistanceLine - The resistance line
+   * @property {Object.<string, string>} abilitiesLines - Lines for each ability
+   * @property {boolean} success - Whether parsing validation passed
+   * @property {string[]} errors - Validation errors
+   */
+
+  /**
+   * Parses the raw lines of a character document into structured sections and checks for required fields.
+   * @param {string[]} lines - The raw text lines from the document
+   * @returns {ParseDocResult} The parsed structure and validation results
+   */
+  ParseDocLines(lines) {
+    /** @type {Object.<string, string[]>} */
+    const sectionLines = {};
+    let attackLine = null;
+    let resistanceLine = null;
+    /** @type {Object.<string, string>} */
+    const abilitiesLines = {};
+    const errors = [];
+
+    let currentSection = null;
+
+    // Single-pass iteration
+    for (const line of lines) {
+      // Check for section start
+      if (this.IsSectionLine(line)) {
+        currentSection = this.sectionNames.find(name => line.startsWith(name));
+        sectionLines[currentSection] = [];
+        continue; // Skip the header line itself
+      }
+
+      // If we are in a section, add line to it
+      if (currentSection) {
+        sectionLines[currentSection].push(line);
+      } else {
+        // We are in the Header (pre-section) area
+        // Check for Attack
+        if (line.startsWith('Attack')) {
+          attackLine = line;
+        }
+        // Check for Resistance
+        else if (line.includes('Resistance')) {
+          resistanceLine = line;
+        }
+        else {
+          // Check for Abilities
+          const abilityName = AbilityNames.find(name => line.startsWith(name));
+          if (abilityName) {
+            abilitiesLines[abilityName] = line;
+          }
+        }
+      }
     }
 
-    return this.ParsePreparedSpellsStructure(listItems, domains, validatorFn);
+    // Validation
+    let validationFailed = false;
+
+    if (!attackLine) {
+      errors.push('Critical: \'Attack\' line not found.');
+      validationFailed = true;
+    }
+
+    // Check required abilities
+    AbilityNames.forEach(name => {
+      if (!abilitiesLines[name]) {
+        errors.push(`Critical: Ability '${name}' not found.`);
+        validationFailed = true;
+      }
+    });
+
+    // Check required sections
+    this.mustHaveSectionNames.forEach(sectionName => {
+      if (!sectionLines[sectionName]) {
+        errors.push(`Critical: Section '${sectionName}' not found.`);
+        validationFailed = true;
+      }
+    });
+
+    return {
+      sectionLines: sectionLines,
+      attackLine: attackLine,
+      resistanceLine: resistanceLine,
+      abilitiesLines: abilitiesLines,
+      success: !validationFailed,
+      errors: errors
+    };
   }
 };
 
 //exports
-module.exports = {
-  ParserUtils,
-};
+if (typeof module !== 'undefined') {
+  module.exports = {
+    ParserUtils
+  };
+}
 
 

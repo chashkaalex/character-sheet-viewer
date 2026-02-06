@@ -1,8 +1,9 @@
-const { Character } = require("./character");
+const { AbilityNames } = require('../_constants');
+
 
 
 /**
- * @param {Character} character 
+ * @param {Character} character
  */
 /**
  * @typedef {Object} CharacterRep
@@ -33,7 +34,7 @@ const { Character } = require("./character");
  */
 
 /**
- * @param {Character} character 
+ * @param {Character} character
  * @returns {CharacterRep}
  */
 function getCharacterRep(character) {
@@ -71,7 +72,7 @@ function getCharacterRep(character) {
   }
 
   characterObject.abilities = {};
-  abilityNames.forEach(abilityName => {
+  AbilityNames.forEach(abilityName => {
     characterObject.abilities[abilityName] = character.abilities[abilityName].state;
   });
 

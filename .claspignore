@@ -9,3 +9,5 @@ package-lock.json
 .claspignore
 jest.config.js
 **/*.test.js
+**/*.d.ts
+

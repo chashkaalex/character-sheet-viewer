@@ -31,3 +31,9 @@ function recordUserLog(functionName, message, type = 'INFO') {
     console.error('CRITICAL: Failed to write log to sheet: ' + e.message);
   }
 }
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    recordUserLog
+  };
+}

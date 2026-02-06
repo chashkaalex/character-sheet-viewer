@@ -1,3 +1,5 @@
+const { ClassesData } = require('./_classes_general_data');
+
 const SacredFist = {
   name: 'Sacred Fist',
   HD: '1d8',
@@ -34,4 +36,4 @@ const SacredFist = {
   ]
 };
 
-classesData.set('Sacred Fist', SacredFist);
+ClassesData.set('Sacred Fist', SacredFist);

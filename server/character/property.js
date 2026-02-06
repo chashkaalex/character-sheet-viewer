@@ -1,3 +1,5 @@
+const { ModifierTypes, Sizes } = require('../_constants');
+
 class ModifiableProperty {
   constructor(baseScore) {
     this.score = baseScore;
@@ -12,7 +14,7 @@ class ModifiableProperty {
     this.effects.push(effect);
 
     const isPenalty = effect.value < 0;
-    const isStackable = modifierTypes[effect.modifierType].isStackable;
+    const isStackable = ModifierTypes[effect.modifierType].isStackable;
     const currentActiveEffect = this.activeEffects
       .find(e => e.property === effect.property && e.modifierType === effect.modifierType);
 
@@ -96,7 +98,7 @@ class AbilityBasedProperty extends ModifiableProperty {
   get state() {
     return {
       ...super.state,
-      bonus: this.bonus,
+      bonus: this.bonus
     };
   }
 }
@@ -122,7 +124,7 @@ class Skill extends ModifiableProperty {
   get state() {
     return {
       ...super.state,
-      bonus: this.bonus,
+      bonus: this.bonus
     };
   }
 }
@@ -248,7 +250,7 @@ class ArmorClass extends ModifiableProperty {
   get state() {
     return {
       ...super.state,
-      bonus: this.currentArmorClass,
+      bonus: this.currentArmorClass
     };
   }
 }

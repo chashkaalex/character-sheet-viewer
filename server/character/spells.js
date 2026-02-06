@@ -1,28 +1,30 @@
 
 // Calculate available spell slots based on spellcaster level
 
-const { Ability, ModifiableProperty } = require("./property");
 
+const { ClassesData } = require('../classes_data/_classes_general_data');
+const { ModifiableProperty } = require('./property');
+
+const { validateModifierType, registerStatusEffects } = require('./_general_effects');
 
 const ROUNDS = 1;
 const ROUNDS_PER_MINUTE = 10;
 /**
  * @typedef {Object} SpellData
- * @property {Effect[]} effects
  * @property {function(SpellCasterClassData): number} calculateDuration
  */
 
 /**
  * @type {Object.<string, SpellData>}
  */
-const spellsData = {
+const SpellsData = {
 
 
   'Guidance': {
     effects: [   //TODO: this requires to define an expendable action property in the character class
       { status: 'Guidance', property: 'expendable_action', modifierType: 'Competence', value: 1 }
     ],
-    calculateDuration: function (spellCasting) {
+    calculateDuration: function (_spellCasting) {
       // TODO: implement duration calculation
       return 1;
     }
@@ -34,7 +36,7 @@ const spellsData = {
       { status: 'Resistance', property: 'Ref', modifierType: 'Resistance', value: 1 },
       { status: 'Resistance', property: 'Will', modifierType: 'Resistance', value: 1 }
     ],
-    calculateDuration: function (spellCasting) {
+    calculateDuration: function (_spellCasting) {
       // always 1 minute (10 rounds)
       return 1 * ROUNDS_PER_MINUTE;
     }
@@ -63,9 +65,9 @@ const spellsData = {
     }
   },
 
-  "Bull's Strength": {
+  'Bull\'s Strength': {
     effects: [
-      { status: "Bull's Strength", property: 'Str', modifierType: 'Enhancement', value: 4 },
+      { status: 'Bull\'s Strength', property: 'Str', modifierType: 'Enhancement', value: 4 }
     ],
     calculateDuration: function (spellCasting) {
       // 1 min./level
@@ -77,7 +79,7 @@ const spellsData = {
     effects: [
       { status: 'Prayer', property: 'Will', modifierType: 'Luck', value: 1 },
       { status: 'Prayer', property: 'bab', modifierType: 'Luck', value: 1 },
-      { status: 'Prayer', property: 'damageBonus', modifierType: 'Luck', value: 1 },
+      { status: 'Prayer', property: 'damageBonus', modifierType: 'Luck', value: 1 }
     ],
     calculateDuration: function (spellCasting) {
       // TODO: implement duration calculation
@@ -97,7 +99,7 @@ const spellsData = {
       { status: 'Haste', property: 'ac', modifierType: 'Dodge', value: 1 },
       { status: 'Haste', property: 'Ref', modifierType: 'Dodge', value: 1 }
     ],
-    calculateDuration: function (spellCasting) {
+    calculateDuration: function (_spellCasting) {
       // TODO: implement duration calculation
       return 1;
     }
@@ -112,9 +114,9 @@ const spellsData = {
         value: function (character) { return character.statuses.includes('Frightful Presence') ? 3 : 0; }
       },
       { status: 'Inspire Courage', property: 'bab', modifierType: 'Morale', value: 3 },
-      { status: 'Inspire Courage', property: 'damageBonus', modifierType: 'Morale', value: 3 },
+      { status: 'Inspire Courage', property: 'damageBonus', modifierType: 'Morale', value: 3 }
     ],
-    calculateDuration: function (spellCasting) {
+    calculateDuration: function (_spellCasting) {
       // TODO: implement duration calculation
       return 1;
     }
@@ -128,9 +130,9 @@ const spellsData = {
         value: function (character) { return character.statuses.includes('Frightful Presence') ? 4 : 0; }
       },
       { status: 'Inspire Courage', property: 'bab', modifierType: 'Morale', value: 4 },
-      { status: 'Inspire Courage', property: 'damageBonus', modifierType: 'Morale', value: 4 },
+      { status: 'Inspire Courage', property: 'damageBonus', modifierType: 'Morale', value: 4 }
     ],
-    calculateDuration: function (spellCasting) {
+    calculateDuration: function (_spellCasting) {
       // TODO: implement duration calculation
       return 1;
     }
@@ -140,8 +142,8 @@ const spellsData = {
 // Extract effects from spellsData and register with the central status effects system
 // This maintains compatibility with the existing status effects system
 const spellsEffectsForRegistration = {};
-Object.keys(spellsData).forEach(spellName => {
-  const effects = spellsData[spellName].effects;
+Object.keys(SpellsData).forEach(spellName => {
+  const effects = SpellsData[spellName].effects;
   // Validate modifier types for all effects
   effects.forEach(effect => {
     validateModifierType(effect.modifierType);
@@ -219,7 +221,7 @@ class SpellCasting {
 
   updateSpellsData() {
     this.classSpellCastingData.forEach((casterClassData, casterClassName) => {
-      const classSpellcastingData = classesData.get(casterClassName).spellCastingData;
+      const classSpellcastingData = ClassesData.get(casterClassName).spellCastingData;
       casterClassData.spellSlots = [...classSpellcastingData.spellSlots[casterClassData.level.score]];
       const bonusSpells = getBonusSpells(casterClassData.ability.modifier);
       casterClassData.spellSlots.forEach((spellSlot, index) => {
@@ -235,6 +237,20 @@ class SpellCasting {
     this.classSpellCastingData.forEach((casterClassData, casterClassName) => {
       if (preparedSpells[casterClassName]) {
         casterClassData.preparedSpells = preparedSpells[casterClassName];
+      }
+    });
+  }
+
+  updateKnownSpells(knownSpells) {
+    this.classSpellCastingData.forEach((casterClassData, casterClassName) => {
+      if (knownSpells[casterClassName]) {
+        // Map known spells to just string array for availableSpells
+        // knownSpells structure is { level: [ {spell, used, ...} ] }
+        const flatSpells = {};
+        Object.keys(knownSpells[casterClassName]).forEach(level => {
+          flatSpells[level] = knownSpells[casterClassName][level].map(s => s.spell);
+        });
+        casterClassData.availableSpells = flatSpells;
       }
     });
   }
@@ -290,9 +306,11 @@ function getBonusSpells(modifier) {
   return bonusSpells;
 }
 
+
+
 if (typeof module !== 'undefined') {
   module.exports = {
     SpellCasting,
-    spellsData
+    SpellsData
   };
 }

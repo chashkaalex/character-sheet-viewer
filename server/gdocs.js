@@ -1,6 +1,6 @@
 //google document editing functions
 
-const { ParserUtils } = require("./parser");
+const { ParserUtils } = require('./parser');
 
 /**
    * Normalizes a string by replacing common Google Docs "smart" characters
@@ -51,11 +51,74 @@ function GetDocRawLines(doc) {
       lines.push(...tab.asDocumentTab().getBody().getText()
         .replaceAll('’', '\'')        //replace smart quotes with standard quotes
         .replace(/\r/g, '\n')         //replace line breaks with newlines
+        // eslint-disable-next-line no-control-regex
         .replace(/\u000b/g, '\n')     //replace form feeds with newlines
         .split('\n')
         .filter(line => line.trim() !== ''));
     }
   );
+  return lines;
+}
+
+/**
+ * Gets the lines of a Google Doc for Character parsing, including visual markers
+ * @param {GoogleAppsScript.Document.Document} doc The Google Doc object.
+ * @returns {string[]} An array of lines in the document with [x] markers for used spells
+ */
+function GetCharacterLinesFromDoc(doc) {
+  const lines = [];
+
+  doc.getTabs().forEach(tab => {
+    const body = tab.asDocumentTab().getBody();
+    let inSpellSection = false;
+
+    // Iterate through all child elements because getText() ignores visual formatting structure
+    for (let i = 0; i < body.getNumChildren(); i++) {
+      const element = body.getChild(i);
+      const type = element.getType();
+
+      let text = '';
+      let isStrikethrough = false;
+
+      if (type === DocumentApp.ElementType.PARAGRAPH) {
+        text = element.asParagraph().getText();
+      } else if (type === DocumentApp.ElementType.LIST_ITEM) {
+        const listItem = element.asListItem();
+        text = listItem.getText();
+        // Check strikethrough on first character for list items
+        // This logic mirrors ParseListItemsTextAndStrikethrough
+        if (text.length > 0) {
+          isStrikethrough = listItem.editAsText().isStrikethrough(0);
+        }
+      } else if (type === DocumentApp.ElementType.TABLE) {
+        // Tables are not currently used for main character data, skipping complex parsing
+        // But we might want the text content just in case
+        text = element.asTable().getText();
+      }
+
+      // Clean text similar to GetDocRawLines
+      text = text.replaceAll('’', '\'').trim();
+
+      if (text === '') continue;
+
+      // Section detection logic
+      if (ParserUtils.IsSectionLine(text)) {
+        // Check if we are entering a spell section
+        if (text.startsWith('Prepared Spells') || text.startsWith('Spells Known')) {
+          inSpellSection = true;
+        } else {
+          inSpellSection = false;
+        }
+      }
+
+      if (inSpellSection && isStrikethrough) {
+        text = `[x] ${text}`;
+      }
+
+      lines.push(text);
+    }
+  });
+
   return lines;
 }
 
@@ -268,9 +331,132 @@ function RemoveLineFromSection(docId, sectionName, lineToRemove) {
   }
 }
 
-module.exports = {
-  GetDocRawLines,
-  UpdateProperty,
-  UpdateSection,
-  RemoveLineFromSection
-};
+
+/**
+ * Extracts list items between two markers from a Google Document
+ * @param {GoogleAppsScript.Document.Document} doc - The Google Document object
+ * @param {string} fromText - The start marker text
+ * @param {string} toText - The end marker text
+ * @returns {{text: string, isStrikeThrough: boolean}[]} Array of list item data
+ */
+function ExtractListItemsBetweenMarkers(doc, fromText, toText) {
+  const listItems = ExtractListItemsArray(doc, fromText, toText);
+  return ParseListItemsTextAndStrikethrough(listItems);
+}
+
+/**
+ * Extracts list items from a Google Document
+ * @param {GoogleAppsScript.Document.Document} doc - The Google Document object
+ * @param {string} fromText - The start marker text
+ * @param {string} toText - The end marker text
+ * @returns { GoogleAppsScript.Document.ListItem[]} Array of list item data
+ */
+function ExtractListItemsArray(doc, fromText, toText) {
+  const body = doc.getBody();
+  const listItems = [];
+  let startParsing = false;
+
+  for (let i = 0; i < body.getNumChildren(); i++) {
+    const element = body.getChild(i);
+    const type = element.getType();
+
+    let elementText = '';
+
+    try {
+      if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
+        const textElement = /** @type {GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem} */ (element);
+        elementText = textElement.getText().trim();
+      }
+    } catch (e) {
+      // Ignore complex elements
+    }
+
+    if (startParsing && elementText.startsWith(toText)) {
+      startParsing = false;
+      break;
+    }
+
+    if (elementText.startsWith(fromText)) {
+      startParsing = true;
+      continue;
+    }
+
+    if (startParsing) {
+      if (type === DocumentApp.ElementType.LIST_ITEM) {
+        const listItem = element.asListItem();
+        listItems.push(listItem);
+      }
+    }
+  }
+
+  return listItems;
+}
+
+/**
+ * Parses the text and strikethrough of a list of items
+ * @param {GoogleAppsScript.Document.ListItem[]} listItems - Array of list item data
+ * @returns {{text: string, isStrikeThrough: boolean}[]} Array of list item data
+ */
+function ParseListItemsTextAndStrikethrough(listItems) {
+  const results = [];
+
+  listItems.forEach(listItem => {
+    const textElement = listItem.editAsText();
+    const itemText = textElement.getText().trim().replaceAll('’', '\'');
+    const isStruckThrough = textElement.isStrikethrough(0) || false;  //may be null if the item is not strikethrough
+
+    results.push({
+      text: itemText,
+      isStrikeThrough: isStruckThrough
+    });
+  });
+
+  return results;
+}
+
+/**
+   * Gets the spells structure from a document
+   * @param {string} docId - The Google Document ID
+   * @param {function(string, number, string, string, string[]): boolean} validatorFn - The validator function
+   * @returns {PreparedSpellsStructure}
+   */
+function GetPreparedSpellsStructure(docId, validatorFn) {
+  const doc = DocumentApp.openById(docId);
+  // Get raw items with potentially method access if they are ListItems
+  const listItems = ExtractListItemsArray(doc, 'Prepared Spells', 'Skills');
+
+  const lines = GetDocRawLines(doc);
+  let domains = [];
+  const domainLine = ParserUtils.GetLineThatContainsOneOfTheseTokens(lines, ['Domain', 'domains']);
+  if (domainLine) {
+    domains = ParserUtils.GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
+  }
+
+  // Convert listItems to object array with [x] markers support (though here we use isStrikeThrough property)
+  const spellsItems = listItems.map(listItem => {
+    const text = listItem.getText().trim();
+    const isStruckThrough = listItem.editAsText().isStrikethrough(0);
+    return {
+      text: (isStruckThrough ? '[x] ' : '') + text,
+      item: listItem,
+      isStrikeThrough: isStruckThrough
+    };
+  });
+
+  return ParserUtils.ParsePreparedSpellsStructure(spellsItems, domains, validatorFn);
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    GetDocRawLines,
+    GetCharacterLinesFromDoc,
+    NormalizeGDocsText,
+    UpdateProperty,
+    UpdateSection,
+    RemoveLineFromSection,
+    ExtractListItemsBetweenMarkers,
+    ExtractListItemsArray,
+    ParseListItemsTextAndStrikethrough,
+    GetPreparedSpellsStructure
+  };
+}

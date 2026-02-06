@@ -2,8 +2,8 @@
 //in the future, we should use a DB to store names of possible classes, races, etc.
 //so that each DM would be able to create their own for their campaign
 
-const abilityNames = ['Str', 'Dex', 'Con', 'Int', 'Wis', 'Char'];
-const saveNames = ['Fort', 'Ref', 'Will'];
+const AbilityNames = ['Str', 'Dex', 'Con', 'Int', 'Wis', 'Char'];
+const SaveNames = ['Fort', 'Ref', 'Will'];
 
 const Sizes = {
   'Fine': { name: 'Fine', next: 'Diminutive', previous: 'Fine', modifier: 8, bonus: -16 },
@@ -17,7 +17,7 @@ const Sizes = {
   'Colossal': { name: 'Colossal', next: 'Colossal', previous: 'Gargantuan', modifier: -8, bonus: 16 }
 };
 
-const resistances = [
+const Resistances = [
   'Acid',
   'Cold',
   'Fire',
@@ -26,7 +26,7 @@ const resistances = [
   'Poison'
 ];
 
-const races = [
+const Races = [
   'Dwarf',
   'Elf',
   'Half-Elf',
@@ -41,7 +41,7 @@ const races = [
   'Lizardfolk'
 ];
 
-const spellcasterClasses = [
+const SpellcasterClasses = [
   'Wizard',
   'Sorcerer',
   'Cleric',
@@ -55,7 +55,7 @@ const spellcasterClasses = [
   'Sacred Fist'
 ];
 
-const skillsAbilities = {
+const SkillsAbilities = {
   'Appraise': 'Int',
   'Balance': 'Dex',
   'Bluff': 'Char',
@@ -103,7 +103,7 @@ const skillsAbilities = {
   'Use Rope': 'Dex'
 };
 
-const skillsSynergyReversed = {
+const SkillsSynergyReversed = {
   'Appraise': ['Craft'],
   'Balance': ['Tumble'],
   'Climb': ['Use Rope'],
@@ -140,7 +140,7 @@ const skillsSynergyReversed = {
   'Use Rope': ['Escape Artist']
 };
 
-const specialAttackNames = [
+const SpecialAttackNames = [
   'Aid another',
   'Bull rush',
   'Charge',
@@ -156,7 +156,7 @@ const specialAttackNames = [
   'Two-weapon fighting'
 ];
 
-const modifierTypes = {
+const ModifierTypes = {
   'Ability': {  //doesn't participate in property effects, added for clarity
     isStackable: true,
     againstTouch: false
@@ -247,3 +247,18 @@ const modifierTypes = {
 
 
 
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    AbilityNames,
+    SaveNames,
+    Sizes,
+    Resistances,
+    Races,
+    SpellcasterClasses,
+    SkillsAbilities,
+    SkillsSynergyReversed,
+    SpecialAttackNames,
+    ModifierTypes
+  };
+}

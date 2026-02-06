@@ -4,3 +4,9 @@ function GetRaceSpeed(race) {
   }
   return 30;
 }
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    GetRaceSpeed
+  };
+}

@@ -1,83 +1,84 @@
+const { WeaponAttackBonus, WeaponDamageBonus } = require('./property');
 
-const weaponsRangeTypes = new Map();
+const WeaponsRangeTypes = new Map();
 
-weaponsRangeTypes.set('Gauntlet', { range: 'Melee' });
-weaponsRangeTypes.set('Unarmed', { range: 'Melee' });
-weaponsRangeTypes.set('Dagger', { range: 'Melee' });
-weaponsRangeTypes.set('Mace', { range: 'Melee' });
-weaponsRangeTypes.set('Sickle', { range: 'Melee' });
-weaponsRangeTypes.set('Club', { range: 'Melee' });
-weaponsRangeTypes.set('Heavy Mace', { range: 'Melee' });
-weaponsRangeTypes.set('Morningstar', { range: 'Melee' });
-weaponsRangeTypes.set('Short Spear', { range: 'Melee' });
-weaponsRangeTypes.set('Long Spear', { range: 'Melee' });
-weaponsRangeTypes.set('Quarterstaff', { range: 'Melee' });
-weaponsRangeTypes.set('Spear', { range: 'Melee' });
+WeaponsRangeTypes.set('Gauntlet', { range: 'Melee' });
+WeaponsRangeTypes.set('Unarmed', { range: 'Melee' });
+WeaponsRangeTypes.set('Dagger', { range: 'Melee' });
+WeaponsRangeTypes.set('Mace', { range: 'Melee' });
+WeaponsRangeTypes.set('Sickle', { range: 'Melee' });
+WeaponsRangeTypes.set('Club', { range: 'Melee' });
+WeaponsRangeTypes.set('Heavy Mace', { range: 'Melee' });
+WeaponsRangeTypes.set('Morningstar', { range: 'Melee' });
+WeaponsRangeTypes.set('Short Spear', { range: 'Melee' });
+WeaponsRangeTypes.set('Long Spear', { range: 'Melee' });
+WeaponsRangeTypes.set('Quarterstaff', { range: 'Melee' });
+WeaponsRangeTypes.set('Spear', { range: 'Melee' });
 
-weaponsRangeTypes.set('Light Crossbow', { range: 'Ranged' });
-weaponsRangeTypes.set('Heavy Crossbow', { range: 'Ranged' });
-weaponsRangeTypes.set('Dart', { range: 'Ranged' });
-weaponsRangeTypes.set('Javelin', { range: 'Ranged' });
-weaponsRangeTypes.set('Sling', { range: 'Ranged' });
+WeaponsRangeTypes.set('Light Crossbow', { range: 'Ranged' });
+WeaponsRangeTypes.set('Heavy Crossbow', { range: 'Ranged' });
+WeaponsRangeTypes.set('Dart', { range: 'Ranged' });
+WeaponsRangeTypes.set('Javelin', { range: 'Ranged' });
+WeaponsRangeTypes.set('Sling', { range: 'Ranged' });
 
-weaponsRangeTypes.set('Throwing Axe', { range: 'Melee' });
-weaponsRangeTypes.set('Light Hammer', { range: 'Melee' });
-weaponsRangeTypes.set('Handaxe', { range: 'Melee' });
-weaponsRangeTypes.set('Kukri', { range: 'Melee' });
-weaponsRangeTypes.set('Light Pick', { range: 'Melee' });
-weaponsRangeTypes.set('Sap', { range: 'Melee' });
-weaponsRangeTypes.set('Light Shield', { range: 'Melee' });
-weaponsRangeTypes.set('Spiked Armour', { range: 'Melee' });
-weaponsRangeTypes.set('Light Spiked Shield', { range: 'Melee' });
-weaponsRangeTypes.set('Short Sword', { range: 'Melee' });
-weaponsRangeTypes.set('Battleaxe', { range: 'Melee' });
-weaponsRangeTypes.set('Flail', { range: 'Melee' });
-weaponsRangeTypes.set('Longsword', { range: 'Melee' });
-weaponsRangeTypes.set('Pick', { range: 'Melee' });
-weaponsRangeTypes.set('Rapier', { range: 'Melee' });
-weaponsRangeTypes.set('Scimitar', { range: 'Melee' });
-weaponsRangeTypes.set('Heavy Shield', { range: 'Melee' });
-weaponsRangeTypes.set('Heavy Spiked Shield', { range: 'Melee' });
-weaponsRangeTypes.set('Trident', { range: 'Melee' });
-weaponsRangeTypes.set('Warhammer', { range: 'Melee' });
-weaponsRangeTypes.set('Falchion', { range: 'Melee' });
-weaponsRangeTypes.set('Glaive', { range: 'Melee' });
-weaponsRangeTypes.set('Greataxe', { range: 'Melee' });
-weaponsRangeTypes.set('Greatclub', { range: 'Melee' });
-weaponsRangeTypes.set('Heavy Flail', { range: 'Melee' });
-weaponsRangeTypes.set('Greatsword', { range: 'Melee' });
-weaponsRangeTypes.set('Guisarme', { range: 'Melee' });
-weaponsRangeTypes.set('Halberd', { range: 'Melee' });
-weaponsRangeTypes.set('Lance', { range: 'Melee' });
-weaponsRangeTypes.set('Ranseur', { range: 'Melee' });
-weaponsRangeTypes.set('Scythe', { range: 'Melee' });
+WeaponsRangeTypes.set('Throwing Axe', { range: 'Melee' });
+WeaponsRangeTypes.set('Light Hammer', { range: 'Melee' });
+WeaponsRangeTypes.set('Handaxe', { range: 'Melee' });
+WeaponsRangeTypes.set('Kukri', { range: 'Melee' });
+WeaponsRangeTypes.set('Light Pick', { range: 'Melee' });
+WeaponsRangeTypes.set('Sap', { range: 'Melee' });
+WeaponsRangeTypes.set('Light Shield', { range: 'Melee' });
+WeaponsRangeTypes.set('Spiked Armour', { range: 'Melee' });
+WeaponsRangeTypes.set('Light Spiked Shield', { range: 'Melee' });
+WeaponsRangeTypes.set('Short Sword', { range: 'Melee' });
+WeaponsRangeTypes.set('Battleaxe', { range: 'Melee' });
+WeaponsRangeTypes.set('Flail', { range: 'Melee' });
+WeaponsRangeTypes.set('Longsword', { range: 'Melee' });
+WeaponsRangeTypes.set('Pick', { range: 'Melee' });
+WeaponsRangeTypes.set('Rapier', { range: 'Melee' });
+WeaponsRangeTypes.set('Scimitar', { range: 'Melee' });
+WeaponsRangeTypes.set('Heavy Shield', { range: 'Melee' });
+WeaponsRangeTypes.set('Heavy Spiked Shield', { range: 'Melee' });
+WeaponsRangeTypes.set('Trident', { range: 'Melee' });
+WeaponsRangeTypes.set('Warhammer', { range: 'Melee' });
+WeaponsRangeTypes.set('Falchion', { range: 'Melee' });
+WeaponsRangeTypes.set('Glaive', { range: 'Melee' });
+WeaponsRangeTypes.set('Greataxe', { range: 'Melee' });
+WeaponsRangeTypes.set('Greatclub', { range: 'Melee' });
+WeaponsRangeTypes.set('Heavy Flail', { range: 'Melee' });
+WeaponsRangeTypes.set('Greatsword', { range: 'Melee' });
+WeaponsRangeTypes.set('Guisarme', { range: 'Melee' });
+WeaponsRangeTypes.set('Halberd', { range: 'Melee' });
+WeaponsRangeTypes.set('Lance', { range: 'Melee' });
+WeaponsRangeTypes.set('Ranseur', { range: 'Melee' });
+WeaponsRangeTypes.set('Scythe', { range: 'Melee' });
 
-weaponsRangeTypes.set('Longbow', { range: 'Ranged' });
-weaponsRangeTypes.set('Composite Longbow', { range: 'Ranged' });
-weaponsRangeTypes.set('Shortbow', { range: 'Ranged' });
-weaponsRangeTypes.set('Composite Shortbow', { range: 'Ranged' });
+WeaponsRangeTypes.set('Longbow', { range: 'Ranged' });
+WeaponsRangeTypes.set('Composite Longbow', { range: 'Ranged' });
+WeaponsRangeTypes.set('Shortbow', { range: 'Ranged' });
+WeaponsRangeTypes.set('Composite Shortbow', { range: 'Ranged' });
 
-weaponsRangeTypes.set('Kama', { range: 'Melee' });
-weaponsRangeTypes.set('Kusarigama', { range: 'Melee' });
-weaponsRangeTypes.set('Nunchaku', { range: 'Melee' });
-weaponsRangeTypes.set('Sai', { range: 'Melee' });
-weaponsRangeTypes.set('Siangham', { range: 'Melee' });
-weaponsRangeTypes.set('Bastard Sword', { range: 'Melee' });
-weaponsRangeTypes.set('Dwarven Waraxe', { range: 'Melee' });
-weaponsRangeTypes.set('Whip', { range: 'Melee' });
-weaponsRangeTypes.set('Orc Axe', { range: 'Melee' });
-weaponsRangeTypes.set('Spiled Chain', { range: 'Melee' });
-weaponsRangeTypes.set('Dire Flail', { range: 'Melee' });
-weaponsRangeTypes.set('Gnome Hammer', { range: 'Melee' });
-weaponsRangeTypes.set('Two-bladed Sword', { range: 'Melee' });
-weaponsRangeTypes.set('Dwarven Urgrosh', { range: 'Melee' });
+WeaponsRangeTypes.set('Kama', { range: 'Melee' });
+WeaponsRangeTypes.set('Kusarigama', { range: 'Melee' });
+WeaponsRangeTypes.set('Nunchaku', { range: 'Melee' });
+WeaponsRangeTypes.set('Sai', { range: 'Melee' });
+WeaponsRangeTypes.set('Siangham', { range: 'Melee' });
+WeaponsRangeTypes.set('Bastard Sword', { range: 'Melee' });
+WeaponsRangeTypes.set('Dwarven Waraxe', { range: 'Melee' });
+WeaponsRangeTypes.set('Whip', { range: 'Melee' });
+WeaponsRangeTypes.set('Orc Axe', { range: 'Melee' });
+WeaponsRangeTypes.set('Spiled Chain', { range: 'Melee' });
+WeaponsRangeTypes.set('Dire Flail', { range: 'Melee' });
+WeaponsRangeTypes.set('Gnome Hammer', { range: 'Melee' });
+WeaponsRangeTypes.set('Two-bladed Sword', { range: 'Melee' });
+WeaponsRangeTypes.set('Dwarven Urgrosh', { range: 'Melee' });
 
-weaponsRangeTypes.set('Bolas', { range: 'Ranged' });
-weaponsRangeTypes.set('Hand Crossbow', { range: 'Ranged' });
-weaponsRangeTypes.set('Repeating Heavy Crossbow', { range: 'Ranged' });
-weaponsRangeTypes.set('Repeating Light Crossbow', { range: 'Ranged' });
-weaponsRangeTypes.set('Net', { range: 'Ranged' });
-weaponsRangeTypes.set('Shuriken', { range: 'Ranged' });
+WeaponsRangeTypes.set('Bolas', { range: 'Ranged' });
+WeaponsRangeTypes.set('Hand Crossbow', { range: 'Ranged' });
+WeaponsRangeTypes.set('Repeating Heavy Crossbow', { range: 'Ranged' });
+WeaponsRangeTypes.set('Repeating Light Crossbow', { range: 'Ranged' });
+WeaponsRangeTypes.set('Net', { range: 'Ranged' });
+WeaponsRangeTypes.set('Shuriken', { range: 'Ranged' });
 
 const specialWeaponMaterials = [
   'Adamantine',
@@ -99,13 +100,13 @@ function GetSpecialWeaponMaterial(name) {
 }
 
 function IsAWeapon(name) {
-  return weaponRangeType = weaponsRangeTypes.has(name);
+  return WeaponsRangeTypes.has(name);
 }
 
 class Weapon {
   constructor(name, bab, dmgBonus, abilities, size) {
     this.name = name;
-    const weaponRangeType = weaponsRangeTypes.get(name).range;
+    const weaponRangeType = WeaponsRangeTypes.get(name).range;
     if (!weaponRangeType) {
       console.warn(`Could not find weapon range type for weapon: ${name}`);
       return null;
@@ -118,4 +119,13 @@ class Weapon {
     this.attackBonus = new WeaponAttackBonus(bab, weaponAttackAbility, size);
     this.damageBonus = new WeaponDamageBonus(weaponDamageAbility, dmgBonus);
   }
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    Weapon,
+    GetSpecialWeaponMaterial,
+    IsAWeapon,
+    WeaponsRangeTypes
+  };
 }

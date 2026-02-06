@@ -1,9 +1,9 @@
-const { Character, CharacterError } = require("./character/character");
-const { getCharacterRep } = require("./character/character_rep");
+const { Character, CharacterError } = require('./character/character');
+const { getCharacterRep } = require('./character/character_rep');
 
 const LOG_DEBUG = false;
 
-function doGet(e) {
+function doGet(_e) {
   if (LOG_DEBUG) {
     recordUserLog('doGet', 'Web App initial load started.', 'INFO');
   }
@@ -65,6 +65,9 @@ function include(filename) {
     .getContent();
 }
 
+const { GetCharacterLinesFromDoc } = require('./gdocs');
+const { recordUserLog } = require('./gsheet_logger');
+
 /**
  * Retrieves a character object by document ID.
  * @param {string} docId The ID of the document containing the character data.
@@ -76,7 +79,8 @@ function GetCharacterByDocId(docId) {
 
   console.log('opened document\'s name is ' + doc.getName());
 
-  const character = new Character(doc);
+  const lines = GetCharacterLinesFromDoc(doc);
+  const character = new Character(lines, docId);
   character.ParseCharacter();
   if (!character.parseSuccess) {
     return new CharacterError('Failed to parse character', character.parseErrors);
@@ -101,6 +105,8 @@ function GetCharacterRepByDocId(docId) {
 if (typeof module !== 'undefined') {
   module.exports = {
     GetCharacterByDocId,
-    GetCharacterRepByDocId
+    GetCharacterRepByDocId,
+    include,
+    doGet
   };
 }
