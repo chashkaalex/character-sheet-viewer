@@ -1,4 +1,4 @@
-const { ClassesData } = require('./_classes_general_data');
+
 
 const Cleric = {
   name: 'Cleric',

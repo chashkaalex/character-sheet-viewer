@@ -1,9 +1,9 @@
 
-const { GetCharacterByDocId, GetCharacterRepByDocId } = require('../server');
-const { Character, CharacterError } = require('./character');
-const { SpellsData } = require('./spells');
-const { ParserUtils } = require('../parser');
-const { UpdateProperty, UpdateSection, RemoveLineFromSection } = require('../gdocs');
+
+
+
+
+
 
 /**
  * @param {string} docId - The document ID of the character

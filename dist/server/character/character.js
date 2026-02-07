@@ -3,30 +3,30 @@
  */
 
 
-const { ParserUtils } = require('../parser');
+
 /**
  * @typedef {import('./property').Ability} Ability
  */
-const { ModifiableProperty, CreatureSize, SpecialAttackBonus, ListOfSpecialProperties, AbilityBasedProperty, ArmorClass, Skill } = require('./property');
-const { SpellCasting } = require('./spells');
 
-const { ParseAbilities } = require('./parsers/abilities');
-const { Sizes, Races, AbilityNames, SaveNames, SkillsAbilities, SpecialAttackNames, SkillsSynergyReversed, SpellcasterClasses } = require('../_constants');
-const { BodySlots } = require('./items');
-const { Weapon } = require('./weapons');
-const { FeatEffects } = require('./feats');
-//const { Effect, registerStatusEffects } = require("./_general_effects");
 
-const { StatusesEffects } = require('./_general_effects');
-const { ClassesData } = require('../classes_data/_classes_general_data');
-const { GetRaceSpeed } = require('../races_data/_races_general_data');
+
+
+
+
+
+
+
+
+
+
+
 
 // Also ensure we load the class definitions so they populate classesData
 if (typeof require !== 'undefined') {
-  require('../classes_data/cleric');
-  require('../classes_data/bard');
-  require('../classes_data/monk');
-  require('../classes_data/sacred_fist');
+
+
+
+
 }
 
 // Attach parser methods to Character prototype

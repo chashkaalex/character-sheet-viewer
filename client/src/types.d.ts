@@ -21,3 +21,7 @@ declare namespace google {
         };
     }
 }
+
+interface Window {
+    currentSlotData: import('../../server/types').SlotData | null;
+}

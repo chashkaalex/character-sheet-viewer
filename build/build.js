@@ -3,7 +3,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const verifyGasContext = require('./verify_gas_context');
 
-const rootDir = __dirname;
+const rootDir = path.join(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 
 // 0. Run Lint and Tests
@@ -36,7 +36,7 @@ fs.mkdirSync(distDir);
 function copyFile(src, dest) {
     if (fs.existsSync(src)) {
         fs.copyFileSync(src, dest);
-        console.log(`Copied ${src} to ${dest}`);
+        //console.log(`Copied ${src} to ${dest}`);
     }
 }
 
@@ -62,9 +62,9 @@ function copyDir(src, dest) {
 }
 
 // 1. Copy config files
-copyFile(path.join(rootDir, 'appsscript.json'), path.join(distDir, 'appsscript.json'));
-copyFile(path.join(rootDir, '.clasp.json'), path.join(distDir, '.clasp.json'));
-copyFile(path.join(rootDir, '.claspignore'), path.join(distDir, '.claspignore'));
+copyFile(path.join(rootDir, 'config', 'appsscript.json'), path.join(distDir, 'appsscript.json'));
+copyFile(path.join(rootDir, 'config', '.clasp.json'), path.join(distDir, '.clasp.json'));
+copyFile(path.join(rootDir, 'config', '.claspignore'), path.join(distDir, '.claspignore'));
 
 // 2. Process Server Files (remove require)
 const serverSrcDir = path.join(rootDir, 'server');
@@ -100,7 +100,6 @@ function processServerFiles(src, dest) {
             // But let's verify if the regex above removes the require calls correctly.
 
             fs.writeFileSync(destPath, content);
-            console.log(`Processed server file: ${destPath}`);
         } else {
             fs.copyFileSync(srcPath, destPath);
         }
@@ -152,7 +151,7 @@ if (fs.existsSync(clientScriptSrcDir)) {
         const htmlContent = `<script>\n${content}\n</script>`;
 
         fs.writeFileSync(outPath, htmlContent);
-        console.log(`Built client script: ${outPath}`);
+        //console.log(`Built client script: ${outPath}`);
     });
 }
 

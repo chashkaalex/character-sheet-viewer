@@ -3,17 +3,18 @@
   "version": "1.0.0",
   "description": "Google Apps Script Character Sheet Viewer",
   "scripts": {
-    "build": "node build.js",
-    "lint": "eslint server/ client/src/",
-    "lint:fix": "eslint server/ client/src/ --fix",
-    "lint:server": "eslint server/",
-    "lint:client": "eslint client/src/",
-    "test": "jest",
+    "build": "node build/build.js",
+    "lint": "eslint server/ client/src/ --config config/.eslintrc.json",
+    "lint:fix": "eslint server/ client/src/ --config config/.eslintrc.json --fix",
+    "lint:server": "eslint server/ --config config/.eslintrc.json",
+    "lint:client": "eslint client/src/ --config config/.eslintrc.json",
+    "test": "jest --config config/jest.config.js",
     "clean": "node -e \"const fs = require('fs'); if(fs.existsSync('dist')) fs.rmSync('dist', {recursive: true, force: true})\"",
     "deploy": "npm run build && cd dist && clasp push && cd .. && npm run clean"
   },
   "devDependencies": {
     "@types/google-apps-script": "^2.0.6",
+    "@types/jest": "^30.0.0",
     "eslint": "^8.57.0",
     "jest": "^30.2.0"
   }

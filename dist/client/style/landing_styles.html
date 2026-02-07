@@ -1,0 +1,116 @@
+<style>
+    .landing-container {
+        background: white;
+        padding: 3rem;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        max-width: 500px;
+        width: 90%;
+        margin: 2rem auto;
+    }
+    
+    .landing-title {
+        color: #333;
+        margin-bottom: 1rem;
+        font-size: 2.5rem;
+        font-weight: 300;
+    }
+    
+    .landing-subtitle {
+        color: #666;
+        margin-bottom: 2.5rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+    
+    .landing-form-group {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .landing-input {
+        flex: 1;
+        padding: 1rem;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .landing-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .landing-button {
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .landing-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .landing-button:active {
+        transform: translateY(0);
+    }
+    
+    .landing-instructions {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-top: 2rem;
+        text-align: left;
+    }
+    
+    .landing-instructions h3 {
+        margin-top: 0;
+        color: #333;
+        font-size: 1.1rem;
+    }
+    
+    .landing-instructions p {
+        margin: 0.5rem 0;
+        color: #666;
+        font-size: 0.95rem;
+    }
+    
+    .landing-error {
+        color: #e74c3c;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .character-sheet-container {
+        display: none;
+    }
+    
+    .character-sheet-container.show {
+        display: block;
+    }
+    
+    @media (max-width: 600px) {
+        .landing-container {
+            padding: 2rem;
+            margin: 1rem;
+        }
+        
+        .landing-form-group {
+            flex-direction: column;
+        }
+        
+        .landing-title {
+            font-size: 2rem;
+        }
+    }
+</style>
