@@ -71,10 +71,7 @@
       "error",
       "single"
     ],
-    "indent": [
-      "error",
-      2
-    ],
+    "indent": "off",
     "comma-dangle": [
       "error",
       "never"
@@ -162,9 +159,6 @@
       ],
       "env": {
         "jest": true
-      },
-      "rules": {
-        "indent": "off"
       }
     },
     {

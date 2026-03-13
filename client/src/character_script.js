@@ -88,24 +88,27 @@ function onCharacterRepresentation(response) {
   UpdateValueAndTooltip('attacksOfOpportunity', characterRep.attacksOfOpportunity);
 
   //populate abilities table
-  //populate abilities table
   const abilitiesTableBody = document.querySelector('#abilitiesTable tbody');
   abilitiesTableBody.innerHTML = '';
 
   if (characterRep.abilities) {
-    Object.entries(characterRep.abilities).forEach(([abilityName, ability]) => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td class="row-style">${abilityName}</td>
-        <td class="row-style ability-score" data-ability="${abilityName}" data-field="score">${ability.score}</td>
-        <td class="row-style ability-current" data-ability="${abilityName}" data-field="currentScore">${ability.currentScore}</td>
-        <td class="row-style ability-modifier" data-ability="${abilityName}" data-field="modifier">${ability.modifier}</td>
-      `;
-      abilitiesTableBody.appendChild(row);
+    const abilityOrder = ['Str', 'Dex', 'Con', 'Int', 'Wis', 'Char'];
+    abilityOrder.forEach(abilityName => {
+      const ability = characterRep.abilities[abilityName];
+      if (ability) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="row-style">${abilityName}</td>
+          <td class="row-style ability-score" data-ability="${abilityName}" data-field="score">${ability.score}</td>
+          <td class="row-style ability-current" data-ability="${abilityName}" data-field="currentScore">${ability.currentScore}</td>
+          <td class="row-style ability-modifier" data-ability="${abilityName}" data-field="modifier">${ability.modifier}</td>
+        `;
+        abilitiesTableBody.appendChild(row);
 
-      // Add tooltips to ability properties
-      const currentScoreElement = row.querySelector('.ability-current');
-      addTooltip(currentScoreElement, ability.string);
+        // Add tooltips to ability properties
+        const currentScoreElement = row.querySelector('.ability-current');
+        addTooltip(currentScoreElement, ability.string);
+      }
     });
   }
 
@@ -114,20 +117,21 @@ function onCharacterRepresentation(response) {
   // Clear previous rows before repopulating to avoid duplicates
   skillsTableBody.innerHTML = '';
   if (characterRep.skills) {
-    Object.entries(characterRep.skills).forEach(([skillName, skill]) => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
+    Object.entries(characterRep.skills)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .forEach(([skillName, skill]) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
               <td class="row-style">${skillName}</td>
-              <td class="row-style skill-rank" data-skill="${skillName}">${skill.currentScore}</td>
+              <td class="row-style skill-rank" data-skill="${skillName}">${skill.score}</td>
               <td class="row-style skill-bonus" data-skill="${skillName}">${skill.bonus}</td>
           `;
-      skillsTableBody.appendChild(row);
+        skillsTableBody.appendChild(row);
 
-      // Add tooltips to skill properties
-      const rankElement = row.querySelector('.skill-rank');
-      const bonusElement = row.querySelector('.skill-bonus');
-      addTooltip(rankElement, skill.string);
-    });
+        // Add tooltips to skill properties
+        const bonusElement = row.querySelector('.skill-bonus');
+        addTooltip(bonusElement, skill.string);
+      });
   }
 
   //populate spells
@@ -386,20 +390,20 @@ function filterItemsByType(items, filterType) {
 
   return items.filter(item => {
     switch (filterType) {
-    case 'equipment':
-      // Items with bodySlot not being null (equipment that can be worn)
-      return item.bodySlot !== null && item.bodySlot !== undefined;
-    case 'weapons':
-      // Items that are weapons
-      return item.isWeapon === true;
-    case 'potions':
-      // Items that are potions
-      return item.isPotion === true;
-    case 'scrolls':
-      // Items that are scrolls
-      return item.isScroll === true;
-    default:
-      return true;
+      case 'equipment':
+        // Items with bodySlot not being null (equipment that can be worn)
+        return item.bodySlot !== null && item.bodySlot !== undefined;
+      case 'weapons':
+        // Items that are weapons
+        return item.isWeapon === true;
+      case 'potions':
+        // Items that are potions
+        return item.isPotion === true;
+      case 'scrolls':
+        // Items that are scrolls
+        return item.isScroll === true;
+      default:
+        return true;
     }
   });
 }

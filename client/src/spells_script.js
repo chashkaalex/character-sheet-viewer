@@ -33,7 +33,7 @@ function renderSpellsUI() {
     classDiv.innerHTML = `
             <h3>${classTitle}</h3>
             <div class="spell-slots-container">
-                ${renderSpellSlots(casterClassData.spellSlots, casterClassData.preparedSpells, casterClassData.className)}
+                ${renderSpellSlots(casterClassData.spellSlots, casterClassData.preparedSpells, casterClassData.className, casterClassData.preparation)}
             </div>
         `;
 
@@ -41,7 +41,7 @@ function renderSpellsUI() {
   });
 }
 
-function renderSpellSlots(spellSlots, preparedSpells = {}, className = '') {
+function renderSpellSlots(spellSlots, preparedSpells = {}, className = '', preparation = 'Prepared') {
   let html = '';
 
   for (let level = 0; level <= 9; level++) {
@@ -56,59 +56,63 @@ function renderSpellSlots(spellSlots, preparedSpells = {}, className = '') {
       const domainSpells = (className === 'Cleric' && level > 0) ? (preparedSpells[domainKey] || []) : [];
       const hasDomainSlot = className === 'Cleric' && level > 0;
 
+      const levelHeader = className === 'BardicSpecial'
+        ? `Specials (${slots} uses)`
+        : `Level ${level} Spells (${slots} slot${slots !== 1 ? 's' : ''}${hasDomainSlot ? ' + 1 domain' : ''})`;
+
       html += `
                 <div class="spell-level-slots">
-                    <h4>Level ${level} Spells (${slots} slot${slots !== 1 ? 's' : ''}${hasDomainSlot ? ' + 1 domain' : ''})</h4>
+                    <h4>${levelHeader}</h4>
                     <div class="spell-slot-grid">
                         ${Array(slots).fill(0).map((_, index) => {
-    const spellData = levelPreparedSpells[index];
-    const isEmpty = !spellData;
+        const spellData = levelPreparedSpells[index];
+        const isEmpty = !spellData;
 
-    // Handle both old format (string) and new format (object with spell and used properties)
-    let spellName = '';
-    let isUsed = false;
+        // Handle both old format (string) and new format (object with spell and used properties)
+        let spellName = '';
+        let isUsed = false;
 
-    if (spellData) {
-      if (typeof spellData === 'string') {
-        spellName = spellData;
-      } else if (typeof spellData === 'object' && spellData.spell) {
-        spellName = spellData.spell;
-        isUsed = spellData.used || false;
-      }
-    }
+        if (spellData) {
+          if (typeof spellData === 'string') {
+            spellName = spellData;
+          } else if (typeof spellData === 'object' && spellData.spell) {
+            spellName = spellData.spell;
+            isUsed = spellData.used || false;
+          }
+        }
 
-    const slotClass = isEmpty ? 'empty' : 'filled';
-    const usedClass = isUsed ? 'used' : '';
-    const displayText = isEmpty ? '' : spellName;
+        const slotClass = isEmpty ? 'empty' : 'filled';
+        const usedClass = isUsed ? 'used' : '';
+        const displayText = isEmpty ? '' : spellName;
 
-    return `<div class="spell-slot ${slotClass} ${usedClass}" data-level="${level}" data-slot="${index}" data-spell="${spellName}" data-used="${isUsed}" data-class="${className}" title="${spellName || 'Empty slot'}">${displayText}</div>`;
-  }).join('')}
+        return `<div class="spell-slot ${slotClass} ${usedClass}" data-level="${level}" data-slot="${index}" data-spell="${spellName}" data-used="${isUsed}" data-class="${className}" data-preparation="${preparation}" title="${spellName || 'Empty slot'}">${displayText}</div>`;
+      }).join('')}
                         ${hasDomainSlot ? (() => {
-    const domainSpellData = domainSpells[0];
-    const isEmpty = !domainSpellData;
+          const domainSpellData = domainSpells[0];
+          const isEmpty = !domainSpellData;
 
-    // Handle both old format (string) and new format (object with spell and used properties)
-    let domainSpellName = '';
-    let domainIsUsed = false;
+          // Handle both old format (string) and new format (object with spell and used properties)
+          let domainSpellName = '';
+          let domainIsUsed = false;
 
-    if (domainSpellData) {
-      if (typeof domainSpellData === 'string') {
-        domainSpellName = domainSpellData;
-      } else if (typeof domainSpellData === 'object' && domainSpellData.spell) {
-        domainSpellName = domainSpellData.spell;
-        domainIsUsed = domainSpellData.used || false;
-      }
-    }
+          if (domainSpellData) {
+            if (typeof domainSpellData === 'string') {
+              domainSpellName = domainSpellData;
+            } else if (typeof domainSpellData === 'object' && domainSpellData.spell) {
+              domainSpellName = domainSpellData.spell;
+              domainIsUsed = domainSpellData.used || false;
+            }
+          }
 
-    const domainSlotClass = isEmpty ? 'empty' : 'filled';
-    const domainUsedClass = domainIsUsed ? 'used' : '';
-    const domainDisplayText = isEmpty ? '' : domainSpellName;
+          const domainSlotClass = isEmpty ? 'empty' : 'filled';
+          const domainUsedClass = domainIsUsed ? 'used' : '';
+          const domainDisplayText = isEmpty ? '' : domainSpellName;
 
-    return `
+          return `
                             <div class="spell-slot-separator"></div>
-                            <div class="spell-slot domain-slot ${domainSlotClass} ${domainUsedClass}" data-level="${level}" data-slot="domain" data-spell="${domainSpellName}" data-used="${domainIsUsed}" data-class="${className}" title="${domainSpellName || 'Empty domain slot'}">${domainDisplayText}</div>
+                            <div class="spell-slot domain-slot ${domainSlotClass} ${domainUsedClass}" data-level="${level}" data-slot="0" data-spell="${domainSpellName}" data-used="${domainIsUsed}" data-class="${className}" data-preparation="${preparation}" title="${domainSpellName || 'Empty domain slot'}">${domainDisplayText}</div>
                         `;
-  })() : ''}
+        })() : ''}
                     </div>
                 </div>
             `;
@@ -132,6 +136,7 @@ function PrepareSpellsUI() {
  * @property {boolean} isEmpty - Whether the slot is empty
  * @property {boolean} isDomain - Whether the slot is a domain slot
  * @property {string} casterClass - The name of the caster class
+ * @property {string} preparation - The spell preparation type (Prepared/Spontaneous)
  */
 
 
@@ -145,7 +150,8 @@ function slotDataFromUISlotData(uiSlotData) {
      */
   const slotData = {
     casterClassName: uiSlotData.casterClass,
-    spellLevel: uiSlotData.level
+    spellLevel: String(uiSlotData.level) + (uiSlotData.isDomain ? ' - domain' : ''),
+    slotIndex: uiSlotData.slot
   };
   return slotData;
 }
@@ -169,7 +175,8 @@ function initializeSpellSlotHandlers() {
         isUsed: target.dataset.used === 'true',
         isEmpty: target.classList.contains('empty'),
         isDomain: target.classList.contains('domain-slot'),
-        casterClass: target.dataset.class || ''
+        casterClass: target.dataset.class || '',
+        preparation: target.dataset.preparation || 'Prepared'
       };
 
       showSpellPopup(target, uiSlotData);
@@ -196,7 +203,8 @@ function showSpellPopup(targetElement, uiSlotData) {
   // Store slot data globally for access in prepareSpell/castSpell
   const slotData = {
     casterClassName: uiSlotData.casterClass,
-    spellLevel: uiSlotData.level + (uiSlotData.isDomain ? ' - domain' : '')
+    spellLevel: String(uiSlotData.level) + (uiSlotData.isDomain ? ' - domain' : ''),
+    slotIndex: uiSlotData.slot
   };
 
   // If it's a cast menu, also store the spell name
@@ -215,8 +223,13 @@ function showSpellPopup(targetElement, uiSlotData) {
   popup.className = 'spell-popup show';
 
   if (uiSlotData.isEmpty) {
-    // Empty slot - show prepare menu
-    popup.innerHTML = createPrepareMenu(uiSlotData);
+    if (uiSlotData.preparation === 'Spontaneous') {
+      // Empty slot for Spontaneous caster - show spontaneous cast menu
+      popup.innerHTML = createSpontaneousCastMenu(uiSlotData);
+    } else {
+      // Empty slot for Prepared caster - show prepare menu
+      popup.innerHTML = createPrepareMenu(uiSlotData);
+    }
   } else {
     // Filled slot - show cast menu
     popup.innerHTML = createCastMenu(uiSlotData);
@@ -269,6 +282,53 @@ function createPrepareMenu(slotData) {
         <div class="spell-actions">
             <button class="spell-button cancel" onclick="hideSpellPopup()">Cancel</button>
             <button class="spell-button prepare disabled" onclick="prepareSpell()" disabled>Prepare</button>
+        </div>
+    `;
+}
+
+function createSpontaneousCastMenu(slotData) {
+  const maxLevel = slotData.level;
+  const className = getCurrentSpellcastingClass();
+
+  const titleText = className === 'BardicSpecial' ? 'Cast Special' : `Cast Spell - Level ${slotData.level}${slotData.isDomain ? ' Domain' : ''}`;
+  const slotText = className === 'BardicSpecial' ? `Use ${slotData.slot + 1}` : `Level ${slotData.level}${slotData.isDomain ? ' Domain' : ''} - Slot ${slotData.slot}`;
+  const typeText = className === 'BardicSpecial' ? 'Bardic Music' : 'Spontaneous';
+
+  return `
+        <h3>${titleText}</h3>
+        <div class="spell-info">
+            <strong>Slot:</strong> ${slotText}
+            <br><strong>Type:</strong> ${typeText}
+        </div>
+        
+        <div class="level-filters" ${className === 'BardicSpecial' ? 'style="display:none;"' : ''}>
+            <h4>Filter by Level:</h4>
+            <div class="filter-checkboxes">
+                ${Array.from({ length: maxLevel + 1 }, (_, i) => {
+    // Skip level 0 for domain slots
+    if (slotData.isDomain && i === 0) {
+      return '';
+    }
+    return `
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="${i}" ${i === maxLevel ? 'checked' : ''}>
+                            Level ${i}
+                        </label>
+                    `;
+  }).join('')}
+            </div>
+        </div>
+        
+        <div class="spell-dropdown">
+            <select id="spellSelect">
+                <option value="">Select a spell...</option>
+                ${generateSpellOptions(className, slotData.level, slotData.isDomain, [slotData.level])}
+            </select>
+        </div>
+        
+        <div class="spell-actions">
+            <button class="spell-button cancel" onclick="hideSpellPopup()">Cancel</button>
+            <button class="spell-button cast disabled" onclick="castSpell()" disabled>Cast</button>
         </div>
     `;
 }
@@ -326,14 +386,18 @@ function generateSpellOptions(className, maxLevel, isDomain, selectedLevels = nu
     const spells = casterClassData.availableSpells[levelKey] || [];
 
     if (spells.length > 0) {
-      const levelLabel = isDomain && level > 0 ? `Level ${level} Domain` : `Level ${level}`;
-      options.push(`<optgroup label="${levelLabel}">`);
+      if (className !== 'BardicSpecial') {
+        const levelLabel = isDomain && level > 0 ? `Level ${level} Domain` : `Level ${level}`;
+        options.push(`<optgroup label="${levelLabel}">`);
+      }
 
       spells.sort().forEach(spell => {
         options.push(`<option value="${spell}" data-level="${level}" data-domain="${isDomain}">${spell}</option>`);
       });
 
-      options.push('</optgroup>');
+      if (className !== 'BardicSpecial') {
+        options.push('</optgroup>');
+      }
     }
   }
 
@@ -354,6 +418,7 @@ function setupPopupEventListeners(popup, slotData) {
   if (spellSelect) {
     spellSelect.addEventListener('change', function () {
       updatePrepareButton(popup, this.value);
+      updateCastButton(popup, this.value);
     });
   }
 }
@@ -380,6 +445,7 @@ function updateSpellDropdown(popup, slotData) {
 
   spellSelect.innerHTML = '<option value="">Select a spell...</option>' + generateSpellOptions(className, slotData.level, slotData.isDomain, selectedLevels);
   updatePrepareButton(popup, '');
+  updateCastButton(popup, '');
 }
 
 function updatePrepareButton(popup, selectedSpell) {
@@ -394,6 +460,20 @@ function updatePrepareButton(popup, selectedSpell) {
     } else {
       prepareButton.classList.remove('disabled');
       prepareButton.style.opacity = '1';
+    }
+  }
+}
+
+function updateCastButton(popup, selectedSpell) {
+  const castButton = popup.querySelector('.spell-button.cast');
+  if (castButton) {
+    const isDisabled = !selectedSpell;
+    castButton.disabled = isDisabled;
+
+    if (isDisabled) {
+      castButton.classList.add('disabled');
+    } else {
+      castButton.classList.remove('disabled');
     }
   }
 }
@@ -492,6 +572,15 @@ function castSpell() {
   if (!slotData) {
     console.error('No slot data available');
     return;
+  }
+
+  // Get the selected spell if it's a dropdown (Spontaneous cast)
+  const popup = document.querySelector('.spell-popup');
+  if (popup) {
+    const spellSelect = popup.querySelector('#spellSelect');
+    if (spellSelect && spellSelect instanceof HTMLSelectElement) {
+      slotData.spellName = spellSelect.value;
+    }
   }
 
   if (!slotData.spellName) {

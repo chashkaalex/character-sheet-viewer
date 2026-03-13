@@ -35,10 +35,13 @@ class ModifiableProperty {
 
   get EffectsString() {
     if (this.activeEffects.length > 0) {
-      return this.activeEffects.map(e => {
-        const sign = e.value >= 0 ? '+' : '';
-        return `${sign}${e.value} (${e.status})`;
-      }).join(', ');
+      const activeEffectsToDisplay = this.activeEffects.filter(e => e.value !== 0);
+      if (activeEffectsToDisplay.length > 0) {
+        return activeEffectsToDisplay.map(e => {
+          const sign = e.value >= 0 ? '+' : '';
+          return `${sign}${e.value} (${e.status})`;
+        }).join(', ');
+      }
     }
     return '';
   }
@@ -112,7 +115,7 @@ class Skill extends ModifiableProperty {
   }
 
   get bonus() {
-    return this.ability.modifier + this.currentScore + this.synergySkills.reduce((acc, skill) => acc + skill.currentScore >= 5 ? 2 : 0, 0);
+    return this.ability.modifier + this.currentScore + this.synergySkills.reduce((acc, skill) => acc + (skill.currentScore >= 5 ? 2 : 0), 0);
   }
 
   get string() {
@@ -120,7 +123,6 @@ class Skill extends ModifiableProperty {
     return `${this.bonus}: ${this.score} rank + ${this.ability.ModifierString} ${synergySkillsString} ${this.EffectsString}`;
   }
 
-  // Extend base state with skill-specific properties
   get state() {
     return {
       ...super.state,
@@ -156,7 +158,10 @@ class CreatureSize {
   }
 
   get bonusString() {
-    const bonusSign = this.currentSize.bonus >= 0 ? '+' : '';
+    if (this.currentSize.bonus === 0) {
+      return '';
+    }
+    const bonusSign = this.currentSize.bonus > 0 ? '+' : '';
     const bonusString = bonusSign + this.currentSize.bonus;
     const sizeEffects = this.effects.length > 0 ? `(${this.effects.map(e => e.status).join(', ')})` : '';
     return `${bonusString} ${sizeEffects} size bonus`;

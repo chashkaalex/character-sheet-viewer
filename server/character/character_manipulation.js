@@ -1,9 +1,8 @@
-
-const { GetCharacterByDocId, GetCharacterRepByDocId } = require('../server');
+const { GetCharacterByDocId, GetCharacterRepByDocId } = require('../server.js');
 const { Character, CharacterError } = require('./character');
 const { SpellsData } = require('./spells');
-const { ParserUtils } = require('../parser');
-const { UpdateProperty, UpdateSection, RemoveLineFromSection } = require('../gdocs');
+const { adapter } = require('./adapter');
+const { ClassesData } = require('../classes_data/_classes_general_data');
 
 /**
  * @param {string} docId - The document ID of the character
@@ -18,10 +17,16 @@ function UpdateHp(docId, amount, actionType) {
   }
   if (actionType === 'inflict') {
     character.InflictDamage(amount);
+
+    // Check for Grudge Keeper flaw (via the 'Keeping Grudge' dummy effect)
+    const grudgeKeeperFlaw = character.flaws && character.flaws.flat().some(effect => effect.status === 'Keeping Grudge');
+    if (grudgeKeeperFlaw) {
+      AddStatusToCharacter(docId, 'Keeping Grudge', -1);
+    }
   } else if (actionType === 'cure') {
     character.CureDamage(amount);
   }
-  UpdateProperty(docId, 'Hp', character.hp.current);
+  adapter.UpdateHp(docId, character.hp.current);
   return GetCharacterRepByDocId(docId);
 }
 
@@ -37,7 +42,7 @@ function AddStatusToCharacter(docId, statusName, duration, elapsed = 1) {
   // Add the single new status line to the document
   const newStatusLine = `${statusName}: ${elapsed} rounds/${duration} rounds`;
 
-  const updateResult = UpdateSection(docId, 'Statuses', newStatusLine);
+  const updateResult = adapter.AddStatus(docId, newStatusLine);
   if (!updateResult.success) {
     console.error('Failed to update document:', updateResult.error);
   }
@@ -64,7 +69,7 @@ function RemoveStatusFromCharacter(docId, statusName) {
  * @returns {Object} The character representation
  */
 function RemoveStatusLine(docId, statusName) {
-  const removeResult = RemoveLineFromSection(docId, 'Statuses', statusName);
+  const removeResult = adapter.RemoveStatus(docId, statusName);
   if (!removeResult.success) {
     console.log('Failed to remove status from document:', removeResult.error);
   }
@@ -109,14 +114,17 @@ function OnPrepareSpell(docId, slotData, selectedSpell) {
   console.log('OnPrepareSpell called with:', { docId, slotData, selectedSpell });
 
   //get all the spell slots with the correct hierarchy
-  const preparedSpells = ParserUtils.GetPreparedSpellsStructure(docId, Character.ValidatePreparedSpell);
+  const preparedSpells = adapter.GetPreparedSpellsStructure(docId, Character.ValidatePreparedSpell);
 
-  //find the first available spell slot for the selected spell
-  const spellSlot = preparedSpells[slotData.casterClassName][slotData.spellLevel].find(
+  //find the first available spell slot index for the selected spell
+  const slotIndex = preparedSpells[slotData.casterClassName][slotData.spellLevel].findIndex(
     spellItem => spellItem.isValid === false
   );
-  if (spellSlot) {
-    spellSlot.item.editAsText().setText(selectedSpell);
+  if (slotIndex !== -1) {
+    const result = adapter.SetPreparedSpell(docId, slotData.casterClassName, slotData.spellLevel, slotIndex, selectedSpell);
+    if (!result.success) {
+      console.error('Failed to prepare spell:', result.error);
+    }
   }
 
   //TODO: after the types are deduced correctly, add warning in case the spell wasn't prepared
@@ -150,35 +158,74 @@ function OnCastSpell(docId, slotData) {
     return new CharacterError('Spell already active');
   }
 
-  //check if the spell is available for the character
-  if (!character.spellCasting.IsSpellPrepared(slotData.casterClassName, slotData.spellName, slotData.spellLevel)) {
-    return new CharacterError('Spell not prepared');
-  }
-
-
   const spellCasterClassData = character.spellCasting.GetSpellCasterClassData(slotData.casterClassName);
   if (!spellCasterClassData) {
     return new CharacterError(`${character.name} does not have a spell caster class data for ${slotData.casterClassName}`);
   }
 
+  const classData = ClassesData.get(slotData.casterClassName);
+  const isSpontaneous = classData && classData.spellCastingData && classData.spellCastingData.preparation === 'Spontaneous';
+
+  //check if the spell is available for the character based on cast type
+  if (!isSpontaneous) {
+    if (!character.spellCasting.IsSpellPrepared(slotData.casterClassName, slotData.spellName, slotData.spellLevel)) {
+      return new CharacterError('Spell not prepared');
+    }
+  }
+
   const duration = spellObject.calculateDuration(spellCasterClassData);
 
   //signify the spell as used
-  const preparedSpells = ParserUtils.GetPreparedSpellsStructure(docId, Character.ValidatePreparedSpell);
-  /**
-   * @type {import('../types').PreparedSpellDocData[]}
-   */
-  const classAndLevelSpells = preparedSpells[slotData.casterClassName][slotData.spellLevel];
-  const availableToCastSpell = classAndLevelSpells.find(
-    spellItem => spellItem.spell === slotData.spellName && !spellItem.used
-  );
+  if (isSpontaneous) {
+    //TODO: update available slots count
+  } else {
 
-  if (availableToCastSpell) {
-    availableToCastSpell.item.editAsText().setStrikethrough(true);
+    const preparedSpells = adapter.GetPreparedSpellsStructure(docId, Character.ValidatePreparedSpell);
+    const classSpellsStructure = preparedSpells[slotData.casterClassName];
+    if (!classSpellsStructure) {
+      return new CharacterError(`No available spell slots found for ${slotData.casterClassName}`);
+    }
+
+    const classAndLevelSpells = classSpellsStructure[slotData.spellLevel];
+    if (!classAndLevelSpells || classAndLevelSpells.length === 0) {
+      return new CharacterError(`No level ${slotData.spellLevel} spell slots found for ${slotData.casterClassName}`);
+    }
+
+    const result = adapter.MarkSpellAsCast(
+      docId,
+      slotData.casterClassName,
+      slotData.spellLevel,
+      slotData.slotIndex,
+      slotData.spellName,
+      isSpontaneous);
+    if (!result.success) {
+      console.error('Failed to mark spell as cast:', result.error);
+      return new CharacterError('Failed to cast spell in document');
+    }
+
   }
 
-  //TODO: implement tatget logic, for now casting on self
-  return AddStatusToCharacter(docId, slotData.spellName, duration);
+  let statusName = slotData.spellName;
+  if (slotData.casterClassName === 'BardicSpecial') {
+    if (character.bardicSpecials) {
+      const matchedSpecial = character.bardicSpecials.find(s => s.name === slotData.spellName);
+      // Since bard.js was modified by user, matchedSpecial.value is now a ModifiableProperty
+      if (matchedSpecial && matchedSpecial.value) {
+        let modifierVal = matchedSpecial.value;
+        if (typeof modifierVal === 'object' && modifierVal.currentScore !== undefined) {
+          modifierVal = modifierVal.currentScore;
+        }
+
+        // Only append +X if the value is truthy (e.g., Inspire Courage has a value, Fascinate does not)
+        if (modifierVal) {
+          statusName = `${slotData.spellName} +${modifierVal}`;
+        }
+      }
+    }
+  }
+
+  //TODO: implement target logic, for now casting on self
+  return AddStatusToCharacter(docId, statusName, duration);
 }
 
 if (typeof module !== 'undefined') {

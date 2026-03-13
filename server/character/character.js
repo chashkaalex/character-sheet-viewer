@@ -7,6 +7,7 @@ const { ParserUtils } = require('../parser');
 /**
  * @typedef {import('./property').Ability} Ability
  */
+const { adapter } = require('./adapter');
 const { ModifiableProperty, CreatureSize, SpecialAttackBonus, ListOfSpecialProperties, AbilityBasedProperty, ArmorClass, Skill } = require('./property');
 const { SpellCasting } = require('./spells');
 
@@ -15,18 +16,23 @@ const { Sizes, Races, AbilityNames, SaveNames, SkillsAbilities, SpecialAttackNam
 const { BodySlots } = require('./items');
 const { Weapon } = require('./weapons');
 const { FeatEffects } = require('./feats');
+const { FlawsEffects } = require('./flaws');
 //const { Effect, registerStatusEffects } = require("./_general_effects");
 
-const { StatusesEffects } = require('./_general_effects');
+const { StatusesEffects, GetEffects } = require('./_general_effects');
 const { ClassesData } = require('../classes_data/_classes_general_data');
-const { GetRaceSpeed } = require('../races_data/_races_general_data');
+const { RacesData } = require('../races_data/_races_general_data');
 
-// Also ensure we load the class definitions so they populate classesData
+// Also ensure we load the class and race definitions so they populate data
 if (typeof require !== 'undefined') {
   require('../classes_data/cleric');
   require('../classes_data/bard');
   require('../classes_data/monk');
   require('../classes_data/sacred_fist');
+  require('../races_data/dwarf');
+  require('../races_data/elf');
+  require('../races_data/human');
+  require('../races_data/half-elf');
 }
 
 // Attach parser methods to Character prototype
@@ -91,8 +97,9 @@ class Character {
     this.spellCasting = new SpellCasting();
 
     this.classes = [];
+    this.skills = [];
 
-    this.domains = [''];
+    this.domains = [];
 
     /**
      * @type {ModifiableProperty}
@@ -126,6 +133,7 @@ class Character {
     // speed initialization
     this.speed = new ModifiableProperty(0); // will be updated later
   }
+
   ParseCharacter() {
 
     //Parsing Abilities
@@ -160,7 +168,9 @@ class Character {
       }
       this.race = parsed.race;
       this.classes = parsed.classes;
-      this.speed = new ModifiableProperty(GetRaceSpeed(this.race));
+
+      const raceData = RacesData.get(this.race);
+      this.speed = new ModifiableProperty(raceData ? raceData.speed : 30);
 
       //AC, must be done after race and classes are parsed
       const acAbilities = [this.abilities.Dex];
@@ -180,6 +190,20 @@ class Character {
         }
       }
 
+      // Add BardicSpecial automatically if the character has Bard levels
+      const bardClass = this.classes.find(c => c.name === 'Bard');
+      if (bardClass) {
+        const classData = ClassesData.get(bardClass.name);
+        this.bardicSpecials = classData.spellCastingData.getBardicSpecials(bardClass.level);
+        this.spellCasting.addSpellCasterClass(
+          'BardicSpecial',
+          bardClass.level,
+          null, // No associated bonus ability for uses per day
+          null
+        );
+      }
+
+      //
       //apply class effects
       this.classes.forEach(c => {
         const classData = ClassesData.get(c.name);
@@ -208,6 +232,14 @@ class Character {
           }
         }
       });
+
+      //apply race effects
+      if (raceData && raceData.effects) {
+        raceData.effects.forEach(effect => {
+          this.ApplyEffect({ ...effect, status: this.race });
+        });
+      }
+
     } else {
       this.LogParseError('Race and classes - no line found');
     }
@@ -222,7 +254,6 @@ class Character {
       const hpDigits = hpPartOfTheLine.match(/\d+/g);
       this.hp.current = Number(hpDigits[0]);
       this.hp.max = Number(hpDigits[1]);
-      console.log('hp is ' + this.hp.current + ' and hpMax is ' + this.hp.max);
 
     } else {
       this.LogParseError('HP - no line found');
@@ -316,9 +347,8 @@ class Character {
     if (statusesSectionLines) {
       this.statuses = this.ParseStatuses(statusesSectionLines);
       this.statuses.forEach(status => {
-        const statusEffects = StatusesEffects[status.name];
+        const statusEffects = GetEffects(StatusesEffects, status.name);
         if (statusEffects) {
-          console.log(`Applying effects for status ${status.name}`);
           statusEffects.forEach(effect => { this.ApplyEffect(effect); });
         }
       });
@@ -337,6 +367,18 @@ class Character {
       this.parseWarnings.push('Character has no feats');
     }
 
+
+    //Parsing Flaws, Traits, Quirks
+    const flawsSectionLines = this.sectionLines['Flaws, Traits, Quirks'];
+    if (flawsSectionLines) {
+      this.flaws = this.ParseFlaws(flawsSectionLines);
+      this.flaws.forEach(flaw => {
+        flaw.forEach(effect => {
+          this.ApplyEffect(effect);
+        });
+      });
+    }
+
     const possessionsLines = this.sectionLines['Possessions'];
     if (possessionsLines) {
       this.possessions = ParserUtils.ParseItems(possessionsLines);
@@ -350,10 +392,17 @@ class Character {
 
   ApplyEffect(effect, isPermanent = false) {
     const propertyKey = effect.property + (effect.casterClassName ? ` ${effect.casterClassName}` : '');
+
+    // Resolve value early to avoid creating untrained skills for conditional 0-value effects
+    effect = this.ResolveEffectValue(effect);
+
+    if (effect.value === 0 && !effect.description) {
+      return; // Skip 0-value effects to avoid bloating the character with empty properties
+    }
+
     const affectedProperty = this.GetNamedProperty(propertyKey);
     if (affectedProperty) {
-      if (effect.value) {
-        effect = this.ResolveEffectValue(effect);
+      if (effect.value !== undefined || effect.description) {
         isPermanent ? affectedProperty.applyPermanentEffect(effect.value) : affectedProperty.applyEffect(effect);
       }
     } else {
@@ -363,7 +412,6 @@ class Character {
 
   ResolveEffectValue(effect) {
     if (typeof effect.value === 'function') {
-      //console.log('resolving effect value');
       effect.value = effect.value(this);
     }
     return effect;
@@ -378,7 +426,14 @@ class Character {
       return this.saves[propertyName];
     }
     else if (SkillsAbilities[propertyName]) {
-      return this.skills.find(s => s.name === propertyName);
+      let skill = this.skills.find(s => s.name === propertyName);
+      if (!skill) {
+        // Untrained skill - create it on the fly
+        const abilityName = SkillsAbilities[propertyName];
+        skill = new Skill(propertyName, 0, this.abilities[abilityName]);
+        this.skills.push(skill);
+      }
+      return skill;
     } else if (SpecialAttackNames.includes(propertyName)) {
       return this.specialAttacks[propertyName];
     } else if (propertyName.includes('casterLevel')) {
@@ -392,28 +447,34 @@ class Character {
   }
 
   ParseSkills(skillsLines) {
-    const skills = [];
-
     skillsLines.forEach(line => {
       const name = ParserUtils.GetSkillNameFromLine(line);
+      if (!name) return; // Skip invalid or empty lines
+
       const rank = ParserUtils.GetFirstNumberFromALine(line);
-      const thisSkillRelatedAbilityName = SkillsAbilities[name];
-      skills.push(new Skill(name, rank, this.abilities[thisSkillRelatedAbilityName]));
+
+      const existingSkill = this.skills.find(s => s.name === name);
+      if (existingSkill) {
+        existingSkill.applyPermanentEffect(rank);
+      } else {
+        const thisSkillRelatedAbilityName = SkillsAbilities[name];
+        this.skills.push(new Skill(name, rank, this.abilities[thisSkillRelatedAbilityName]));
+      }
     });
 
-    skills.forEach(skill => {
+    this.skills.forEach(skill => {
       const synergySkillsNames = SkillsSynergyReversed[skill.name];
       if (synergySkillsNames) {
         synergySkillsNames.forEach(synergySkillName => {
-          const synergySkill = skills.find(s => s.name === synergySkillName);
-          if (synergySkill) {
+          const synergySkill = this.skills.find(s => s.name === synergySkillName);
+          if (synergySkill && !skill.synergySkills.some(s => s.name === synergySkill.name)) {
             skill.synergySkills.push(synergySkill);
           }
         });
       }
     });
 
-    return skills;
+    return this.skills;
   }
 
   ParseWeapons(attackLine) {
@@ -493,9 +554,9 @@ class Character {
     featsLines.forEach(featLine => {
       const theFeat = Object.keys(FeatEffects).find(feat => featLine.startsWith(feat));
       if (theFeat) {
-        const featEffects = FeatEffects[theFeat];
+        const featEffects = GetEffects(FeatEffects, theFeat);
         if (theFeat === 'Practiced Spellcaster') {
-          const casterClassName = this.classes.find(c => featLine.includes(c.name)).name;
+          const casterClassName = this.classes.find(classObj => featLine.includes(classObj.name)).name;
           featEffects.forEach(f => { f.casterClassName = casterClassName; });
         }
         feats.push(featEffects);
@@ -507,49 +568,81 @@ class Character {
   }
 
   /**
+   * @param {string[]} flawsLines - The lines containing the flaws
+   */
+  ParseFlaws(flawsLines) {
+    const flaws = [];
+    flawsLines.forEach(flawLine => {
+      const theFlaw = Object.keys(FlawsEffects).find(flaw => flawLine.startsWith(flaw));
+      if (theFlaw) {
+        const flawEffects = GetEffects(FlawsEffects, theFlaw);
+        flaws.push(flawEffects);
+      } else {
+        this.parseWarnings.push(`Flaw ${flawLine} not found`);
+      }
+    });
+    return flaws;
+  }
+
+  /**
    * Parses the prepared spells from the document
    * @typedef {Object.<string, boolean>} PreparedSpellData
    * @returns {PreparedSpellsStructure} The prepared spells
    * @typedef {Object.<string, Object.<number|string, PreparedSpellData[]>>} PreparedSpellsStructure
    */
   ParsePreparedSpells() {
-    //const preparedSpellsLines = ParserUtils.GetLinesBetweenTwoTokens(this.lines, "Prepared Spells", "Skills");
-    const preparedSpellsLines = ParserUtils.GetLinesBetweenTwoTokens(this.lines, 'Prepared Spells', 'Skills');
-
-    const preparedSpellsItems = preparedSpellsLines.map(line => ({ text: line, item: null }));
-
-    if (preparedSpellsLines && preparedSpellsLines.length > 0 && this.spellCasting.isActive()) {
-      /**
-       * @type {PreparedSpellsStructure}
-       */
-      const preparedSpells = ParserUtils.ParsePreparedSpellsStructure(
-        preparedSpellsItems,
-        this.domains,
-        Character.ValidatePreparedSpell
-      );
-
-      // Log warnings for invalid spells
-      Object.keys(preparedSpells).forEach(casterClass => {
-        Object.keys(preparedSpells[casterClass]).forEach(level => {
-          preparedSpells[casterClass][level].forEach(spellData => {
-            if (!spellData.isValid) {
-              let warningMessage = `Spell ${spellData.spell} is not available for ${casterClass} at level ${level}`;
-              if (level.includes('domain')) {
-                warningMessage += `s: ${this.domains.join(' or ')}`;
-              }
-              this.parseWarnings.push(warningMessage);
-            }
-          });
-        });
-      });
-
-      return preparedSpells;
-    } else {
-      if (!this.spellCasting.isActive()) {
-        this.parseWarnings.push('Spell casting data not found, prepared spells will not be updated');
-      }
+    if (!this.spellCasting.isActive()) {
+      this.parseWarnings.push('Spell casting data not found, prepared spells will not be updated');
       return null;
     }
+
+    /**
+     * @type {PreparedSpellsStructure}
+     */
+    const preparedSpells = adapter.GetPreparedSpellsStructure(
+      this.docId,
+      Character.ValidatePreparedSpell
+    );
+
+    if (!preparedSpells || Object.keys(preparedSpells).length === 0) {
+      return null;
+    }
+
+    // Log warnings for invalid spells and mismatched slot counts
+    Object.keys(preparedSpells).forEach(casterClass => {
+      const spellCasterData = this.spellCasting.GetSpellCasterClassData(casterClass);
+
+      Object.keys(preparedSpells[casterClass]).forEach(level => {
+        const slotsForLevel = preparedSpells[casterClass][level];
+        slotsForLevel.forEach(spellData => {
+          if (!spellData.isValid) {
+            let warningMessage = `Spell ${spellData.spell} is not available for ${casterClass} at level ${level}`;
+            if (level.includes('domain')) {
+              warningMessage += `s: ${this.domains.join(' or ')}`;
+            }
+            this.parseWarnings.push(warningMessage);
+          }
+        });
+
+        // check if slot count matches
+        if (spellCasterData && spellCasterData.spellSlots) {
+          const isDomain = typeof level === 'string' && level.includes('domain');
+          const levelNum = parseInt(level);
+          if (!isNaN(levelNum)) {
+            const currentSlots = slotsForLevel.length;
+            const expectedSlots = isDomain ?
+              (spellCasterData.domains && spellCasterData.domains.length > 0 && spellCasterData.spellSlots[levelNum] > 0 ? 1 : 0) :
+              spellCasterData.spellSlots[levelNum];
+
+            if (expectedSlots !== undefined && currentSlots !== expectedSlots && (expectedSlots > 0 || currentSlots > 0)) {
+              this.parseWarnings.push(`Mismatch in ${casterClass} spell slots for level ${level}: document has ${currentSlots}, but expected ${expectedSlots}.`);
+            }
+          }
+        }
+      });
+    });
+
+    return preparedSpells;
   }
 
   /**
@@ -650,12 +743,13 @@ class CharacterError {
    * @param {string} errorMessage
    * @param {string[]} parseErrors
    * @param {string[]} parseWarnings
-   */
+    */
   constructor(errorMessage, parseErrors = [], parseWarnings = []) {
     this.error = true;
     this.errorMessage = errorMessage;
     this.parseErrors = parseErrors;
     this.parseWarnings = parseWarnings;
+    this.parseSuccess = false;
   }
 }
 

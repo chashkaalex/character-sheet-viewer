@@ -49,6 +49,7 @@ const SpellcasterClasses = [
   'Druid',
   'Ranger',
   'Bard',
+  'BardicSpecial',
 
   //prestige spellcaster classes
   'Archmage',
@@ -246,6 +247,21 @@ const ModifierTypes = {
  */
 
 
+const VisionTypes = {
+  'Regular': {
+    description: 'Needs light source to see.'
+  },
+  'Darkvision': {
+    description: 'Can see in darkness.'
+  },
+  'Low-light': {
+    description: 'Can see in dim light.'
+  }
+};
+
+/**
+ * @typedef {'Regular' | 'Darkvision' | 'Low-light'} VisionType
+ */
 
 
 if (typeof module !== 'undefined') {
@@ -259,6 +275,7 @@ if (typeof module !== 'undefined') {
     SkillsAbilities,
     SkillsSynergyReversed,
     SpecialAttackNames,
-    ModifierTypes
+    ModifierTypes,
+    VisionTypes
   };
 }

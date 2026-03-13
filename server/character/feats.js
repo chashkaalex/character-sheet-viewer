@@ -91,6 +91,18 @@ const FeatEffects = {
       }
     }
   ],
+  'Dragonfoe': [
+    {
+      status: 'Dragonfoe',
+      property: 'bab',
+      modifierType: 'Generic',
+      value: function (character) {
+        return StatusRelatedValue(character, 'Fighting Dragon', 2);
+      }
+    },
+    { status: 'Dragonfoe', property: 'Special', description: '+2 bonus on caster level checks made to overcome a dragon\'s spell resistance.' },
+    { status: 'Dragonfoe', property: 'Special', description: 'Dragons take a —2 penalty on saving throws against your spells, spell-like abilities, and supernatural abilities.' }
+  ],
   'Endurance': [
     { status: 'Endurance', property: 'Checks/Saves (resist nonlethal damage)', modifierType: 'Generic', value: 4 } // TODO: define a property
   ],
@@ -411,6 +423,7 @@ const FeatEffects = {
 
 if (typeof module !== 'undefined') {
   module.exports = {
-    FeatEffects
+    FeatEffects,
+    StatusRelatedValue
   };
 }

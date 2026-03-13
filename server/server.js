@@ -65,8 +65,8 @@ function include(filename) {
     .getContent();
 }
 
-const { GetCharacterLinesFromDoc } = require('./gdocs');
 const { recordUserLog } = require('./gsheet_logger');
+const { adapter } = require('./character/adapter');
 
 /**
  * Retrieves a character object by document ID.
@@ -75,11 +75,9 @@ const { recordUserLog } = require('./gsheet_logger');
  */
 function GetCharacterByDocId(docId) {
   console.log('docId is ' + docId);
-  const doc = DocumentApp.openById(docId);
+  const rawlines = adapter.GetCharacterLines(docId);
+  const lines = adapter.CleanRawLines(rawlines);
 
-  console.log('opened document\'s name is ' + doc.getName());
-
-  const lines = GetCharacterLinesFromDoc(doc);
   const character = new Character(lines, docId);
   character.ParseCharacter();
   if (!character.parseSuccess) {
@@ -99,6 +97,7 @@ function GetCharacterRepByDocId(docId) {
   if (currentCharacter instanceof CharacterError) {
     return currentCharacter;
   }
+
   return getCharacterRep(currentCharacter);
 }
 

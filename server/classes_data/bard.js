@@ -1,5 +1,6 @@
 
 const { ClassesData } = require('./_classes_general_data');
+const { ModifiableProperty } = require('../character/property');
 
 const Bard = {
   name: 'Bard',
@@ -114,8 +115,84 @@ const Bard = {
         availableSpells[level] = this.spells[level] || [];
       }
       return availableSpells;
+    },
+
+    getBardicSpecials(level) {
+      const bardicSpecials = [];
+
+      //basics
+      bardicSpecials.push({ name: 'Countersong' });
+      bardicSpecials.push({ name: 'Fascinate' });
+
+      //Inspire Courage
+      let inspireCourageBonus = 1;
+      if (level >= 7) {
+        inspireCourageBonus = 2;
+      } else if (level >= 13) {
+        inspireCourageBonus = 3;
+      } else if (level >= 19) {
+        inspireCourageBonus = 4;
+      }
+      bardicSpecials.push({ name: 'Inspire Courage', value: new ModifiableProperty(inspireCourageBonus) });
+
+      //Inspire Competence
+      if (level > 2) {
+        bardicSpecials.push({ name: 'Inspire Competence' });
+      }
+
+      //Suggestion
+      if (level > 5) {
+        bardicSpecials.push({ name: 'Suggestion' });
+      }
+
+      //Inspire greatness
+      if (level > 9) {
+        bardicSpecials.push({ name: 'Inspire Greatness' });
+      }
+
+      //Song of freedom
+      if (level > 11) {
+        bardicSpecials.push({ name: 'Song of Freedom' });
+      }
+
+      //Inspire heroics
+      if (level > 14) {
+        bardicSpecials.push({ name: 'Inspire Heroics' });
+      }
+
+      //Mass Suggestion
+      if (level > 17) {
+        bardicSpecials.push({ name: 'Mass Suggestion' });
+      }
+
+
+      return bardicSpecials;
+    }
+  }
+};
+
+const BardicSpecial = {
+  name: 'BardicSpecial',
+  spellCastingData: {
+    casterClass: 'BardicSpecial',
+    type: 'Special',
+    preparation: 'Spontaneous',
+    bonusSpellAbility: null,
+    spellSlots: Array.from({ length: 21 }, (_, i) => {
+      const arr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      arr[1] = i; // i uses per day at level i
+      return arr;
+    }),
+    getAvailableSpells(maxLevel, domains, level) {
+      const specials = Bard.spellCastingData.getBardicSpecials(level || 1).map(s => {
+        return s.name;
+      });
+      return {
+        1: specials
+      };
     }
   }
 };
 
 ClassesData.set('Bard', Bard);
+ClassesData.set('BardicSpecial', BardicSpecial);

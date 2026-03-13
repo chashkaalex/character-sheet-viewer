@@ -57,7 +57,7 @@ const ParserUtils = {
    * @returns {number|null} The first number found or null
    */
   GetFirstNumberFromALine(line) {
-    const regex = /\d+/;
+    const regex = /-?\d+/;
     const match = line.match(regex);
     if (match) {
       return Number(match[0]);
@@ -275,7 +275,10 @@ const ParserUtils = {
             }
           }
         }
-        const item = this.GetPartOfTheLineUntilToken(nameLine, '(').trim().replaceAll(',', '');
+        let item = this.GetPartOfTheLineUntilToken(nameLine, '(').trim().replaceAll(',', '');
+        if (nameLine.toLowerCase().includes('holy symbol')) {
+          item += ' (holy symbol)';
+        }
         items.push(new Item(item, amount));
       }
     });
@@ -313,14 +316,14 @@ const ParserUtils = {
 
   /**
     * Parses the prepared spells structure from list items
-    * @param {Array<{text: string, item: any, isStrikeThrough?: boolean}>} items - The items to parse
+    * @param {Array<{text: string, isStrikeThrough?: boolean, listItem?: GoogleAppsScript.Document.ListItem}>} items - The items to parse
     * @param {string[]} domains - The domains of the character
     * @param {function(string, number, string, string, string[]): boolean} validatorFn - The validator function
-    * @returns {PreparedSpellsStructure}
+    * @returns {import('./types').PreparedSpellsStructure}
     */
   ParsePreparedSpellsStructure(items, domains, validatorFn) {
     /**
-     * @type {PreparedSpellsStructure}
+     * @type {import('./types').PreparedSpellsStructure}
      */
     const preparedSpells = {};
     let currentSpellLevel = 0;
@@ -328,19 +331,18 @@ const ParserUtils = {
     let currentSpellLevelName = '';
 
     items.forEach(entry => {
-      let text = entry.text.trim().replaceAll('’', '\'');
-      let isStrikeThrough = entry.isStrikeThrough || false;
-      const itemRef = entry.item;
-
-      // Check for used marker (override or additive)
-      if (text.startsWith('[x] ')) {
-        isStrikeThrough = true;
-        text = text.substring(4).trim();
-      }
+      const text = entry.text.trim().replaceAll('’', '\'');
+      const isStrikeThrough = entry.isStrikeThrough || false;
 
       if (SpellcasterClasses.includes(text)) {  //new caster class
         currentCasterClassName = text;
         preparedSpells[currentCasterClassName] = {};
+        if (currentCasterClassName === 'BardicSpecial') {
+          // BardicSpecials don't print "level 1" headers, so force it.
+          currentSpellLevel = 1;
+          currentSpellLevelName = '1';
+          preparedSpells[currentCasterClassName]['1'] = [];
+        }
       } else if (text.includes('level')) {  //new spell level
         currentSpellLevel = ParserUtils.GetFirstNumberFromALine(text);
         currentSpellLevelName = String(currentSpellLevel); // Ensure string key
@@ -352,11 +354,12 @@ const ParserUtils = {
         // Only add if we are inside a valid block
         if (currentCasterClassName && preparedSpells[currentCasterClassName][currentSpellLevelName]) {
           const isValid = validatorFn ? validatorFn(currentCasterClassName, currentSpellLevel, currentSpellLevelName, text, domains) : true;
+          const listItem = entry.listItem;
           preparedSpells[currentCasterClassName][currentSpellLevelName].push({
-            item: itemRef,
             spell: text,
             used: isStrikeThrough,
-            isValid: isValid
+            isValid: isValid,
+            listItem: listItem
           });
         }
       }

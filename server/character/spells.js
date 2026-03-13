@@ -12,6 +12,7 @@ const ROUNDS_PER_MINUTE = 10;
 /**
  * @typedef {Object} SpellData
  * @property {function(SpellCasterClassData): number} calculateDuration
+ * @property {Array} [effects]
  */
 
 /**
@@ -105,36 +106,36 @@ const SpellsData = {
     }
   },
 
-  'Inspire Courage +3': {
-    effects: [
-      {
-        status: 'Inspire Courage',
-        property: 'Will',
-        modifierType: 'Morale',
-        value: function (character) { return character.statuses.includes('Frightful Presence') ? 3 : 0; }
-      },
-      { status: 'Inspire Courage', property: 'bab', modifierType: 'Morale', value: 3 },
-      { status: 'Inspire Courage', property: 'damageBonus', modifierType: 'Morale', value: 3 }
-    ],
+  'Inspire Courage': {
     calculateDuration: function (_spellCasting) {
-      // TODO: implement duration calculation
-      return 1;
+      // Inspire Courage lasts for 5 rounds after the bard stops playing,
+      // but without specific concentration mechanics, giving a default 5 rounds here as a placeholder.
+      return 5;
     }
   },
-  'Inspire Courage +4': {
-    effects: [
-      {
-        status: 'Inspire Courage',
-        property: 'Will',
-        modifierType: 'Morale',
-        value: function (character) { return character.statuses.includes('Frightful Presence') ? 4 : 0; }
-      },
-      { status: 'Inspire Courage', property: 'bab', modifierType: 'Morale', value: 4 },
-      { status: 'Inspire Courage', property: 'damageBonus', modifierType: 'Morale', value: 4 }
-    ],
+  'Fascinate': {
+    calculateDuration: function (spellCasting) {
+      return spellCasting.level.currentScore * ROUNDS;
+    }
+  },
+  'Suggestion': {
+    calculateDuration: function (spellCasting) {
+      return spellCasting.level.currentScore * ROUNDS_PER_MINUTE * 60; // 1 hr/level
+    }
+  },
+  'Inspire Competence': {
     calculateDuration: function (_spellCasting) {
-      // TODO: implement duration calculation
-      return 1;
+      return 20; // Up to 2 minutes
+    }
+  },
+  'Inspire Greatness': {
+    calculateDuration: function (_spellCasting) {
+      return 5; // 5 rounds after stop
+    }
+  },
+  'Inspire Heroics': {
+    calculateDuration: function (_spellCasting) {
+      return 5; // 5 rounds after stop
     }
   }
 };
@@ -142,13 +143,16 @@ const SpellsData = {
 // Extract effects from spellsData and register with the central status effects system
 // This maintains compatibility with the existing status effects system
 const spellsEffectsForRegistration = {};
+
 Object.keys(SpellsData).forEach(spellName => {
-  const effects = SpellsData[spellName].effects;
-  // Validate modifier types for all effects
-  effects.forEach(effect => {
-    validateModifierType(effect.modifierType);
-  });
-  spellsEffectsForRegistration[spellName] = effects;
+  if (SpellsData[spellName].effects) {
+    const effects = SpellsData[spellName].effects;
+    // Validate modifier types for all effects
+    effects.forEach(effect => {
+      validateModifierType(effect.modifierType);
+    });
+    spellsEffectsForRegistration[spellName] = effects;
+  }
 });
 registerStatusEffects(spellsEffectsForRegistration);
 
@@ -182,7 +186,7 @@ class SpellCasting {
      * Adds a spell caster class to the spell casting data
      * @param {string} className - The name of the class
      * @param {number} level - The level of the class
-     * @param {Ability} ability - The ability of the class
+     * @param {import('./character').Ability} ability - The ability of the class
      * @param {string[]} domains - The domains of the class
      */
   addSpellCasterClass(className, level, ability, domains = null) {
@@ -214,7 +218,8 @@ class SpellCasting {
           domains: casterClassData.domains,
           spellSlots: casterClassData.spellSlots,
           availableSpells: casterClassData.availableSpells,
-          preparedSpells: casterClassData.preparedSpells
+          preparedSpells: casterClassData.preparedSpells,
+          preparation: ClassesData.get(className)?.spellCastingData?.preparation || 'Prepared'
         }))
     };
   }
@@ -223,13 +228,13 @@ class SpellCasting {
     this.classSpellCastingData.forEach((casterClassData, casterClassName) => {
       const classSpellcastingData = ClassesData.get(casterClassName).spellCastingData;
       casterClassData.spellSlots = [...classSpellcastingData.spellSlots[casterClassData.level.score]];
-      const bonusSpells = getBonusSpells(casterClassData.ability.modifier);
+      const bonusSpells = casterClassData.ability ? getBonusSpells(casterClassData.ability.modifier) : new Array(10).fill(0);
       casterClassData.spellSlots.forEach((spellSlot, index) => {
         casterClassData.spellSlots[index] += casterClassData.spellSlots[index] > 0 ? bonusSpells[index] : 0;
       });
 
       const maxSpellLevel = casterClassData.spellSlots.findLastIndex(spellSlot => spellSlot > 0);
-      casterClassData.availableSpells = classSpellcastingData.getAvailableSpells(maxSpellLevel, casterClassData.domains);
+      casterClassData.availableSpells = classSpellcastingData.getAvailableSpells(maxSpellLevel, casterClassData.domains, casterClassData.level.score);
     });
   }
 
@@ -261,7 +266,7 @@ class SpellCasting {
  * Data class for a spell caster class
  * @param {string} className - The name of the class
  * @param {number} level - The level of the class
- * @param {Ability} ability - The ability of the class
+ * @param {import('./character').Ability} ability - The ability of the class
  * @param {string[]} domains - The domains of the class
  */
 class SpellCasterClassData {
@@ -275,7 +280,7 @@ class SpellCasterClassData {
          */
     this.level = new ModifiableProperty(level);
     /**
-         * @type {Ability}
+         * @type {import('./character').Ability}
          */
     this.ability = ability;
     /**

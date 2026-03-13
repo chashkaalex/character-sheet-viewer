@@ -1,3 +1,9 @@
+const { OnCastSpell } = require('../character/character_manipulation');
+const { getCharacterRep } = require('../character/character_rep');
+const { ModifiableProperty } = require('../character/property');
+const { ParserUtils } = require('../parser');
+const { GetCharacterByDocId } = require('../server');
+
 function TestBessTAndASheet() {
   const bessTAndASheetId = '1Xo6O9bpBqeQfdYtkTIVaDW2pojFKAAHNsfeVWNXHyp8';  //Bess t&a sheet
   TestCharacterSheet(bessTAndASheetId);
@@ -13,12 +19,46 @@ function TestThorsRealSheet() {
   TestCharacterSheet(throrsRealSheetId);
 }
 
+function TestBessSpontaneousCast() {
+  const bessTAndASheetId = '1Xo6O9bpBqeQfdYtkTIVaDW2pojFKAAHNsfeVWNXHyp8';  //Bess t&a sheet
+  const slotData = {
+    casterClassName: 'BardicSpecial',
+    spellName: 'Inspire Courage',
+    spellLevel: '1',
+    slotIndex: 0
+  };
+  console.log('Testing Spontaneous Cast on Bess with:', slotData);
+  try {
+    const result = OnCastSpell(bessTAndASheetId, slotData);
+    console.log('Result:', result);
+  } catch (error) {
+    console.error('Error casting spontaneous spell:', error);
+  }
+}
 
+function TestThrorsOnSpellCast() {
+  const throrsTAndASheetId = '1_Is4lS5xB7Wz14-SKDw7NpWKI17FO6hFN6TzZjgbIaU';  //Thors t&a sheet
+  const slotData = {
+    casterClassName: 'Cleric',
+    slotIndex: 0,
+    spellLevel: '1 - domain',
+    spellName: 'Enlarge Person'
+  };
+
+  console.log('Testing Spontaneous Cast on Thors with:', slotData);
+
+  try {
+    const result = OnCastSpell(throrsTAndASheetId, slotData);
+    console.log('Result:', result);
+  } catch (error) {
+    console.error('Error casting spontaneous spell:', error);
+  }
+}
 function TestCharacterSheet(characterSheetId) {
 
   const character = GetCharacterByDocId(characterSheetId);
 
-  console.log('first line is ' + character.name);
+  console.log('parsed character successfully' + character.parseSuccess);
 
   const characterRepresentation = getCharacterRep(character);
 
@@ -99,7 +139,7 @@ function TestParseRaceAndClasses() {
     ]
   };
 
-  const result = ParseRaceAndClasses(testString);
+  const result = ParserUtils.ParseRaceAndClasses(testString);
 
   checkTest(result.race, expected.race, 'Race test');
 

@@ -29,6 +29,9 @@ function ParseAbilities(abilitiesLines) {
     }
   });
 
+  // Add a None ability for skills that don't have an associated ability
+  abilities['None'] = new Ability(10, 'None');
+
   return abilities;
 }
 

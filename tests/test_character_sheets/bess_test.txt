@@ -1,0 +1,216 @@
+Bess T&E
+“Rhyme and punishment”
+
+(Half-Elf Bard 12)
+
+Init: +9; Senses: Listen +11, Spot +12, Low-light vision; 
+BAb: 	+9/+4; Grapple: +4; Hp: 74/74 ; Speed: 30 ft.
+Attack: +13 Short Sword (1d6 + 1 + 2/19-20) or +13 Light Crossbow (1d8/19-20).
+Full Attack: +13/+8 Short Sword (1d6 + 1 + 2/19-20) or +13/+8 Light Crossbow (1d8/19-20), with a 4-bolts magazine, semi-automatic, with a spray gun.
+AC: 17 (+3 Dex +4 Armor +1 Deflection -1 AC) +4 temp natural ac , Touch 13, Flat-footed 14.
+Saves: Fort +6; Ref +12; Will +11. (+1 Amulet of Pelor/Set)
+Str: 12 (+1)
+Dex: 16 (+3)
+Con: 14 (+2) 
+Int: 16 (+3)
+Wis: 14 (+2)
+Char: 20 +4 enchant. (+5 +2) 
+Statuses:
+
+Feats:
+Negotiator (+2 on Diplomacy and Sense Motive), 
+Nymph's Kiss (+2 circumstance bonus on all Charisma-related skills, +1 on Saves vs. Spells, +1 Skill Point per level),
+Improved Initiative,
+Song of the Heart, 
+Lyric Spell, 
+Melodic Casting, 
+Dragon Foe,
+Dragon Hunter (+2 bonus on attack rolls against dragons and a +2 bonus on caster level checks made to overcome a dragon's spell resistance. Dragons take a -2 penalty on saving throws against your spells, spell-like abilities, and supernatural abilitiesб +2 AC against Dragons, +2 on all opposed checks with Dragons).
+Special Abilities:
+Bardic Knowledge, 
+Bardic Music, 
+Secrets of the Diplomat (Extended Spell List), 
+Shield Proficiency (Basic), 
+Weapon Proficiency (Bard).
+Racial Traits:
+Immunity to sleep, 
++2 racial Saves vs. Enchantment school, 
+Low-light vision, 
++1 racial on Listen, Search, and Spot, 
++2 racial bonus on Diplomacy and Gather Information,.
+Bonus Abilities:
+
+Fey creatures regard you as though you were fey,
++1 on Bardic Knowledge on Yuan-Ti Culture. 
+Flaws, Traits, Quirks:
+Aggressive (+2 Init, -1 AC), 
+Lightweight (Half base weight, -4 to resist Bull-rush, Grapple, Overrun, or Trip. No attack bonus for Charge), 
+Can not harm Fey creatures unprovoked. 
+Languages:
+Elven, 
+Common, 
+Goblin, 
+Orcish (basic – like there is any other kind of Orkish), 
+Sylvan, 
+Thieves' cant, 
+Valossian (Yuan-ti). 
+Dwarven: +186 
+
+Bardic Music:
+Command (DC 16), 
+Inspire Competence +3, 
+Inspire Courage +3 (+1), 
+Fascinate (DC Perform roll), 
+Soothing Voice (DC Diplomacy roll), 
+Song of Freedom
+
+Skills: 
+Bluff (Char): 15 (Nymph's Kiss +2) = 17
+Concentration (Con): 8
+Gather Information (Cha): 15 (Nymph's Kiss +2) (Half-elf +2) = 19
+Diplomacy (Cha): 15 
+Listen (Wis): 8
+Knowledge (dungeoneering) (Int): 1
+Decipher script (Int): 5
+Perform (voice) (Cha): 15 (Nymph's Kiss +2) = 17
+Perform (mandolin) (Cha): 3
+Perform (White Oak Lute) (Cha): 5
+Perform (flute) (Cha): 1
+Ride (Dex): 3
+Search (Int): 4 
+Sense Motive (Wis): 15
+Sleight of Hand (Dex): 6
+Spot (Wis): 12
+Use Magic Device (Cha): 7
+Tumble (Dex): 7
+Balance (Dex): 1
+Spellcraft (Int): 9
+Disguise (Cha): 3
+Skill Tricks: 
+Distracting Taunt [Interaction]
+Battle Gear: 
+Cloak of Charisma +4,
+Amulet of Pelor/Set (holy symbol),
+Light Coil Crossbow (Darkwood, Dwarvencraft) (+1, 1d8/19-20, range 80’, 3 lb., reload while moving), 
+Mandoline, 
+Short Bow (1d6/X3, 60’), 
+Short Sword (Green Dragone Bone) (+1, 1d6 + 2/19-20, 1 lb, Green Dragon Fang, +2 poison damage ), 
+Spell Component Pouch
+Glamour Studded Leather Armor +1 (+4 AC, + 5 max Dex, 15% spell failure, 15 lb., changes appearance at will+ 2 * 4d4 + deaf chance (fort save) sonic bells), 
+Ivory Ring of Deflection +1, 
+Silver Signet Ring (Divination) - Abyssal, Infernal and Dark Speech (BORROWED),
+Brooch of Shielding (anti magic missile)
+Boots of Landing (Slow Fall 20 ft., Feather Fall 1/day, Cloud Step 3/day) - Cloud Step -- move 5 ft. on air. These light blue leather boots have very thick soles. Walking in them is like dancing in clouds.
+Wand of Magic Missile ( Evocation | Magic Missile |  1 X (1d4 +1)  | 7 missiles ),  
+Wand of Fear (18),  
+Wand of Disguise Self  (22)
+Blessed Bandage (2) (stabilize to 0 hp). 
+Potion of Cure Light Wounds (2) (1d8 + 3), 
+Potion of Blur, 
+Potion of RemoveFear x 2,
+Potion of  Resist energy (Lightning 10)
+Parchment Call Lightning, 
+Scroll of Hold Monsters x 2, 
+Scroll of summon monster III × 2
+Possessions: 
+Backpack,
+Buckler (+1 AC, -1 penalty, 5% spell failure), 
+Dagger  (1d4/19-20),
+Handy Haversack ,
+Belt Pouch x 2,
+Shoulder harness, 
+Dwarven child's bierkrug, 
+Bedroll, 
+Blanket, 
+Performer’s Outfit, 
+Flint and Steel, 
+Knife, 
+Noble’s Outfit, 
+Sewing Needle, 
+piece of copper wire, 
+Bolt Quiver, 
+Pack of Fancy Playing Cards, 
+Fancy Waterproof Cloak (Abjuration), 
+Letter of recommendation from halfling merchant, 
+Snake tongue,
+Honey, 
+Climbing kit
+Book: тайнопись от тактикуса и до наших дней, 
+Ring (given as a present to Bess by Balsa the bugbear) - (Trans.), 
+Crude flute with a pleasing sound, 
+Dragon bone flute (shaken),
+Shaman’s Scrollholder,
+Elaborate blue oak wood owl figurine,
+Somewhat gaudy cashmere hat with a massive feather sticking out of it,
+Marble dice - snazzy,
+Ermine gloves with gold embroidery,
+Embroidered velvet handkerchief,
+Bottle of excellent Elven wine,
+Studded Leather Armor (Masterwork, Fancy, Black) (+3 AC, + 5 max Dex, 15% spell failure, 15 lb.) 
+Masterwork Lute +2 perform (Lute), 
+Pearl of power l.1 , 
+2 minotaur horns, 
+A string of pink pearls, 
+Necklace of Fireballs (Type III) (+1fb*5d6+4fb*3d6 ),
+Wing-Shaped Pendant,
+Tiny silver-blue pendant shaped like a dragon’s wing. It seems to buzz faintly when worn in a storm,
+Owl-riding saddle, probably fancy (+2 Ride)
+Gems (2 x 100 gp, 2 x 250 gp
+Silver necklace (Seth’s riual shit) 250gp, golden necklace (Seth’s riual shit) 300 gp
+Potion of Cure Moderate Wounds (2d8 + 5)
+Quest Item: 8 Ruendils. 
+Onyx (3)
+silver rings with moonstone (was on 4-finger hand) (10 gp) x 3
+BAG FROM DEVLIN’S – 20 SP
+Money: 226.5 gp, 18 sp, 21cp, 26 Ruendils
+
+Food: Тяжела жизнь маленькой полуэльфийки. 
+
+Spells
+Spell Slots per day:
+Level 0: 2/3. 
+Level 1: 5/5 + (Pearl 1 lvl.).
+Level 2: 5/5. 
+Level 3: 5/5. 
+Level 4: 2/3.
+Songs per day: 
+7/12
+Spells Known:
+Cantrips (0 level):
+Dancing Lights – Up to 4 spheres in a 10’ area,  30’ of light each. They can move 100’ per round.
+Light – causes an object to glow like a torch, shedding bright light in a 20’ radius.
+Detect Magic – The caster can see the Magic Aura of a spell or item in a 60’ Cone-shaped Emanation.
+Ghost Sound – Sounds of 4 people per level (max 20 people). 
+Message – The whispered message is audible to all targeted creatures within range.
+Prestidigitation – Performs minor tasks, such as drying, cleaning, & soaking objects.
+1st  level:
+Cure Light Wounds – Cures 1d8 damage +1/level (max +5).
+Grease – Makes 10’ square or one object slippery.
+Hideous laughter – afflicts the subject with uncontrollable laughter.
+Silent Image – creates the visual illusion of an object, creature, or force, as visualized by you.
+Instant of Power – grants a +4 enhancement bonus on targets next attack, saving throw, or damage roll.
+Inspirational Boost – the morale bonus granted by your inspire courage bardic music increases by 1.
+Command – a single-word command, which the subj. obeys to the best of its ability.
+2nd  level:
+Glitterdust – causing creatures to become blinded and visibly outlining invisible things.
+Cure moderate wounds  – cures 2d8 points of damage +1 point per caster level (maximum +10). 
+Tongues – grants the ability to speak and understand the language of any intelligent creature.
+Suggestion – you influence the actions of the target creature by suggesting a course of activity.
+Zone of Truth – creatures within the area can't speak any deliberate and intentional lies.
+3rd  level:
+Cure Serious Wounds – cures 3d8 points of damage +1 point per caster level (maximum +15). 
+Glibness – +30 on bluff checks, lies not discernible by magical means.
+Hesitate – the subject can take no action other than a move action on its current turn.
+Haste -  Move and act more quickly (25 ft. + 5 ft./2 levels, one creature/level, 1 round/level).
+4th  level:
+Drums of War – enemies in range take a -2 on attacks and saving throws as long as the drums go.
+Sending – send a short message of twenty-five words to a creature you are familiar with.
+Mirror Image, Greater – 1d4 + 1/3 caster level illusory duplicates of you pop into being.
+Personal Information
+Height/Weight: 5’1”/100lb
+Eyes/Hair color:  Heterochromia iridis (Blue/Brown)/Dark brown
+Age: 20
+Alignment: Chaotic Good
+ExP: 69115/78000
+Patron Deity: Pelor and Set
+Can carry to battle: 17 lbs
