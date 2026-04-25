@@ -1,0 +1,52 @@
+import { AbilitiesMap, CharacterClass, CharacterState } from './common_types';
+import { ModifiableProperty, CreatureSize, Skill, ArmorClass } from './property';
+import { SpellCasting } from './spells';
+import { Status } from './state';
+
+export interface ICharacter {
+    docId: string;
+    lines: string[];
+    sectionLines: Record<string, string[]>;
+    parseSuccess: boolean;
+    parseErrors: string[];
+    parseWarnings: string[];
+    name: string;
+    size: CreatureSize;
+    abilities: AbilitiesMap;
+    bodySlots: Map<string, number>;
+    spellCasting: SpellCasting;
+    race: string;
+    classes: CharacterClass[];
+    skills: Skill[];
+    statuses: Status[];
+    feats: any[][];
+    flaws: any[][];
+    battleGear: any[];
+    possessions: any[];
+    domains: string[];
+    bab: ModifiableProperty;
+    specialAttacks: Record<string, ModifiableProperty>;
+    resistances: string;
+    hp: { current: number; max: number };
+    HD: number;
+    temporaryHp: number;
+    damageBonus: ModifiableProperty;
+    weapons: any[];
+    Special: any;
+    speed: ModifiableProperty;
+    partyName: string | null;
+    partyMembers: string[];
+    InitiativeBonus: ModifiableProperty;
+    attacksOfOpportunity: ModifiableProperty;
+    ac: ArmorClass;
+
+    ParseCharacter(): void;
+    ApplyEffect(effect: any, isPermanent?: boolean): void;
+    ResolveEffectValue(effect: any): any;
+    GetNamedProperty(propertyName: string): any;
+    hasWeaponFinesse(): boolean;
+    InflictDamage(amount: number): void;
+    CureDamage(amount: number): void;
+    OnRoundsElapsed(amount: number): Status[];
+    LogParseError(errorMessage: string): void;
+}

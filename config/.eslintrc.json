@@ -25,6 +25,7 @@
     "CacheService": "readonly",
     "ScriptApp": "readonly",
     "console": "readonly",
+    "Docs": "readonly",
     //server-only types
     "GDoc": "readonly",
     //common types (used in both server and client)
@@ -114,7 +115,7 @@
   "overrides": [
     {
       "files": [
-        "server/**/*.js"
+        "src/server/**/*.js"
       ],
       "env": {
         "browser": false,
@@ -127,8 +128,17 @@
     },
     {
       "files": [
-        "client/src/**/*.js"
+        "src/client/ts/**/*.ts",
+        "src/server/**/*.ts"
       ],
+      "parser": "@typescript-eslint/parser",
+      "plugins": [
+        "@typescript-eslint"
+      ],
+      "parserOptions": {
+        "sourceType": "module",
+        "project": "./tsconfig.json"
+      },
       "env": {
         "browser": true,
         "node": false
@@ -149,7 +159,8 @@
         "no-implicit-globals": "off",
         "no-unused-vars": "off",
         "no-redeclare": "off",
-        "no-restricted-globals": "off"
+        "no-restricted-globals": "off",
+        "no-undef": "off" // TypeScript handles undef checks
       }
     },
     {
@@ -163,7 +174,7 @@
     },
     {
       "files": [
-        "server/gas_tests/**/*.js"
+        "src/server/gas_tests/**/*.js"
       ],
       "rules": {
         "no-unused-vars": "off",

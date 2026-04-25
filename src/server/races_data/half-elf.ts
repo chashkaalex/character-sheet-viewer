@@ -1,0 +1,29 @@
+import { CreatureSize } from '../character/property';
+import { Sizes } from '../character/_constants';
+import { RacesData } from './_races_general_data';
+import { RaceData } from './race_types';
+
+export const HalfElf: RaceData = {
+    size: new CreatureSize(Sizes['Medium']),
+    speed: 30,
+    effects: [
+        { property: 'Special', description: 'Immunity to sleep spells and similar magical effects.' },
+        { property: 'Special', description: '+2 racial bonus on saving throws against enchantment spells or effects.' },
+        { property: 'Special', description: 'Low-Light Vision: A half-elf can see twice as far as a human in starlight, moonlight, torchlight, and similar conditions of poor illumination.' },
+        { property: 'Special', description: 'Elven Blood: For all effects related to race, a half-elf is considered an elf.' },
+        { property: 'Listen', modifierType: 'Racial', value: 1 },
+        { property: 'Search', modifierType: 'Racial', value: 1 },
+        { property: 'Spot', modifierType: 'Racial', value: 1 },
+        { property: 'Diplomacy', modifierType: 'Racial', value: 2 },
+        { property: 'Gather Information', modifierType: 'Racial', value: 2 }
+    ]
+};
+
+RacesData.set('Half-Elf', HalfElf);
+
+// for CommonJS compatibility
+// @ts-ignore
+if (typeof module !== 'undefined') {
+    // @ts-ignore
+    module.exports = HalfElf;
+}

@@ -1,0 +1,6 @@
+1. Implement "Feat of Strength" status for Thror, add tests etc. V
+2. Change the way gdoc styles are parsed.
+2. Refactor character parsing function to separate files. 
+3. Re-implement weapons parsing and weapon-specific effects.
+4. Implement effects of Thror's holy symbol.
+5. Implement expendable actions.

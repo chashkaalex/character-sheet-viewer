@@ -1,0 +1,171 @@
+Dein “Eisengesicht” Tiefhorn
+“When you set yourself above the clan you're the first to hit your head.
+
+(Dwarf Fighter 8/ Monk 2)                                                        
+
+Init: +1; Senses: Listen -1 , Spot -1, Darkvision 60’; 
+BAb: +9/+4; Grapple: +19; Hp: 55/107; Speed: 20 ft.
+Attack: +15 Waraxe () or +13 Unarmed (2d10 + 3/X2)
+AC: 31 (10 +11 Armor +7 Shield +1 Deflection +1 Dex +1 Natural Armor), Touch, Flat-footed
+Resistance: 5 Acid, 10 lightning
+Saves: Fort +17; Ref +14; Will +15 (+2 resistance).
+Str: 22 (+6)
+Dex: 12 (+1)
+Con: 17 (+3)  {15 +2}
+Int: 13  (+1)
+Wis: 11 (0)
+Char: 8 (-1)
+Action Points: 2 
+
+Statuses:
+
+Feats:
+Heavy Armor Optimization, 
+Deflective Armor (Heavy, Armor AC to Touch), 
+Dragonfoe,
+Dragonhunter ( +2 AC, +2 saves , +2 on d20 rollls - Attk and opposed checks vs. Dragons),
+Shield Specialization (Tower),
+Shield Ward,
+Combat Expertise,
+Weapon Specialization (Waraxe),
+Improved Trip,
+Improved Unarmed Strike (Monk),
+Improved Grapple,
+Combat Reflexes
+Special Abilities:
+Spell Reflection,
+Axe Focus,
+Racial Foes (+2 dmg on Orcs, Goblinoids, Giants),
+Weapon Proficiency (Fighter).
+Racial Traits:
++4 AC dodge vs. the giant type,
++2 racial on Appraise and Craft (Stone and Metal),
++1 racial on attack vs. orcs and goblinoids,
++2 racial on Saves vs. poison, spells and spell-like effects,
+Stability (+4+2 against Bullrush and Trip),
+Stonecunning (+2 on Search checks on stonework, automatic search, approximate depth, etc.),
+Weapon Familiarity (Dwarven).
+Bonus Abilities:
+Flaws, Traits, Quirks:
+Loudmouth (-4 on Diplomacy & Move Silently),
+Stout (+2 on Strength checks vs. Bullrush or Overrun, -1 on Escape Artist).
+Focused ( +1 on Concentration , -1 on Spot and Listen ) 
+Languages:
+Common, Dwarven, Goblin
+
+Spells (Caster Level 0):
+Spell Slots per day:
+
+Prepared Spells :
+Caster Class 1
+level 0
+
+
+
+
+
+
+
+
+
+
+level 1
+
+
+
+
+
+
+
+
+
+
+level 2
+
+
+
+
+
+
+
+
+level 3
+
+
+
+
+Skills:
+Craft (armor) (Int): 11+2{+1 Int+2 kit=16}
+Jump (Str):  1
+Swim (Str): 9
+Climb (Str): 1
+Ride (Dex): 11
+Concentration: 0 {+1+3 = 4}
+Knowledge Arcana: 1
+Knowledge Psionics: 9
+Skills Synergy:
+SKS 1
+SKS 2
+Battle Gear: 
+Frost Waraxe +1 (Dwarvencraft) (+1, 1d10 /X3), 
+Flaming +1 Composite Longbow +5 Str (+1 1d8+1d6{fire} /X3)
+Black Dragoncraft Full Plate +2 ( Acid resist 5 ) (+8+2(+1) AC, + 1 max Dex, -4 penalty, 25?%? spell failure, ?40? lb)
+
+Full Plate +1 (+8+1{+1} AC, + 1 max Dex, -4 penalty, 25% spell failure, 40 lb) , 
+Mithral Breastplate +1 (+5+1 AC, + 5 max Dex, -?? penalty, ?? lb)
+
+
+Tower Shield made from Blue Dragon Hide +2 , +10 Lightning resist {10 resist electr }
+ (+6{+1} AC, + 4 max Dex, -7 penalty, -2 atk, 40% spell failure, 50 lb), 
+
+Belt of Giant Strength +4 Str
+Brooch of shielding ( ?? HP )
+Ivory Ring (Abjuration, +1 AC deflection), 
+Amulet of Natural Armor +1,
+Cloak of resistance +3
+
+Light Purple Mournlode Mace (Magic+1) 
+(1d6 +1/X2, [Bldg, Bypass DR -Good, silver, ColdIron], 4lb
++1 Adamantine Dwarven Waraxe
+Adamantine Dwarvencraft Dagger
+Adamantine suriken.
+
+
+Heavy mace +2 (each blade in a shape of dragon) (Shamann - magic item, Identified by SuperBabka )
+
+Ring of Storing 1lvl [1x Expeditious Retreat]
+
+1 x Cure Serious ( 3d8 +6 ) 
+Potion of Moderate Wounds ( 2d8+5 ),
+2x Cure Moderate 2d8 + 3 ( Tiamat loot )
+2x_Potion (Cure light) - d8+3
+1x_(Cure light) - d8+2
+1x Potion of remove Fear
+1 x Potion of Lesser  Restoration (1d4)
+
+Potion Water Breathing 10 hours
+Potion of Swim +10 to swim for 1 hour
+Potion of Spider climb 40 min
+
+Pair of boots from Grey Elfs { 2/per day Can charge after using move action , 
+No need for Balance check on stairs/slopes,
+Move through rubble w/o losing speed }
+Symbol_of_Faith(Helm_in_a_thorned_circle) - Passive = +2 enhancement to Will
+1 per day can throw 2 dice for Will and choose (if pass with lower - no secondary)
+After lost Will Save - can say “NO” - suffer no effect - that turns the amulet off for a week.
+Possessions: 
+PS 1
+PS 2
+
+Money: 3417 gp, 4679 sp, 0 cp, 97 Ruendils
+
+Food: Dried Rations (7 days), Beer (waterskin). 
+
+Personal Information
+Height/Weight: 5’1”/220 lb.
+Eyes/Hair color: Black/Greyish
+Age: 212
+Alignment: Lawful Neutral
+ExP: 53,785(+600+1820+3,500+3050)+6,770= 
+62,755+6,770+3,820= 73,345/78,000
+Deity worshiped: Moradin

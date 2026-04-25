@@ -4,19 +4,30 @@
   "description": "Google Apps Script Character Sheet Viewer",
   "scripts": {
     "build": "node build/build.js",
-    "lint": "eslint server/ client/src/ tests/ --config config/.eslintrc.json",
-    "lint:fix": "eslint server/ client/src/ --config config/.eslintrc.json --fix",
-    "lint:server": "eslint server/ --config config/.eslintrc.json",
-    "lint:client": "eslint client/src/ --config config/.eslintrc.json",
+    "lint": "eslint src/server/ src/client/ts/ src/local_tests/ --config config/.eslintrc.json --ext .js,.ts",
+    "lint:fix": "eslint src/server/ src/client/ts/ --config config/.eslintrc.json --fix --ext .js,.ts",
+    "lint:server": "eslint src/server/ --config config/.eslintrc.json --ext .js",
+    "lint:client": "eslint src/client/ts/ --config config/.eslintrc.json --ext .ts",
     "test": "jest --config config/jest.config.js",
     "clean": "node -e \"const fs = require('fs'); if(fs.existsSync('dist')) fs.rmSync('dist', {recursive: true, force: true})\"",
-    "deploy": "npm run lint:fix && npm run build && cd dist && clasp push && cd .. && npm run clean"
+    "backup": "node build/backup.js",
+    "deploy": "npm run backup && npm run lint:fix && npm run build && cd dist && clasp push"
   },
   "devDependencies": {
-    "@types/google-apps-script": "^2.0.6",
+    "@types/google-apps-script": "^2.0.8",
     "@types/jest": "^30.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.2",
+    "@typescript-eslint/parser": "^8.58.2",
     "eslint": "^8.57.0",
     "fs": "^0.0.1-security",
-    "jest": "^30.2.0"
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.9",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.8",
+    "vite-plugin-singlefile": "^2.3.2"
+  },
+  "dependencies": {
+    "google-auth-library": "^10.6.2",
+    "googleapis": "^171.4.0"
   }
 }

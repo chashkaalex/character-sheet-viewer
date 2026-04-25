@@ -10,4 +10,6 @@ package-lock.json
 jest.config.js
 **/*.test.js
 **/*.d.ts
-
+tests/**
+config/token.json
+creds.json

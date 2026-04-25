@@ -1,49 +1,115 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const verifyGasContext = require('./verify_gas_context');
 
+// Configuration
 const rootDir = path.join(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
+const srcDir = path.join(rootDir, 'src');
 
-// 0. Run Lint and Tests
-// 0. Run Lint and Tests
-console.log('Running linter...');
+console.log('Starting build...');
+console.log(`Target directory: ${distDir}`);
+
+// 0. Run Type Checking
+console.log('Running type check...');
 try {
-    execSync('npm run lint', { stdio: 'inherit' });
+    execSync('npx tsc -p config/tsconfig.json --noEmit', { stdio: 'inherit' });
 } catch (e) {
-    console.error('❌ Lint failed. Aborting build.');
+    console.error('❌ Type check failed. Aborting build.');
     process.exit(1);
 }
 
-console.log('Running local tests...');
-try {
-    execSync('npm test', { stdio: 'inherit' });
-} catch (e) {
-    console.error('❌ Tests failed. Aborting build.');
-    process.exit(1);
-}
-
-// Cleanup dist directory
+// 1. Cleanup target directory
 if (fs.existsSync(distDir)) {
     fs.rmSync(distDir, { recursive: true, force: true });
 }
-fs.mkdirSync(distDir);
+fs.mkdirSync(distDir, { recursive: true });
 
 /**
  * Copies a file from src to dest
  */
 function copyFile(src, dest) {
     if (fs.existsSync(src)) {
+        const destDir = path.dirname(dest);
+        if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
         fs.copyFileSync(src, dest);
-        //console.log(`Copied ${src} to ${dest}`);
     }
 }
 
+// 2. Copy config files
+console.log('Copying config files...');
+copyFile(path.join(rootDir, 'config', 'appsscript.json'), path.join(distDir, 'appsscript.json'));
+copyFile(path.join(rootDir, 'config', '.clasp.json'), path.join(distDir, '.clasp.json'));
+copyFile(path.join(rootDir, 'config', '.claspignore'), path.join(distDir, '.claspignore'));
+
+// 3. Process Server Files (Local Transpilation)
+console.log('Processing server files...');
+const serverSrcDir = path.join(srcDir, 'server');
+const serverDistDir = path.join(distDir, 'server');
+const serverTempOutDir = path.join(distDir, 'server_out');
+
+// A. Transpile TypeScript server files locally
+console.log('Transpiling server TypeScript files...');
+try {
+    if (fs.existsSync(serverSrcDir)) {
+        execSync('npx tsc -p config/tsconfig.server.json', { stdio: 'inherit' });
+    }
+} catch (e) {
+    console.error('❌ Server transpilation failed. Aborting.');
+    process.exit(1);
+}
+
 /**
- * Copies a directory recursively
+ * Strips module-specific code and renames exports to var
  */
-function copyDir(src, dest) {
+function cleanContentForGAS(content) {
+    // 1. Identify and resolve CJS import aliases created by tsc (e.g., const _constants_1 = ... )
+    // These aliases are used in the transpiled code for members, but GAS uses raw global names.
+    const importRegex = /^(?:var|const|let) (.*) = require\(.*\);$/gm;
+    let match;
+    let aliasReplacements = [];
+    while ((match = importRegex.exec(content)) !== null) {
+        const alias = match[1].trim();
+        // Skip destructuring (tsc doesn't typically destructure for standard imports in CJS)
+        if (!alias.startsWith('{')) {
+            aliasReplacements.push(alias);
+        }
+    }
+
+    // Apply alias replacements (e.g., _constants_1.ModifierTypes -> ModifierTypes)
+    // Sort by length descending to avoid partial replacements (e.g., prepared_spells_1 vs spells_1)
+    aliasReplacements.sort((a, b) => b.length - a.length);
+
+    for (const alias of aliasReplacements) {
+        const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        content = content.replace(new RegExp(`${escapedAlias}\\.`, 'g'), '');
+    }
+
+    // 2. Remove redundant early-export initializations (exports.X = void 0;) 
+    // and redundant self-assignments (exports.X = X;)
+    // Both cause "Identifier already declared" errors for classes in GAS.
+    content = content.replace(/^exports\..* = void 0;$/gm, '');
+    content = content.replace(/^exports\.(.*) = \1;$/gm, '');
+
+    // 3. Replace remaining "exports.Name = ..." with "var Name = ..." to make it global in GAS
+    content = content.replace(/^exports\.([a-zA-Z0-9_$]+) = /gm, 'var $1 = ');
+
+    // 4. Remove the __esModule declaration
+    content = content.replace(/^.*Object\.defineProperty\(exports,.*$/gm, '');
+
+    // 5. Fix remaining "exports." usages (e.g. in function bodies)
+    content = content.replace(/exports\./g, '');
+
+    // 6. Remove require/import calls that weren't resolved (GAS is global)
+    content = content.replace(/.*require\s*\(.*\).*/g, '');
+
+    return content;
+}
+
+/**
+ * Recursively processes server files, transforming .js/ts to .gs
+ */
+function processServerDir(src, dest, isTranspiled = false) {
     if (!fs.existsSync(src)) return;
     if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
 
@@ -51,108 +117,95 @@ function copyDir(src, dest) {
 
     for (const entry of entries) {
         const srcPath = path.join(src, entry.name);
-        const destPath = path.join(dest, entry.name);
-
+        
         if (entry.isDirectory()) {
-            copyDir(srcPath, destPath);
-        } else {
-            fs.copyFileSync(srcPath, destPath);
-        }
-    }
-}
+            processServerDir(srcPath, path.join(dest, entry.name), isTranspiled);
+        } else if (entry.isFile()) {
+            // Handle script files
+            if (entry.name.endsWith('.js') || entry.name.endsWith('.gs')) {
+                const destName = entry.name.replace(/\.[jt]s$/, '.gs');
+                const destPath = path.join(dest, destName);
 
-// 1. Copy config files
-copyFile(path.join(rootDir, 'config', 'appsscript.json'), path.join(distDir, 'appsscript.json'));
-copyFile(path.join(rootDir, 'config', '.clasp.json'), path.join(distDir, '.clasp.json'));
-copyFile(path.join(rootDir, 'config', '.claspignore'), path.join(distDir, '.claspignore'));
-
-// 2. Process Server Files (remove require)
-const serverSrcDir = path.join(rootDir, 'server');
-const serverDistDir = path.join(distDir, 'server');
-
-function processServerFiles(src, dest) {
-    if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
-
-    const entries = fs.readdirSync(src, { withFileTypes: true });
-
-    for (const entry of entries) {
-        const srcPath = path.join(src, entry.name);
-        const destPath = path.join(dest, entry.name);
-
-        if (entry.isDirectory()) {
-            if (entry.name === 'tests') continue;
-            if (entry.name === 'gas_tests') {
-                processServerFiles(srcPath, path.join(dest, 'tests'));
+                // If we are processing transpiled output, it takes priority
+                // If we are processing legacy source, only copy if destination doesn't exist yet
+                if (isTranspiled || !fs.existsSync(destPath)) {
+                    let content = fs.readFileSync(srcPath, 'utf8');
+                    content = cleanContentForGAS(content);
+                    fs.writeFileSync(destPath, content);
+                }
+            } else if (entry.name.endsWith('.ts')) {
+                // Skip .ts files in the source dir (they are handled by tsc)
                 continue;
+            } else {
+                // Copy other files (json, txt, etc.) as is
+                const destPath = path.join(dest, entry.name);
+                if (!fs.existsSync(destPath)) {
+                    fs.copyFileSync(srcPath, destPath);
+                }
             }
-            processServerFiles(srcPath, destPath);
-        } else if (entry.isFile() && entry.name.endsWith('.js')) {
-            let content = fs.readFileSync(srcPath, 'utf8');
-
-            // Remove lines with require(...)
-            // Simple regex approach: remove lines starting with const ... = require(...); or require(...);
-            content = content.replace(/.*require\s*\(.*\).*/g, '');
-
-            // Remove module.exports block at the end if it exists (our previous fix)
-            // We can check for "if (typeof module !==" block or just leave it since module won't be defined in GAS
-            // but strictly speaking, removing it is cleaner. 
-            // However, the previous fix was "safe", so leaving it is fine.
-            // But let's verify if the regex above removes the require calls correctly.
-
-            fs.writeFileSync(destPath, content);
-        } else {
-            fs.copyFileSync(srcPath, destPath);
         }
     }
 }
 
-console.log('Processing server files...');
+// Start processing
 if (fs.existsSync(serverSrcDir)) {
-    processServerFiles(serverSrcDir, serverDistDir);
+    // 1. First, process transpiled files (if any)
+    if (fs.existsSync(serverTempOutDir)) {
+        console.log('Processing transpiled TypeScript output...');
+        processServerDir(serverTempOutDir, serverDistDir, true);
+        // Cleanup temp dir
+        fs.rmSync(serverTempOutDir, { recursive: true, force: true });
+    }
 
-    // 5. Verify GAS Context
-    console.log('Verifying GAS context compatibility... SKIPPED');
-    // The 'verifyGasContext' function is already required at the top of the file.
-    // This line is redundant but included as per instruction.
-    // const verifyGasContext = require('./verify_gas_context');
-    // try {
-    //     const testDataPath = path.join(rootDir, 'server', 'tests', 'test_character_sheets', 'thror_test.txt');
-    //     verifyGasContext(serverDistDir, testDataPath);
-    // } catch (e) {
-    //     console.error('❌ GAS context verification failed. Aborting build.');
-    //     process.exit(1);
-    // }
+    // 2. Then, process all other source files (legacy JS, data files, subdirectories)
+    console.log('Processing legacy source and data files...');
+    processServerDir(serverSrcDir, serverDistDir, false);
 }
 
-
-// 3. Process Client Files
+// 4. Process Client Files
 console.log('Processing client files...');
-const clientSrcDir = path.join(rootDir, 'client');
-const clientDistDir = path.join(distDir, 'client');
+const clientSrcDir = path.join(srcDir, 'client');
 
-// Copy static assets first (html, style)
-copyDir(path.join(clientSrcDir, 'html'), path.join(clientDistDir, 'html'));
-copyDir(path.join(clientSrcDir, 'style'), path.join(clientDistDir, 'style'));
+if (fs.existsSync(clientSrcDir)) {
+    // Run Vite for client build
+    console.log('Running Vite build for client...');
+    try {
+        // Vite is configured to output to dist/_vite_temp via config/vite.config.ts
+        execSync('npx vite build -c config/vite.config.ts', { stdio: 'inherit' });
 
-// Build client scripts (src -> script as html)
-const clientScriptSrcDir = path.join(clientSrcDir, 'src');
-const clientScriptDistDir = path.join(clientDistDir, 'script');
+        // Post-processing: Move built files to root of dist
+        // and strip legacy include tags that Vite kept as text
+        const builtHtmlPath = path.join(distDir, '_vite_temp', 'src', 'client', 'html', 'main.html');
+        if (fs.existsSync(builtHtmlPath)) {
+            let html = fs.readFileSync(builtHtmlPath, 'utf8');
+            // Remove GAS include tags like <?!= include(...) ?>
+            html = html.replace(/<\?!= include\(['"][^'"]+['"]\);? \?>/g, '');
 
-if (fs.existsSync(clientScriptSrcDir)) {
-    if (!fs.existsSync(clientScriptDistDir)) fs.mkdirSync(clientScriptDistDir, { recursive: true });
+            // Save to final location
+            const finalDestMain = path.join(distDir, 'client', 'html', 'main.html');
+            const finalDestDir = path.dirname(finalDestMain);
+            if (!fs.existsSync(finalDestDir)) fs.mkdirSync(finalDestDir, { recursive: true });
+            fs.writeFileSync(finalDestMain, html);
+        }
 
-    const files = fs.readdirSync(clientScriptSrcDir).filter(file => file.endsWith('.js'));
+        // Copy unauthorized.html (static)
+        const unauthorizedSrc = path.join(srcDir, 'client', 'html', 'unauthorized.html');
+        if (fs.existsSync(unauthorizedSrc)) {
+            const finalDestUnauth = path.join(distDir, 'client', 'html', 'unauthorized.html');
+            const finalDestDir = path.dirname(finalDestUnauth);
+            if (!fs.existsSync(finalDestDir)) fs.mkdirSync(finalDestDir, { recursive: true });
+            fs.copyFileSync(unauthorizedSrc, finalDestUnauth);
+        }
 
-    files.forEach(file => {
-        const srcPath = path.join(clientScriptSrcDir, file);
-        const outPath = path.join(clientScriptDistDir, file.replace('.js', '.html'));
-
-        const content = fs.readFileSync(srcPath, 'utf8');
-        const htmlContent = `<script>\n${content}\n</script>`;
-
-        fs.writeFileSync(outPath, htmlContent);
-        //console.log(`Built client script: ${outPath}`);
-    });
+        // Cleanup Vite temp output
+        const viteTempDir = path.join(distDir, '_vite_temp');
+        if (fs.existsSync(viteTempDir)) {
+            fs.rmSync(viteTempDir, { recursive: true, force: true });
+        }
+    } catch (e) {
+        console.error('❌ Vite build failed. Aborting.');
+        process.exit(1);
+    }
 }
 
-console.log('Build complete! Output in dist/');
+console.log(`Build complete! Output in ${distDir}/`);

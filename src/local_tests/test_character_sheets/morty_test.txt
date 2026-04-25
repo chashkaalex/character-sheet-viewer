@@ -1,0 +1,152 @@
+Mortfinn aep Dessantein (Morty)
+“Block with your face!”
+
+(Elf Rogue 7/Shadowdancer 2/Beguiler 1/ Unseen Seer 3)                                                        
+
+Init: +4; Senses: Listen +15, Spot +15; Darkvision 60’; 
+BAb: +9/+4; Grapple: +10; Hp: 32/52; Speed: 50 ft.
+Attack: +12 Unarmed (2d10 + 3/X2).
+Enlarged: +12 Unarmed (4d8 + 3/X2)
+Full Attack: +11/+11/+6 Unarmed (2d10 + 3/X2).
+AC: 28 (), Touch 25, Flat-footed 24
+Resistance: 5 acid
+Saves: Fort +17; Ref +14; Will +15 (+2 resistance).
+Str:	12 (+1) 
+Dex:    	23 (+6) +4 Gloves of Dex  
+Con:   	11 (+1)
+Int:     	20 (+5) +2 Headband of Intellect +2	
+Wis:    	16 (+3)
+Char:  12 (+1)
+Action Points: 1. 
+
+Statuses:
+
+Feats:
+Expeditious Dodge (+2)
+Combat Reflexes
+Poison Use
+Practiced Spellcaster
+Weapon Finesse
+Darkvision
+Dragon Hunter
+Illusion Spell Power
+Evasion
+Darkstalker
+Dragonfoe
+Shadow Blade Technique
+Mobility [+4]	
+Spell Reflection
+Advanced learning
+Improved Uncanny dodge
+Armored mage	
+Silent Spell
+Special Abilities:
+Sneak attack		+6d6	
+Weapon Proficiency (Rogue)			
+Trapfinding				
+Trap-sence 
+Penetrating Strike		+3d6	
+Hide in plain sight (SU)		
+The Action
+
+Racial Traits:
+RT 1
+RT 2
+Bonus Abilities:
+BA 1
+BA 2
+Flaws, Traits, Quirks:
+Quick (+10 ft. land speed, -1 hp per level)
+Shaky (-2 on ranged attacks)
+Languages:
+Elven
+Common
+Sylvan
+Terran
+Gnome	
+Draconic
+Dwarven
+DrowSign
+ThievesCant	
+
+Spells (Caster Level 10):
+Spell Slots per day (All+Dom.):
+0 level – 5, 
+1st level – 5+1, 
+2nd level – 5+1, 
+3rd level – 3+1.
+Spell List.
+
+Prepared Spells :
+Beguiler
+level 0: 6/6
+level 1: 8/8
+level 2: 5/5
+Skills:
+Balance (Dex): 6
+Climb (Str): 6
+Concentration (Con): 6
+Decipher Script (Int): 5
+Disable Device (Int): 10
+Escape Artist (Dex): 7
+Hide (Dex): 16
+Jump (Str): 8
+Knowledge (Arcana) (Int): 6
+Listen (Wis): 16
+Move Silently (Dex): 16
+Open Lock (Dex): 10
+Perform (Dance) (Cha): 5
+Search (Int): 16
+Sense Motive (Wis): 4
+Spellcraft (Int): 7
+Spot (Wis): 16
+Swim (Str): 2
+Tumble (Dex): 14
+Use Magic Device (Cha): 11
+Use Rope  (Dex): 6
+
+Skills Synergy:
+SKS 1
+SKS 2
+Skill Tricks:
+Shrouded Dance
+Back on Your Feet
+SPOT THE WEAK POINT
+Conceal Spellcasting	
+Battle Gear: 
+Deadly Precision Wingblade Elvencraft Thinblade +1 (+1Atk 1d8+1/18-20x3)
+Elven Cloak (Hide +5)
+Gloves of Dexterity +4
+Whisperleaf Striders (Green Dragon scale Boots)Permanent: Pass without trace, Move Silently +5 Once per Day: Greater Invisibility for 7 rounds.
+Explorer's Outfit Masterwork
+Headband of Intellect +2
+Amulet of Pelor with Maple Leaf (holy symbol) (Saves +2)
+Brooch of Shielding
+Bone Ring +2 (Abjuration, +2AC deflection)
+Ring of Chameleon Power
+Dragoncraft bracers of armor +2 ( +2AC Black +5 resist Acid)
+Possessions: 
+Elven Rope,
+Magic Elven rope 50ft with 
+Silk rope 50ft
+Animated Rope
+Mithral Grappling Hook
+Grappling hook
+Rope Ladder (10')
+Masterwork manacles
+Tanglefoot Bags
+Potion of Cure Light Wounds (+5)
+
+
+Money: 5894 gp, 7417 sp, 0 cp, 267 Ruendils
+
+Food: Lembas, Beef Jerky, Water (waterskin). 
+
+Personal Information
+Height/Weight: 6’/130lb
+Eyes/Hair color: Amber/Pale gold	
+Age:118
+Alignment: 
+ExP: 78455
+Deity worshiped: Tel'Seldarine (Corellon Larethian/Erevan Ilesere)
+
