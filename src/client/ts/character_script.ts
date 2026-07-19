@@ -68,6 +68,12 @@ export function onCharacterRepresentation(response) {
   }
 
   UpdateValueAndTooltip('acValue', characterRep.ac);
+  if (characterRep.ac && characterRep.ac.touch) {
+    UpdateValueAndTooltip('touchAcValue', characterRep.ac.touch);
+  }
+  if (characterRep.ac && characterRep.ac.flatFooted) {
+    UpdateValueAndTooltip('flatFootedAcValue', characterRep.ac.flatFooted);
+  }
 
   // Populate weapon dropdown and display weapon stats
   populateWeaponDropdown();

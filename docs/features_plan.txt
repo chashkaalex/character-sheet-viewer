@@ -4,3 +4,8 @@
 3. Re-implement weapons parsing and weapon-specific effects.
 4. Implement effects of Thror's holy symbol.
 5. Implement expendable actions.
+
+create a callbacks system to handle additional actions on top of character manipulation events.
+for example: instead of checking for Grudge Keeper during UpdateHp, Grudge Keeper should add a callback call
+to the event system forHp changes. There should be a registry for callbacks, so that every manipulation flow would 
+call it's callbacks every time it runs. 

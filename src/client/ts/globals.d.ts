@@ -32,3 +32,13 @@ interface Window {
   loadCharacterData: () => void;
   showError: (message: string) => void;
 }
+
+declare module '*.css' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.html' {
+  const content: string;
+  export default content;
+}

@@ -14,7 +14,7 @@ if (typeof DocumentApp !== 'undefined') {
         // Dynamically require the local adapter from the test directory
         // Use require for dynamic loading in Node.js environment
         // @ts-ignore
-        LocalAdapter = require('../../local_tests/_local_adapter').LocalAdapter;
+        LocalAdapter = require('../../tests/local_tests/_local_adapter').LocalAdapter;
         adapter = new LocalAdapter();
     } catch (e) {
         // @ts-ignore
@@ -23,13 +23,3 @@ if (typeof DocumentApp !== 'undefined') {
 }
 
 export { adapter, GDocsAdapter, LocalAdapter };
-
-// @ts-ignore
-if (typeof module !== 'undefined') {
-    // @ts-ignore
-    module.exports = {
-        adapter,
-        GDocsAdapter,
-        LocalAdapter
-    };
-}

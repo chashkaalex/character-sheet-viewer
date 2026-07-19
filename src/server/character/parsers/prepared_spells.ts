@@ -1,14 +1,14 @@
 import { SpellcasterClasses } from '../_constants';
 import { ClassesData } from '../../classes_data/_classes_general_data';
-import { ParserUtils } from '../parser_utils';
-import { CharacterSpellSlots, CasterClassSpellSlots, SpellSlotData } from '../common_types';
+import { GetFirstNumberFromALine } from '../parser_utils';
+import { CharacterSpellSlots, CasterClassSpellSlots } from '../common_types';
 
 /**
  * Parses the prepared spells structure from list items
  * @param preparedSpellsLines Lines containing prepared spells information
  * @returns A structure of character spell slots indexed by caster class
  */
-export function ParsePreparedSpellsFreeStyle(preparedSpellsLines: string[]): CharacterSpellSlots {
+export function ParsePreparedSpells(preparedSpellsLines: string[]): CharacterSpellSlots {
     const preparedSpells: CharacterSpellSlots = {};
 
     if (preparedSpellsLines.length === 0) return preparedSpells;
@@ -36,8 +36,8 @@ export function ParsePreparedSpellsFreeStyle(preparedSpellsLines: string[]): Cha
             // Next operations are defined by the name of the caster class
             // The relevant function should be exported from the class spellcasting definition
             const classInfo = ClassesData.get(currentCasterClassName);
-            if (classInfo && classInfo.spellCastingData && typeof classInfo.spellCastingData.ParsePreparedSpells === 'function') {
-                const ClassParsingFunction = classInfo.spellCastingData.ParsePreparedSpells;
+            if (classInfo && classInfo.spellCastingData && typeof classInfo.spellCastingData.ParsePreparedSpellsMethod === 'function') {
+                const ClassParsingFunction = classInfo.spellCastingData.ParsePreparedSpellsMethod;
                 preparedSpells[currentCasterClassName] = ClassParsingFunction(currentCasterClassName, currentCasterClassLines);
             }
 
@@ -64,7 +64,7 @@ export function ParsePreparedSlotsDivine(casterClassName: string, preparedSpells
     preparedSpellsLines.forEach(line => {
         let cleanLine = line.trim();
         if (cleanLine.toLowerCase().startsWith('level')) {
-            const spellLevelNum = ParserUtils.GetFirstNumberFromALine(cleanLine);
+            const spellLevelNum = GetFirstNumberFromALine(cleanLine);
             levelName = String(spellLevelNum); // Ensure string key
             if (cleanLine.toLowerCase().includes('domain')) {
                 levelName += ' - domain';
@@ -112,7 +112,7 @@ export function ParsePreparedSlotsSpontaneous(casterClassName: string, preparedS
         const levelNamePart = cleanLine.split(':')[0].trim();
         let levelName = levelNamePart;
         if (levelNamePart.toLowerCase().startsWith('level')) {
-            const spellLevelNum = ParserUtils.GetFirstNumberFromALine(levelNamePart);
+            const spellLevelNum = GetFirstNumberFromALine(levelNamePart);
             levelName = String(spellLevelNum);
         }
 
@@ -137,13 +137,3 @@ export function ParsePreparedSlotsSpontaneous(casterClassName: string, preparedS
     return preparedSpells;
 }
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-    // @ts-ignore
-    module.exports = {
-        ParsePreparedSpellsFreeStyle,
-        ParsePreparedSlotsDivine,
-        ParsePreparedSlotsSpontaneous
-    };
-}

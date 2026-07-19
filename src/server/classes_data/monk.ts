@@ -1,9 +1,8 @@
 import { ClassesData } from './_classes_general_data';
-import { ClassData } from './class_types';
-import { ModifiableProperty } from '../character/property';
+import { ClassData, createClassData } from './class_types';
 import { ICharacter } from '../character/icharacter';
 
-export const Monk: ClassData = {
+export const Monk: ClassData = createClassData({
   name: 'Monk',
   HD: '1d8',
   skills: [
@@ -52,23 +51,28 @@ export const Monk: ClassData = {
   ],
 
   AddSpecialProps(character: ICharacter) {
-    const monkClassInfo = character.classes.find(c => c.name === 'Monk');
-    if (monkClassInfo) {
-      if (!(character as any).effectiveMonkLevel) {
-        (character as any).effectiveMonkLevel = new ModifiableProperty(0);
-      }
-      (character as any).effectiveMonkLevel.applyPermanentEffect(monkClassInfo.level);
+    const level = character.GetClassLevel('Monk');
+    if (level > 0) {
+      character.GetModifiableProperty('effectiveMonkLevel').applyPermanentEffect(level);
     }
+  },
+
+  GetUnarmedDamage(character: ICharacter, _level: number) {
+    const effectiveLevel = character.GetModifiableProperty('effectiveMonkLevel').currentScore;
+    const progression = ['1d6', '1d8', '1d10', '2d6', '2d8', '2d10', '4d8'];
+
+    let baseKey = 0;
+    if (effectiveLevel < 4) baseKey = 0;
+    else if (effectiveLevel < 8) baseKey = 1;
+    else if (effectiveLevel < 12) baseKey = 2;
+    else if (effectiveLevel < 16) baseKey = 3;
+    else if (effectiveLevel < 20) baseKey = 4;
+    else baseKey = 5;
+
+    const finalKey = Math.min(baseKey, progression.length - 1);
+    return progression[finalKey];
   }
-};
+});
 
 ClassesData.set('Monk', Monk);
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-  // @ts-ignore
-  module.exports = {
-    Monk
-  };
-}

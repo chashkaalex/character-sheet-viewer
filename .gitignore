@@ -5,6 +5,8 @@ node_modules/
 .clasp.json
 .google/
 config/creds.json
+config/token.json
+config/.clasp.*.json
 
 # Build Output
 client/script/

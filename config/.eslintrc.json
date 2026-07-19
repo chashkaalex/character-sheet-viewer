@@ -26,13 +26,10 @@
     "ScriptApp": "readonly",
     "console": "readonly",
     "Docs": "readonly",
-    //server-only types
     "GDoc": "readonly",
-    //common types (used in both server and client)
     "Character": "readonly",
     "SlotData": "readonly",
     "HpActionType": "readonly",
-    // Constants
     "AbilityNames": "readonly",
     "Races": "readonly",
     "SaveNames": "readonly",
@@ -129,7 +126,8 @@
     {
       "files": [
         "src/client/ts/**/*.ts",
-        "src/server/**/*.ts"
+        "src/server/**/*.ts",
+        "src/tests/**/*.ts"
       ],
       "parser": "@typescript-eslint/parser",
       "plugins": [
@@ -160,7 +158,7 @@
         "no-unused-vars": "off",
         "no-redeclare": "off",
         "no-restricted-globals": "off",
-        "no-undef": "off" // TypeScript handles undef checks
+        "no-undef": "off"
       }
     },
     {

@@ -1,8 +1,10 @@
 import { ClassesData } from './_classes_general_data';
-import { ClassData } from './class_types';
+import { ClassData, createClassData } from './class_types';
 import { ParsePreparedSlotsSpontaneous } from '../character/parsers/prepared_spells';
+import { ICharacter } from '../character/icharacter';
+import { ParseKnownSpellsSpontaneous } from '../character/parsers/known_spells';
 
-export const Beguiler: ClassData = {
+export const Beguiler: ClassData = createClassData({
   name: 'Beguiler',
   HD: '1d6',
   skills: [
@@ -99,22 +101,18 @@ export const Beguiler: ClassData = {
       [6, 6, 6, 6, 6, 6, 6, 6, 6, 5]  // 20th
     ],
     spells: {},
-    getAvailableSpells(maxLevel: number) {
-      const availableSpells: Record<string, string[]> = {};
-      for (let level = 0; level <= maxLevel; level++) {
-        availableSpells[level] = (this.spells as any)[level] || [];
-      }
-      return availableSpells;
+    getKnownSpells(character: Readonly<ICharacter>, maxLevel: number, domains?: string[]) {
+      return ParseKnownSpellsSpontaneous(character, 'Beguiler', domains);
     },
-    ParsePreparedSpells: ParsePreparedSlotsSpontaneous
+    ParsePreparedSpellsMethod: ParsePreparedSlotsSpontaneous,
+    ConsumeSpellSlot: (docId: string, slotData: any, adapter: any) => {
+      return adapter.DecrementSpontaneousSlots(docId, slotData.casterClassName, slotData.spellLevel);
+    },
+    ReplenishSpellSlots: (docId: string, adapter: any) => {
+      return adapter.ReplenishSpontaneousSlots(docId, 'Beguiler');
+    }
   }
-};
+});
 
 ClassesData.set('Beguiler', Beguiler);
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-  // @ts-ignore
-  module.exports = { Beguiler };
-}

@@ -85,6 +85,16 @@ export abstract class DocumentAdapter {
     abstract GetPartyMembers(partyName: string, currentDocId: string): string[];
 
     /**
+     * Replenishes prepared spells (removes strikethroughs).
+     */
+    abstract ReplenishPreparedSpells(docId: string, casterClass: string): AdapterResult;
+
+    /**
+     * Replenishes spontaneous spell slots (restores counts to max).
+     */
+    abstract ReplenishSpontaneousSlots(docId: string, casterClass: string): AdapterResult;
+
+    /**
      * Cleans raw lines by removing empty ones.
      */
     CleanRawLines(rawLines: string[]): string[] {

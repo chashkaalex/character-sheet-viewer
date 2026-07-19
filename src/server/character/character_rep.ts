@@ -1,5 +1,7 @@
-import { AbilityNames } from './_constants';
-import { CharacterClass } from './common_types';
+import { ICharacter } from './icharacter';
+import { AbilityNames } from './properties/abilities/ability_types';
+import { CharacterClass } from './properties/race_and_classes';
+import { ActionsData, NumberAction } from './actions/actions_effects';
 
 /**
  * Character representation for the client.
@@ -15,6 +17,7 @@ export interface CharacterRep {
   initBonus: any;
   damageBonus: any;
   attacksOfOpportunity: any;
+  acp: any;
   hp: { current: number; max: number };
   ac: any;
   speed: any;
@@ -24,6 +27,7 @@ export interface CharacterRep {
   skills: Record<string, any>;
   abilities: Record<string, any>;
   statuses: any[];
+  actions: string[];
   spellCasting?: any;
   weapons: any[];
   specialAttacks: Record<string, any>;
@@ -31,6 +35,13 @@ export interface CharacterRep {
   possessions: any[];
   partyName: string | null;
   partyMembers: string[];
+  actionsMetadata?: Record<string, {
+    name: string;
+    acceptsNumber: boolean;
+    minNumber?: number;
+    maxNumber?: number;
+    label?: string;
+  }>;
 }
 
 /**
@@ -38,7 +49,7 @@ export interface CharacterRep {
  * @param character The character object.
  * @returns A CharacterRep object.
  */
-export function getCharacterRep(character: any): CharacterRep {
+export function getCharacterRep(character: ICharacter): CharacterRep {
   const characterObject: CharacterRep = {
     docId: character.docId,
     parseWarnings: character.parseWarnings,
@@ -50,6 +61,7 @@ export function getCharacterRep(character: any): CharacterRep {
     initBonus: character.InitiativeBonus ? character.InitiativeBonus.state : null,
     damageBonus: character.damageBonus ? character.damageBonus.state : null,
     attacksOfOpportunity: character.attacksOfOpportunity ? character.attacksOfOpportunity.state : null,
+    acp: character.acp ? character.acp.state : null,
     hp: { current: character.hp.current, max: character.hp.max },
     ac: character.ac ? character.ac.state : null,
     speed: character.speed ? character.speed.state : null,
@@ -61,6 +73,7 @@ export function getCharacterRep(character: any): CharacterRep {
     specialAttacks: {},
     weapons: [],
     statuses: [],
+    actions: [],
     battleGear: [],
     possessions: [],
     partyName: character.partyName,
@@ -95,6 +108,26 @@ export function getCharacterRep(character: any): CharacterRep {
   // Add statuses
   if (character.statuses) {
     characterObject.statuses = character.statuses;
+  }
+
+  // Add actions
+  if (character.actions) {
+    characterObject.actions = character.actions;
+    const actionsMetadata: Record<string, any> = {};
+    character.actions.forEach(actionName => {
+      const action = ActionsData[actionName];
+      if (action) {
+        const isNumberAction = action instanceof NumberAction;
+        actionsMetadata[actionName] = {
+          name: actionName,
+          acceptsNumber: isNumberAction,
+          minNumber: isNumberAction ? (action as any).minNumber : undefined,
+          maxNumber: isNumberAction ? (action as any).maxNumberResolver(character) : undefined,
+          label: isNumberAction ? (action as any).label : undefined
+        };
+      }
+    });
+    characterObject.actionsMetadata = actionsMetadata;
   }
 
   // Add spell casting
@@ -139,13 +172,4 @@ export function getCharacterRep(character: any): CharacterRep {
   }
 
   return characterObject;
-}
-
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-  // @ts-ignore
-  module.exports = {
-    getCharacterRep
-  };
 }

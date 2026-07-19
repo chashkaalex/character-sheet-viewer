@@ -1,7 +1,7 @@
 import { ClassesData } from './_classes_general_data';
-import { ClassData } from './class_types';
+import { ClassData, createClassData } from './class_types';
 
-export const Shadowdancer: ClassData = {
+export const Shadowdancer: ClassData = createClassData({
   name: 'Shadowdancer',
   HD: '1d8',
   skills: [
@@ -40,13 +40,7 @@ export const Shadowdancer: ClassData = {
     /*level: 9*/ { bab: 6, Fort: 3, Ref: 6, Will: 3 },
     /*level: 10*/{ bab: 7, Fort: 3, Ref: 7, Will: 3 }
   ]
-};
+});
 
 ClassesData.set('Shadowdancer', Shadowdancer);
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-  // @ts-ignore
-  module.exports = { Shadowdancer };
-}

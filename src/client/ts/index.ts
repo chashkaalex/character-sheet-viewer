@@ -43,11 +43,17 @@ const globalRegistry: Record<string, any> = {
     showPartyModal: Dashboard.showPartyModal,
     closePartyModal: Dashboard.closePartyModal,
 
-    // Spells
+    // Actions & Spells
     PrepareSpellsUI: Spells.PrepareSpellsUI,
     hideSpellPopup: Spells.hideSpellPopup,
     prepareSpell: Spells.prepareSpell,
-    castSpell: Spells.castSpell
+    castSpell: Spells.castSpell,
+    replenishClassSpellSlots: Spells.replenishClassSpellSlots,
+    useAction: Spells.useAction,
+    hideMovePopup: Spells.hideMovePopup,
+    moveAction: Spells.moveAction,
+    hideNumberActionPopup: Spells.hideNumberActionPopup,
+    useNumberAction: Spells.useNumberAction
 };
 
 // Map each function to the window object

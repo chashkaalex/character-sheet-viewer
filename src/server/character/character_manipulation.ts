@@ -7,6 +7,7 @@ declare let require: any;
 
 import { ClassesData } from '../classes_data/_classes_general_data';
 import { SpellsData } from './spells';
+import { ActionsData, NumberAction } from './actions/actions_effects';
 
 /**
  * Retrieves a character object by document ID.
@@ -54,19 +55,19 @@ export function UpdateHp(docId: string, amount: number, actionType: 'inflict' | 
     return character;
   }
 
-  const alreadyKeepingGrudge = character.statuses && character.statuses.some((status: any) => status.name === 'Keeping Grudge');
-
-  if (actionType === 'inflict' && !alreadyKeepingGrudge) {
+  if (actionType === 'inflict') {
     character.InflictDamage(amount);
-
-    // Check for Grudge Keeper flaw (via the 'Keeping Grudge' dummy effect)
-    const grudgeKeeperFlaw = character.flaws && character.flaws.flat().some((effect: any) => effect.status === 'Keeping Grudge');
-    if (grudgeKeeperFlaw) {
-      _addStatusToCharacter(docId, 'Keeping Grudge', -1);
-    }
   } else if (actionType === 'cure') {
     character.CureDamage(amount);
   }
+
+  // Execute registered callbacks with runtime helpers
+  const helpers = {
+    addStatus: (statusName: string, duration: number) => _addStatusToCharacter(docId, statusName, duration),
+    removeStatus: (statusName: string) => _removeStatusFromCharacter(docId, statusName)
+  };
+  character.manipulationCallbacks.UpdateHp.forEach(cb => cb(character, amount, actionType, helpers));
+
   adapter.UpdateHp(docId, character.hp.current);
   return GetCharacterRepByDocId(docId);
 }
@@ -202,7 +203,8 @@ export function OnCastSpell(docId: string, slotData: SpellSlotData): CharacterRe
     return new CharacterError('Spell description was not found');
   }
 
-  if (character.statuses && character.statuses.some((status: any) => status.name === slotData.spellName)) {
+  const targetStatusName = spellObject.statusName || slotData.spellName;
+  if (character.HasStatus(targetStatusName)) {
     return new CharacterError('Spell already active');
   }
 
@@ -222,70 +224,151 @@ export function OnCastSpell(docId: string, slotData: SpellSlotData): CharacterRe
 
   const duration = spellObject.calculateDuration(spellCasterClassData);
 
-  if (isSpontaneous && (!spellCasterClassData || !spellCasterClassData[slotData.spellLevel])) {
-    const result = adapter.DecrementSpontaneousSlots(docId, slotData.casterClassName, slotData.spellLevel);
-    if (!result.success) {
-      console.error('Failed to decrement spontaneous slots:', result.error);
-      return new CharacterError(`Failed to cast spontaneous spell: ${result.error}`);
-    }
-  } else {
-    if (!spellCasterClassData) {
-      return new CharacterError(`No available spell slots found for ${slotData.casterClassName}`);
-    }
-
-    const classAndLevelSpells = spellCasterClassData.preparedSpells[slotData.spellLevel];
-    if (!classAndLevelSpells || classAndLevelSpells.length === 0) {
-      return new CharacterError(`No level ${slotData.spellLevel} spell slots found for ${slotData.casterClassName}`);
-    }
-
-    const result = adapter.MarkSpellAsCast(
-      docId,
-      slotData.casterClassName,
-      slotData.spellLevel,
-      slotData.slotIndex,
-      slotData.spellName,
-      isSpontaneous
-    );
-    if (!result.success) {
-      console.error('Failed to mark spell as cast:', result.error);
-      return new CharacterError('Failed to cast spell in document');
-    }
+  const classAndLevelSpells = spellCasterClassData.preparedSpells[slotData.spellLevel];
+  if (!classAndLevelSpells || classAndLevelSpells.length === 0) {
+    return new CharacterError(`No level ${slotData.spellLevel} spell slots found for ${slotData.casterClassName}`);
   }
 
-  let statusName = slotData.spellName;
-  if (slotData.casterClassName === 'Bard' && slotData.spellLevel === 'songs') {
-    if ((character as any).bardicSpecials) {
-      const matchedSpecial = (character as any).bardicSpecials.find((s: any) => s.name === slotData.spellName);
-      if (matchedSpecial && matchedSpecial.value) {
-        let modifierVal = matchedSpecial.value;
-        if (typeof modifierVal === 'object' && modifierVal.currentScore !== undefined) {
-          modifierVal = modifierVal.currentScore;
-        }
-
-        if (modifierVal) {
-          statusName = `${slotData.spellName} +${modifierVal}`;
-        }
-      }
-    }
+  const spellCastingData = classData && classData.spellCastingData;
+  if (!spellCastingData || typeof spellCastingData.ConsumeSpellSlot !== 'function') {
+    return new CharacterError(`ConsumeSpellSlot method not implemented for caster class ${slotData.casterClassName}`);
   }
 
-  _addStatusToCharacter(docId, statusName, duration);
+  const result = spellCastingData.ConsumeSpellSlot(docId, slotData, adapter);
+  if (!result.success) {
+    console.error('Failed to cast spell:', result.error);
+    return new CharacterError(`Failed to cast spell: ${result.error}`);
+  }
+
+
+  const context = {
+    statusName: spellObject.statusName || slotData.spellName,
+    duration: duration
+  };
+
+  // Execute registered OnCastSpell callbacks with runtime helpers
+  const helpers = {
+    addStatus: (statusName: string, duration: number) => _addStatusToCharacter(docId, statusName, duration),
+    removeStatus: (statusName: string) => _removeStatusFromCharacter(docId, statusName)
+  };
+  character.manipulationCallbacks.OnCastSpell.forEach(cb => cb(character, slotData, context, helpers));
+
+  _addStatusToCharacter(docId, context.statusName, context.duration);
   return GetCharacterRepByDocId(docId);
 }
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-  // @ts-ignore
-  module.exports = {
-    GetCharacterByDocId,
-    GetCharacterRepByDocId,
-    UpdateHp,
-    AddStatusToCharacter,
-    RemoveStatusFromCharacter,
-    RemoveStatusLine,
-    OnRoundsElapsed,
-    OnPrepareSpell,
-    OnCastSpell
-  };
+/**
+ * Replenishes spell slots for a specific caster class of a character.
+ */
+export function OnReplenishClassSpellSlots(docId: string, className: string): CharacterRep | CharacterError {
+  const character = GetCharacterByDocId(docId);
+  if (character instanceof CharacterError) {
+    return character;
+  }
+
+  const classData = ClassesData.get(className);
+  if (classData && classData.spellCastingData && typeof classData.spellCastingData.ReplenishSpellSlots === 'function') {
+    const result = classData.spellCastingData.ReplenishSpellSlots(docId, adapter);
+    if (!result.success) {
+      console.error(`Failed to replenish spell slots for ${className}:`, result.error);
+      return new CharacterError(`Failed to replenish spell slots for ${className}: ${result.error}`);
+    }
+  } else {
+    return new CharacterError(`No replenishment definition found for ${className}`);
+  }
+
+  return GetCharacterRepByDocId(docId);
 }
+
+/**
+ * Uses a general action for a character.
+ */
+export function OnUseAction(docId: string, actionName: string): CharacterRep | CharacterError {
+  const character = GetCharacterByDocId(docId);
+  if (character instanceof CharacterError) {
+    return character;
+  }
+
+  const action = ActionsData[actionName];
+  if (!action) {
+    return new CharacterError(`Action '${actionName}' not found in registry`);
+  }
+
+  if (!character.actions.includes(actionName)) {
+    return new CharacterError(`Character does not have action '${actionName}' available`);
+  }
+
+  if (character.HasStatus(action.statusName)) {
+    return new CharacterError(`Action '${actionName}' is already active`);
+  }
+
+  const duration = action.calculateDuration(character);
+  _addStatusToCharacter(docId, action.statusName, duration);
+
+  return GetCharacterRepByDocId(docId);
+}
+
+/**
+ * Triggers a move action for a character.
+ */
+export function OnMoveAction(docId: string, feet: number): CharacterRep | CharacterError {
+  const character = GetCharacterByDocId(docId);
+  if (character instanceof CharacterError) {
+    return character;
+  }
+
+  if (typeof feet !== 'number' || isNaN(feet) || feet <= 0) {
+    return new CharacterError('Move action requires a positive feet distance');
+  }
+
+  const speed = character.speed.currentScore;
+  if (feet > speed) {
+    return new CharacterError(`Cannot move ${feet} feet; speed is only ${speed} feet`);
+  }
+
+  _addStatusToCharacter(docId, `Moved ${feet} feet`, 1);
+  return GetCharacterRepByDocId(docId);
+}
+
+/**
+ * Triggers a generic number-accepting action.
+ */
+export function OnUseNumberAction(docId: string, actionName: string, value: number): CharacterRep | CharacterError {
+  const character = GetCharacterByDocId(docId);
+  if (character instanceof CharacterError) {
+    return character;
+  }
+
+  const action = ActionsData[actionName];
+  if (!action) {
+    return new CharacterError(`Action '${actionName}' not found`);
+  }
+
+  if (!(action instanceof NumberAction)) {
+    return new CharacterError(`Action '${actionName}' does not accept a numeric value`);
+  }
+
+  if (typeof value !== 'number' || isNaN(value) || value < action.minNumber) {
+    return new CharacterError(`Invalid value for action '${actionName}'`);
+  }
+
+  const maxVal = action.maxNumberResolver(character);
+  if (value > maxVal) {
+    return new CharacterError(`Value ${value} exceeds maximum allowed of ${maxVal} for action '${actionName}'`);
+  }
+
+  if (actionName === 'Move') {
+    return OnMoveAction(docId, value);
+  }
+
+  const duration = action.calculateDuration(character);
+  const targetStatusName = actionName === 'Combat Expertise' ? `Combat Expertise -${value}` : `${action.statusName} ${value}`;
+
+  if (character.HasStatus(targetStatusName)) {
+    return new CharacterError(`Action '${actionName}' with value ${value} is already active`);
+  }
+
+  _addStatusToCharacter(docId, targetStatusName, duration);
+  return GetCharacterRepByDocId(docId);
+}
+

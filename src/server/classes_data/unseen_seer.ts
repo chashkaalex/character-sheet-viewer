@@ -1,7 +1,7 @@
 import { ClassesData } from './_classes_general_data';
-import { ClassData } from './class_types';
+import { ClassData, createClassData } from './class_types';
 
-export const UnseenSeer: ClassData = {
+export const UnseenSeer: ClassData = createClassData({
   name: 'Unseen Seer',
   HD: '1d4',
   skills: [
@@ -55,13 +55,7 @@ export const UnseenSeer: ClassData = {
     type: 'Arcane',
     bonusSpellAbility: 'Int'
   }
-};
+});
 
 ClassesData.set('Unseen Seer', UnseenSeer);
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-  // @ts-ignore
-  module.exports = { UnseenSeer };
-}

@@ -8,7 +8,9 @@ import {
     RemoveLineFromSection,
     GetSpellListItem,
     DecrementSpontaneousSlotsInGDoc,
-    GetPartyMembersFromGDoc
+    GetPartyMembersFromGDoc,
+    ReplenishPreparedSpellsInGDoc,
+    ReplenishSpontaneousSlotsInGDoc
 } from '../services/gdoc_utilities';
 
 /**
@@ -79,6 +81,14 @@ export class GDocsAdapter extends DocumentAdapter {
         }
 
         return DecrementSpontaneousSlotsInGDoc(docId, sectionName, marker);
+    }
+
+    ReplenishPreparedSpells(docId: string, casterClass: string): AdapterResult {
+        return ReplenishPreparedSpellsInGDoc(docId, casterClass);
+    }
+
+    ReplenishSpontaneousSlots(docId: string, casterClass: string): AdapterResult {
+        return ReplenishSpontaneousSlotsInGDoc(docId, casterClass);
     }
 
     GetCharacterLines(docId: string): string[] {

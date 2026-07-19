@@ -1,10 +1,12 @@
 import { ParsePreparedSlotsDivine } from '../character/parsers/prepared_spells';
 import { ClassesData } from './_classes_general_data';
-import { ClassData } from './class_types';
-import { ParserUtils } from '../character/parser_utils';
+import { ClassData, createClassData } from './class_types';
+import { GetLineThatContainsOneOfTheseTokens, GetParenthesesContent } from '../character/parser_utils';
 import { ICharacter } from '../character/icharacter';
+import { ExtractAndValidateSpell } from '../character/spells';
+import { KnownSpellEntry } from '../character/common_types';
 
-export const Cleric: ClassData = {
+export const Cleric: ClassData = createClassData({
   name: 'Cleric',
   HD: '1d8',
   skills: [
@@ -44,20 +46,34 @@ export const Cleric: ClassData = {
     /*level: 19*/{ bab: 14, Fort: 11, Ref: 6, Will: 11 },
     /*level: 20*/{ bab: 15, Fort: 12, Ref: 6, Will: 12 }
   ],
-  AddSpecialProps(character: ICharacter) {
-    const domainLine = ParserUtils.GetLineThatContainsOneOfTheseTokens(character.lines, ['Domain', 'domains']);
-    if (domainLine) {
-      (character as any).domains = ParserUtils.GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
-    } else {
-      character.LogParseError('No domains found for Cleric class');
-      character.parseSuccess = false;
-    }
-  },
   spellCastingData: {
     casterClass: 'Cleric',
     type: 'Divine',
     preparation: 'In Advance',
     bonusSpellAbility: 'Wis',
+    AddSpecialProperties: (character: ICharacter, runtimeData: any) => {
+      const domainsLines = character.sectionLines['Domains'];
+      let domainLine = '';
+      if (domainsLines && domainsLines.length > 0) {
+        domainLine = domainsLines.join(' ');
+      } else {
+        // Fallback to searching the whole document (legacy behavior)
+        domainLine = GetLineThatContainsOneOfTheseTokens(character.lines, ['Domain', 'domains']) || '';
+      }
+
+      if (domainLine) {
+        const parsedDomains = GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
+        const validDomains = parsedDomains.filter(d => (Cleric.spellCastingData!.spells!.domainSpells as any)[d]) as DomainNames[];
+        runtimeData.domains = validDomains;
+      } else {
+        character.LogParseError('No domains found for Cleric class');
+        character.parseSuccess = false;
+      }
+
+      if (!character.actions.includes('Turn Undead')) {
+        character.actions.push('Turn Undead');
+      }
+    },
 
     spellSlots: [
       //lvl: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -571,35 +587,51 @@ export const Cleric: ClassData = {
         ]
       }
     },
-    getAvailableSpells(maxLevel: number, domains?: string[]) {
-      const availableSpells: Record<string, string[]> = {};
+    getKnownSpells(character: Readonly<ICharacter>, maxLevel: number, domains?: string[]) {
+      const knownSpells: Record<string, KnownSpellEntry[]> = {};
       for (let level = 0; level <= maxLevel; level++) {
-        availableSpells[level] = (this.spells as any)[level] || [];
+        const levelName = String(level);
+        knownSpells[levelName] = ((this.spells as any)[level] || []).map((spellName: string) => {
+          const { extractedName, isValid } = ExtractAndValidateSpell('Cleric', level, levelName, spellName, domains || []);
+          return { spellName: extractedName, isValid };
+        });
       }
       if (domains) {
         for (let domainSpellLevel = 1; domainSpellLevel <= maxLevel; domainSpellLevel++) {
           const domainLevelName = domainSpellLevel + ' - domain';
-          availableSpells[domainLevelName] = [];
+          knownSpells[domainLevelName] = [];
           for (const domain of domains) {
             const domainList = (this.spells.domainSpells as any)[domain];
             if (domainList) {
-                const domainSpell = domainList[domainSpellLevel - 1];
-                availableSpells[domainLevelName].push(domainSpell);
+              const domainSpell = domainList[domainSpellLevel - 1];
+              if (domainSpell) {
+                const { extractedName, isValid } = ExtractAndValidateSpell('Cleric', domainSpellLevel, domainLevelName, domainSpell, domains || []);
+                knownSpells[domainLevelName].push({ spellName: extractedName, isValid });
+              }
             }
           }
         }
       }
-      return availableSpells;
+      return knownSpells;
     },
-    ParsePreparedSpells: ParsePreparedSlotsDivine
+    ParsePreparedSpellsMethod: ParsePreparedSlotsDivine,
+    ConsumeSpellSlot: (docId: string, slotData: any, adapter: any) => {
+      return adapter.MarkSpellAsCast(
+        docId,
+        slotData.casterClassName,
+        slotData.spellLevel,
+        slotData.slotIndex,
+        slotData.spellName,
+        false
+      );
+    },
+    ReplenishSpellSlots: (docId: string, adapter: any) => {
+      return adapter.ReplenishPreparedSpells(docId, 'Cleric');
+    }
   }
-};
+});
+
+export type DomainNames = keyof typeof Cleric.spellCastingData.spells.domainSpells;
 
 ClassesData.set('Cleric', Cleric);
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-  // @ts-ignore
-  module.exports = { Cleric };
-}

@@ -1,9 +1,8 @@
 import { ClassesData } from './_classes_general_data';
-import { ClassData } from './class_types';
-import { ModifiableProperty } from '../character/property';
+import { ClassData, createClassData } from './class_types';
 import { ICharacter } from '../character/icharacter';
 
-export const SacredFist: ClassData = {
+export const SacredFist: ClassData = createClassData({
   name: 'Sacred Fist',
   HD: '1d8',
   skills: [
@@ -21,7 +20,10 @@ export const SacredFist: ClassData = {
     casterClass: 'Cleric', //levels of Scared Fist are counted towards Cleric spell slots
     type: 'Divine',
     preparation: 'In Advance',
-    bonusSpellAbility: 'Wis'
+    bonusSpellAbility: 'Wis',
+    GetCasterLevelAddition: (level: number) => {
+      return level - Math.floor(level / 4);
+    }
   },
 
   levelTable: [
@@ -39,21 +41,12 @@ export const SacredFist: ClassData = {
   ],
 
   AddSpecialProps(character: ICharacter) {
-    const sacredFistClassInfo = character.classes.find(c => c.name === 'Sacred Fist');
-    if (sacredFistClassInfo) {
-      if (!(character as any).effectiveMonkLevel) {
-        (character as any).effectiveMonkLevel = new ModifiableProperty(0);
-      }
-      (character as any).effectiveMonkLevel.applyPermanentEffect(sacredFistClassInfo.level);
+    const level = character.GetClassLevel('Sacred Fist');
+    if (level > 0) {
+      character.GetModifiableProperty('effectiveMonkLevel').applyPermanentEffect(level);
     }
   }
-};
+});
 
 ClassesData.set('Sacred Fist', SacredFist);
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-  // @ts-ignore
-  module.exports = { SacredFist };
-}

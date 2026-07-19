@@ -9,7 +9,11 @@ import {
     RemoveStatusFromCharacter,
     OnRoundsElapsed,
     OnPrepareSpell,
-    OnCastSpell
+    OnCastSpell,
+    OnReplenishClassSpellSlots,
+    OnUseAction,
+    OnMoveAction,
+    OnUseNumberAction
 } from '../character/character_manipulation';
 
 const LOG_DEBUG = false;
@@ -124,23 +128,10 @@ export {
     RemoveStatusFromCharacter,
     OnRoundsElapsed,
     OnPrepareSpell,
-    OnCastSpell
+    OnCastSpell,
+    OnReplenishClassSpellSlots,
+    OnUseAction,
+    OnMoveAction,
+    OnUseNumberAction
 };
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-    // @ts-ignore
-    module.exports = {
-        GetCharacterByDocId,
-        GetCharacterRepByDocId,
-        UpdateHp,
-        AddStatusToCharacter,
-        RemoveStatusFromCharacter,
-        OnRoundsElapsed,
-        OnPrepareSpell,
-        OnCastSpell,
-        include,
-        doGet
-    };
-}

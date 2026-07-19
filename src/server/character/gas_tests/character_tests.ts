@@ -1,9 +1,8 @@
 import { Character } from '../character';
-import { OnCastSpell } from '../character_manipulation';
+import { OnCastSpell, OnReplenishClassSpellSlots } from '../character_manipulation';
 import { getCharacterRep } from '../character_rep';
-import { ModifiableProperty } from '../property';
-import { ParserUtils } from '../parser_utils';
-import { ParseRaceAndClassesString } from '../parsers/races_and_classes';
+import { ModifiableProperty } from '../00_property';
+import { ParseRaceAndClassesString } from '../properties/race_and_classes';
 import { GetCharacterByDocId } from '../../services/gas_server';
 
 export function TestBessTAndESheet() {
@@ -51,6 +50,26 @@ export function TestBessSpontaneousCast() {
     console.error('Error casting spontaneous spell:', error);
   }
 }
+
+export function TestBessSpontaneousSpellCast() {
+  const bessTAndASheetId = '1Xo6O9bpBqeQfdYtkTIVaDW2pojFKAAHNsfeVWNXHyp8';  //Bess t&a sheet
+  const slotData = {
+    casterClassName: 'Bard',
+    spellLevel: '1',
+    spellName: 'Cure Light Wounds',
+    slotIndex: 0,
+    isUsed: false,
+    isEmpty: true
+  };
+  console.log('Testing Spontaneous Bard Spell Cast on Bess with:', slotData);
+  try {
+    const result = OnCastSpell(bessTAndASheetId, slotData);
+    console.log('Result:', result);
+  } catch (error) {
+    console.error('Error casting spontaneous spell:', error);
+  }
+}
+
 
 export function TestThrorsOnSpellCast() {
   const throrsTAndASheetId = '1_Is4lS5xB7Wz14-SKDw7NpWKI17FO6hFN6TzZjgbIaU';  //Thors t&a sheet
@@ -155,6 +174,116 @@ function TestParseRaceAndClasses() {
   });
 
   checkTest(classesMatch, true, 'Classes test');
+}
+
+export function TestThrorsReplenish() {
+  const throrsTAndASheetId = '1_Is4lS5xB7Wz14-SKDw7NpWKI17FO6hFN6TzZjgbIaU';  //Thors t&a sheet
+
+  // 1. Cast Enlarge Person first to ensure there's something to replenish
+  const slotData = {
+    casterClassName: 'Cleric',
+    slotIndex: 0,
+    spellLevel: '1 - domain',
+    spellName: 'Enlarge Person',
+    isUsed: false,
+    isEmpty: false
+  };
+
+  console.log('TestThrorsReplenish - Casting spell first...');
+  try {
+    OnCastSpell(throrsTAndASheetId, slotData);
+  } catch (error) {
+    console.log('Spell cast failed or was already cast:', error);
+  }
+
+  // 2. Replenish Cleric slots
+  console.log('TestThrorsReplenish - Replenishing Cleric slots...');
+  try {
+    const result = OnReplenishClassSpellSlots(throrsTAndASheetId, 'Cleric');
+    console.log('Replenish Cleric Result:', result);
+  } catch (error) {
+    console.error('Error replenishing Cleric slots:', error);
+  }
+}
+
+export function TestBessReplenish() {
+  const bessTAndASheetId = '1Xo6O9bpBqeQfdYtkTIVaDW2pojFKAAHNsfeVWNXHyp8';  //Bess t&a sheet
+
+  // 1. Cast a spontaneous spell first
+  const slotData = {
+    casterClassName: 'Bard',
+    spellLevel: '1',
+    spellName: 'Cure Light Wounds',
+    slotIndex: 0,
+    isUsed: false,
+    isEmpty: true
+  };
+
+  console.log('TestBessReplenish - Casting spell first...');
+  try {
+    OnCastSpell(bessTAndASheetId, slotData);
+  } catch (error) {
+    console.log('Spell cast failed:', error);
+  }
+
+  // 2. Replenish Bard slots
+  console.log('TestBessReplenish - Replenishing Bard slots...');
+  try {
+    const result = OnReplenishClassSpellSlots(bessTAndASheetId, 'Bard');
+    console.log('Replenish Bard Result:', result);
+  } catch (error) {
+    console.error('Error replenishing Bard slots:', error);
+  }
+}
+
+export function TestCastEnlargePerson() {
+  const throrsTAndASheetId = '1_Is4lS5xB7Wz14-SKDw7NpWKI17FO6hFN6TzZjgbIaU';  //Thors t&a sheet
+  const slotData = {
+    casterClassName: 'Cleric',
+    slotIndex: 0,
+    spellLevel: '1 - domain',
+    spellName: 'Enlarge Person',
+    isUsed: false,
+    isEmpty: false
+  };
+
+  console.log('Testing Cast Enlarge Person on Thors with:', slotData);
+  try {
+    const result = OnCastSpell(throrsTAndASheetId, slotData);
+    console.log('Cast Enlarge Person Result:', result);
+  } catch (error) {
+    console.error('Error casting Enlarge Person:', error);
+  }
+}
+
+export function TestBessReplenishRemote() {
+  const bessRemoteSheetId = '1NOnQwIPqsf3ZwlILiAUDKofC7zJ-LscSOtQK6AbanFU';  //Bess remote test sheet
+
+  // 1. Cast a spontaneous spell first
+  const slotData = {
+    casterClassName: 'Bard',
+    spellLevel: '1',
+    spellName: 'Cure Light Wounds',
+    slotIndex: 0,
+    isUsed: false,
+    isEmpty: true
+  };
+
+  console.log('TestBessReplenishRemote - Casting spell first...');
+  try {
+    OnCastSpell(bessRemoteSheetId, slotData);
+  } catch (error) {
+    console.log('Spell cast failed:', error);
+  }
+
+  // 2. Replenish Bard slots
+  console.log('TestBessReplenishRemote - Replenishing Bard slots...');
+  try {
+    const result = OnReplenishClassSpellSlots(bessRemoteSheetId, 'Bard');
+    console.log('Replenish Bard Result:', result);
+  } catch (error) {
+    console.error('Error replenishing Bard slots:', error);
+  }
 }
 
 // Run all tests

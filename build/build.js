@@ -10,6 +10,8 @@ const srcDir = path.join(rootDir, 'src');
 console.log('Starting build...');
 console.log(`Target directory: ${distDir}`);
 
+
+
 // 0. Run Type Checking
 console.log('Running type check...');
 try {
@@ -39,7 +41,6 @@ function copyFile(src, dest) {
 // 2. Copy config files
 console.log('Copying config files...');
 copyFile(path.join(rootDir, 'config', 'appsscript.json'), path.join(distDir, 'appsscript.json'));
-copyFile(path.join(rootDir, 'config', '.clasp.json'), path.join(distDir, '.clasp.json'));
 copyFile(path.join(rootDir, 'config', '.claspignore'), path.join(distDir, '.claspignore'));
 
 // 3. Process Server Files (Local Transpilation)

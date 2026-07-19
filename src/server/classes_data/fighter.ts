@@ -1,7 +1,7 @@
 import { ClassesData } from './_classes_general_data';
-import { ClassData } from './class_types';
+import { ClassData, createClassData } from './class_types';
 
-export const Fighter: ClassData = {
+export const Fighter: ClassData = createClassData({
   name: 'Fighter',
   HD: '1d10',
   skills: [
@@ -39,13 +39,7 @@ export const Fighter: ClassData = {
     /*level: 19*/{ bab: 19, Fort: 11, Ref: 6, Will: 6 },
     /*level: 20*/{ bab: 20, Fort: 12, Ref: 6, Will: 6 }
   ]
-};
+});
 
 ClassesData.set('Fighter', Fighter);
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-  // @ts-ignore
-  module.exports = { Fighter };
-}

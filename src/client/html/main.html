@@ -57,7 +57,7 @@
         <div class="section-titles">
           <span class="section-title active" data-section="0">Dashboard</span>
           <span class="section-title" data-section="1">Abilities</span>
-          <span class="section-title" data-section="2">Spells</span>
+          <span class="section-title" data-section="2">Actions</span>
           <span class="section-title" data-section="4">Inventory</span>
         </div>
       </div>
@@ -81,6 +81,14 @@
                 <div class="save-item">
                   <label>Armor Class:</label>
                   <span id="acValue">-</span>
+                </div>
+                <div class="save-item">
+                  <label>Touch AC:</label>
+                  <span id="touchAcValue">-</span>
+                </div>
+                <div class="save-item">
+                  <label>Flat-Footed AC:</label>
+                  <span id="flatFootedAcValue">-</span>
                 </div>
                 <div class="save-item">
                   <label>Fortitude:</label>
@@ -204,8 +212,11 @@
           </table>
         </div>
       </div>
-      <div class="section" id="section3">
-        <div class="spells-container" id="spellsDynamicContainer">
+      <div class="section" id="section3" style="flex-direction: column; align-items: stretch; gap: 20px;">
+        <div id="generalActionsContainer">
+          <!-- General actions will be rendered here dynamically -->
+        </div>
+        <div class="spells-container" id="spellsDynamicContainer" style="padding: 0;">
           <!-- Spell levels will be rendered here dynamically -->
         </div>
       </div>

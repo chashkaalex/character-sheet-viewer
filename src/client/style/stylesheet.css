@@ -228,6 +228,12 @@
         border-color: var(--border-color);
     }
 
+    .spell-slot.filled.invalid {
+        background-color: #dc3545 !important;
+        color: white !important;
+        border-color: #bd2130 !important;
+    }
+
     /* Spontaneous spell styles */
     .spell-level-slots.spontaneous {
         background-color: rgba(193, 127, 36, 0.05);
@@ -629,7 +635,7 @@
     }
 
     .saves-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
 
     .combat-grid {
@@ -1229,3 +1235,24 @@
     .custom-tooltip.show {
         display: block;
     }
+
+    /* Replenish button styles */
+    .replenish-button {
+        background-color: var(--header-bg);
+        color: var(--header-text);
+        border: 2px solid var(--border-color);
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 1em;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+
+    .replenish-button:hover {
+        background-color: var(--accent-color);
+        transform: scale(1.03);
+    }

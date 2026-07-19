@@ -1,10 +1,12 @@
 import { ClassesData } from './_classes_general_data';
-import { ClassData } from './class_types';
-import { ModifiableProperty } from '../character/property';
+import { ClassData, createClassData } from './class_types';
+import { ModifiableProperty } from '../character/00_property';
+import { BardicSpecial } from '../character/common_types';
 import { ParsePreparedSlotsSpontaneous } from '../character/parsers/prepared_spells';
 import { ICharacter } from '../character/icharacter';
+import { ParseKnownSpellsSpontaneous } from '../character/parsers/known_spells';
 
-export const Bard: ClassData = {
+export const Bard: ClassData = createClassData({
   name: 'Bard',
   HD: '1d6',
   skills: [
@@ -57,12 +59,6 @@ export const Bard: ClassData = {
     /*level: 19*/{ bab: 14, Fort: 6, Ref: 11, Will: 11 },
     /*level: 20*/{ bab: 15, Fort: 6, Ref: 12, Will: 12 }
   ],
-  AddSpecialProps(character: ICharacter) {
-    const bardClassInfo = character.classes.find(c => c.name === 'Bard');
-    if (bardClassInfo) {
-      (character as any).bardicSpecials = this.spellCastingData?.getBardicSpecials?.(bardClassInfo.level);
-    }
-  },
   acAbilityName: 'Dex',
   spellCastingData: {
     casterClass: 'Bard',
@@ -118,74 +114,107 @@ export const Bard: ClassData = {
       [6, 5, 5, 5, 5, 5, 4, 0, 0, 0]  // 20th
     ],
     spells: {},
-    getAvailableSpells(maxLevel: number) {
-      const availableSpells: Record<string, string[]> = {};
-      for (let level = 0; level <= maxLevel; level++) {
-        availableSpells[level] = (this.spells as any)[level] || [];
-      }
-      return availableSpells;
+    getKnownSpells(character: Readonly<ICharacter>, maxLevel: number, domains?: string[]) {
+      const known = ParseKnownSpellsSpontaneous(character, 'Bard', domains);
+      const levelNum = character.GetClassLevel('Bard');
+      const specials = resolveBardicSpecials(levelNum);
+      known['songs'] = specials.map(s => ({
+        spellName: s.name,
+        isValid: true
+      }));
+      return known;
     },
 
     getBardicSpecials(level: number) {
-      const bardicSpecials = [];
-
-      //basics
-      bardicSpecials.push({ name: 'Countersong' });
-      bardicSpecials.push({ name: 'Fascinate' });
-
-      //Inspire Courage
-      let inspireCourageBonus = 1;
-      if (level >= 19) {
-        inspireCourageBonus = 4;
-      } else if (level >= 13) {
-        inspireCourageBonus = 3;
-      } else if (level >= 7) {
-        inspireCourageBonus = 2;
-      }
-      bardicSpecials.push({ name: 'Inspire Courage', value: new ModifiableProperty(inspireCourageBonus) });
-
-      //Inspire Competence
-      if (level > 2) {
-        bardicSpecials.push({ name: 'Inspire Competence' });
-      }
-
-      //Suggestion
-      if (level > 5) {
-        bardicSpecials.push({ name: 'Suggestion' });
-      }
-
-      //Inspire greatness
-      if (level > 9) {
-        bardicSpecials.push({ name: 'Inspire Greatness' });
-      }
-
-      //Song of freedom
-      if (level > 11) {
-        bardicSpecials.push({ name: 'Song of Freedom' });
-      }
-
-      //Inspire heroics
-      if (level > 14) {
-        bardicSpecials.push({ name: 'Inspire Heroics' });
-      }
-
-      //Mass Suggestion
-      if (level > 17) {
-        bardicSpecials.push({ name: 'Mass Suggestion' });
-      }
-
-
-      return bardicSpecials;
+      return resolveBardicSpecials(level);
     },
-    ParsePreparedSpells: ParsePreparedSlotsSpontaneous
+    ParsePreparedSpellsMethod: ParsePreparedSlotsSpontaneous,
+    ConsumeSpellSlot: (docId: string, slotData: any, adapter: any) => {
+      return adapter.DecrementSpontaneousSlots(docId, slotData.casterClassName, slotData.spellLevel);
+    },
+    ReplenishSpellSlots: (docId: string, adapter: any) => {
+      return adapter.ReplenishSpontaneousSlots(docId, 'Bard');
+    },
+    AddSpecialProperties(character: ICharacter, runtimeData: any) {
+
+      runtimeData.bardicSpecials = resolveBardicSpecials(runtimeData.level.currentScore);
+      runtimeData.bardicSpecials.forEach((special: any) => {
+        if (special.value && (character as any).registerProperty) {
+          (character as any).registerProperty(special.name, special.value);
+        }
+      });
+
+      character.manipulationCallbacks.OnCastSpell.push((char, slotData, context, helpers) => {
+        if (slotData.casterClassName === 'Bard' && slotData.spellLevel === 'songs') {
+          const bardCasterData = char.spellCasting.GetSpellCasterClassData('Bard');
+          if (bardCasterData && bardCasterData.bardicSpecials) {
+            const matchedSpecial = bardCasterData.bardicSpecials.find((s) => s.name === slotData.spellName);
+            if (matchedSpecial && matchedSpecial.value) {
+              const modifierVal = matchedSpecial.value.currentScore;
+              if (modifierVal) {
+                context.statusName = `${slotData.spellName} +${modifierVal}`;
+              }
+              if (slotData.spellName === 'Inspire Courage' && char.HasStatus('Inspirational Boost')) {
+                helpers.removeStatus('Inspirational Boost');
+              }
+            }
+          }
+        }
+      });
+    }
   }
-};
+});
+
+function resolveBardicSpecials(level: number): BardicSpecial[] {
+  const bardicSpecials: BardicSpecial[] = [];
+
+  //basics
+  bardicSpecials.push({ name: 'Countersong' });
+  bardicSpecials.push({ name: 'Fascinate' });
+
+  //Inspire Courage
+  let inspireCourageBonus = 1;
+  if (level >= 19) {
+    inspireCourageBonus = 4;
+  } else if (level >= 13) {
+    inspireCourageBonus = 3;
+  } else if (level >= 7) {
+    inspireCourageBonus = 2;
+  }
+  bardicSpecials.push({ name: 'Inspire Courage', value: new ModifiableProperty(inspireCourageBonus) });
+
+  //Inspire Competence
+  if (level > 2) {
+    bardicSpecials.push({ name: 'Inspire Competence', value: new ModifiableProperty(2) });
+  }
+
+  //Suggestion
+  if (level > 5) {
+    bardicSpecials.push({ name: 'Suggestion' });
+  }
+
+  //Inspire greatness
+  if (level > 9) {
+    bardicSpecials.push({ name: 'Inspire Greatness', value: new ModifiableProperty(2) });
+  }
+
+  //Song of freedom
+  if (level > 11) {
+    bardicSpecials.push({ name: 'Song of Freedom' });
+  }
+
+  //Inspire heroics
+  if (level > 14) {
+    bardicSpecials.push({ name: 'Inspire Heroics', value: new ModifiableProperty(4) });
+  }
+
+  //Mass Suggestion
+  if (level > 17) {
+    bardicSpecials.push({ name: 'Mass Suggestion' });
+  }
+
+  return bardicSpecials;
+}
 
 ClassesData.set('Bard', Bard);
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-  // @ts-ignore
-  module.exports = { Bard };
-}

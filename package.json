@@ -4,24 +4,28 @@
   "description": "Google Apps Script Character Sheet Viewer",
   "scripts": {
     "build": "node build/build.js",
-    "lint": "eslint src/server/ src/client/ts/ src/local_tests/ --config config/.eslintrc.json --ext .js,.ts",
-    "lint:fix": "eslint src/server/ src/client/ts/ --config config/.eslintrc.json --fix --ext .js,.ts",
+    "lint": "eslint src/server/ src/client/ts/ src/tests/ --config config/.eslintrc.json --ext .js,.ts",
+    "lint:fix": "eslint src/server/ src/client/ts/ src/tests/ --config config/.eslintrc.json --fix --ext .js,.ts",
     "lint:server": "eslint src/server/ --config config/.eslintrc.json --ext .js",
     "lint:client": "eslint src/client/ts/ --config config/.eslintrc.json --ext .ts",
     "test": "jest --config config/jest.config.js",
+    "test:local": "jest --config config/jest.config.js src/tests/local_tests",
     "clean": "node -e \"const fs = require('fs'); if(fs.existsSync('dist')) fs.rmSync('dist', {recursive: true, force: true})\"",
     "backup": "node build/backup.js",
-    "deploy": "npm run backup && npm run lint:fix && npm run build && cd dist && clasp push"
+    "deploy": "npx ts-node --compiler-options \"{\\\"module\\\":\\\"CommonJS\\\",\\\"esModuleInterop\\\":true}\" build/pipeline.ts",
+    "test:deploy": "npx ts-node --compiler-options \"{\\\"module\\\":\\\"CommonJS\\\"}\" src/tests/remote_tests/test_connection.ts"
   },
   "devDependencies": {
     "@types/google-apps-script": "^2.0.8",
     "@types/jest": "^30.0.0",
+    "@types/node": "^22.13.5",
     "@typescript-eslint/eslint-plugin": "^8.58.2",
     "@typescript-eslint/parser": "^8.58.2",
     "eslint": "^8.57.0",
     "fs": "^0.0.1-security",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
     "vite": "^8.0.8",
     "vite-plugin-singlefile": "^2.3.2"

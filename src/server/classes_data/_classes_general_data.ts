@@ -5,9 +5,3 @@ import { ClassData } from './class_types';
  */
 export const ClassesData = new Map<string, ClassData>();
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-    // @ts-ignore
-    module.exports = { ClassesData };
-}

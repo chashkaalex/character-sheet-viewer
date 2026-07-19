@@ -1,5 +1,7 @@
-import { ParserUtils } from '../character/parser_utils';
+import { GetLineThatContainsOneOfTheseTokens, GetParenthesesContent } from '../character/parser_utils';
+import { SECTION_NAMES, IsSectionLine, ParsePreparedSpellsStructure } from '../character/parsers/doc_parser';
 import { AdapterResult } from '../character/common_types';
+import { ClassesData } from '../classes_data/_classes_general_data';
 
 class ParagraphResult {
     public success: boolean;
@@ -128,7 +130,7 @@ export function UpdateSection(docId: string, sectionName: string, newLine: strin
         // Find the section end (next section or end of document)
         let sectionEndIndex = sectionStartIndex + 1;
         while (sectionEndIndex < paragraphs.length &&
-            !ParserUtils.sectionNames.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
+            !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
             sectionEndIndex++;
         }
 
@@ -177,7 +179,7 @@ export function RemoveLineFromSection(docId: string, sectionName: string, lineTo
         // Find the section end (next section or end of document)
         let sectionEndIndex = sectionStartIndex + 1;
         while (sectionEndIndex < paragraphs.length &&
-            !ParserUtils.sectionNames.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
+            !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
             sectionEndIndex++;
         }
 
@@ -288,7 +290,7 @@ export function ExtractListItemsArray(doc: GoogleAppsScript.Document.Document, s
             // Ignore complex elements
         }
 
-        if (startParsing && ParserUtils.IsSectionLine(elementText) && !elementText.startsWith(sectionName)) {
+        if (startParsing && IsSectionLine(elementText) && !elementText.startsWith(sectionName)) {
             startParsing = false;
             break;
         }
@@ -324,9 +326,9 @@ export function GetSpellListItem(docId: string, casterClass: string, spellLevel:
 
     const lines = ParseGDocToRawLines(docId);
     let domains: string[] = [];
-    const domainLine = ParserUtils.GetLineThatContainsOneOfTheseTokens(lines, ['Domain', 'domains']);
+    const domainLine = GetLineThatContainsOneOfTheseTokens(lines, ['Domain', 'domains']);
     if (domainLine) {
-        domains = ParserUtils.GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
+        domains = GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
     }
 
     // Convert listItems to object array
@@ -340,7 +342,7 @@ export function GetSpellListItem(docId: string, casterClass: string, spellLevel:
         };
     });
 
-    const preparedSpellsStructure = ParserUtils.ParsePreparedSpellsStructure(spellsItems, domains, () => true);
+    const preparedSpellsStructure = ParsePreparedSpellsStructure(spellsItems, domains, () => true);
 
     // Filter for the specific spell level
     // @ts-ignore
@@ -381,7 +383,7 @@ export function DecrementSpontaneousSlotsInGDoc(docId: string, sectionName: stri
         // Find the section end
         let sectionEndIndex = sectionStartIndex + 1;
         while (sectionEndIndex < paragraphs.length &&
-            !ParserUtils.sectionNames.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
+            !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
             sectionEndIndex++;
         }
 
@@ -390,7 +392,7 @@ export function DecrementSpontaneousSlotsInGDoc(docId: string, sectionName: stri
             const paragraph = paragraphs[i];
             const text = paragraph.getText();
 
-            const isTargetLine = text.startsWith(marker);
+            const isTargetLine = text.toLowerCase().startsWith(marker.toLowerCase());
 
             if (isTargetLine) {
                 const match = text.match(/(\d+)\/(\d+)/);
@@ -400,6 +402,7 @@ export function DecrementSpontaneousSlotsInGDoc(docId: string, sectionName: stri
                     if (remaining > 0) {
                         const newText = text.replace(`${remaining}/${total}`, `${remaining - 1}/${total}`);
                         paragraph.setText(newText);
+                        paragraph.editAsText().setStrikethrough(false);
                         return { success: true };
                     }
                     return { success: false, error: 'No slots remaining' };
@@ -543,19 +546,140 @@ export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string)
     }
 }
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-    // @ts-ignore
-    module.exports = {
-        ParseGDocToRawLines,
-        UpdateProperty,
-        UpdateSection,
-        RemoveLineFromSection,
-        ExtractListItemsArray,
-        GetSpellListItem,
-        DecrementSpontaneousSlotsInGDoc,
-        DecrementPropertyWithUpdateProperty,
-        GetPartyMembersFromGDoc
-    };
+/**
+ * Replenishes prepared spells (removes strikethroughs) in Google Doc.
+ */
+export function ReplenishPreparedSpellsInGDoc(docId: string, casterClass: string): AdapterResult {
+    try {
+        const doc = DocumentApp.openById(docId);
+        const body = doc.getBody();
+        let startParsing = false;
+        let currentClass = '';
+
+        for (let i = 0; i < body.getNumChildren(); i++) {
+            const element = body.getChild(i);
+            const type = element.getType();
+            let elementText = '';
+
+            try {
+                if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
+                    const textElement = element as GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem;
+                    elementText = textElement.getText().trim();
+                }
+            } catch (e) {
+                // Ignore complex elements
+            }
+
+            if (startParsing && IsSectionLine(elementText) && !elementText.startsWith('Prepared Spells')) {
+                startParsing = false;
+                break;
+            }
+
+            if (elementText.startsWith('Prepared Spells')) {
+                startParsing = true;
+                continue;
+            }
+
+            if (startParsing) {
+                if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
+                    const matchedClass = Array.from(ClassesData.keys()).find(
+                        cls => cls.toLowerCase() === elementText.toLowerCase()
+                    );
+                    if (matchedClass) {
+                        currentClass = matchedClass;
+                        continue;
+                    }
+                }
+
+                if (currentClass.toLowerCase() === casterClass.toLowerCase()) {
+                    if (type === DocumentApp.ElementType.LIST_ITEM) {
+                        const listItem = element.asListItem();
+                        if (listItem.getText().trim() !== '') {
+                            console.log(`Replenishing prepared spell: ${listItem.getText().trim()}`);
+                            listItem.editAsText().setStrikethrough(false);
+                        }
+                    }
+                }
+            }
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error replenishing prepared spells in GDoc:', error);
+        return { success: false, error: (error as Error).toString() };
+    }
 }
+
+/**
+ * Replenishes spontaneous spell slots (Y/Y) in Google Doc.
+ */
+export function ReplenishSpontaneousSlotsInGDoc(docId: string, casterClass: string): AdapterResult {
+    try {
+        const doc = DocumentApp.openById(docId);
+        const body = doc.getBody();
+        let startParsing = false;
+        let currentClass = '';
+
+        for (let i = 0; i < body.getNumChildren(); i++) {
+            const element = body.getChild(i);
+            const type = element.getType();
+            let elementText = '';
+
+            try {
+                if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
+                    const textElement = element as GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem;
+                    elementText = textElement.getText().trim();
+                }
+            } catch (e) {
+                // Ignore complex elements
+            }
+
+            if (startParsing && IsSectionLine(elementText) && !elementText.startsWith('Prepared Spells')) {
+                startParsing = false;
+                break;
+            }
+
+            if (elementText.startsWith('Prepared Spells')) {
+                startParsing = true;
+                continue;
+            }
+
+            if (startParsing) {
+                if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
+                    const matchedClass = Array.from(ClassesData.keys()).find(
+                        cls => cls.toLowerCase() === elementText.toLowerCase()
+                    );
+                    if (matchedClass) {
+                        currentClass = matchedClass;
+                        continue;
+                    }
+                }
+
+                if (currentClass.toLowerCase() === casterClass.toLowerCase()) {
+                    if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
+                        const textElement = element as GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem;
+                        const text = textElement.getText();
+                        const match = text.match(/(\d+)\/(\d+)/);
+                        if (match) {
+                            const total = match[2];
+                            const newText = text.replace(/(\d+)\/(\d+)/, `${total}/${total}`);
+                            console.log(`Replenished spontaneous slots for ${currentClass}: '${text}' -> '${newText}'`);
+                            if (type === DocumentApp.ElementType.PARAGRAPH) {
+                                (element as GoogleAppsScript.Document.Paragraph).setText(newText);
+                            } else {
+                                (element as GoogleAppsScript.Document.ListItem).setText(newText);
+                            }
+                            textElement.editAsText().setStrikethrough(false);
+                        }
+                    }
+                }
+            }
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error replenishing spontaneous slots in GDoc:', error);
+        return { success: false, error: (error as Error).toString() };
+    }
+}
+

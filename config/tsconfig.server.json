@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ES2019",
     "module": "CommonJS",
+    "ignoreDeprecations": "6.0",
     "lib": ["es2019", "dom"],
     "skipLibCheck": true,
     "esModuleInterop": true,

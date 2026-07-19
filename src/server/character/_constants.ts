@@ -3,12 +3,6 @@
  * Many of these should eventually move to a database.
  */
 
-export const AbilityNames = ['Str', 'Dex', 'Con', 'Int', 'Wis', 'Cha'] as const;
-export type AbilityName = typeof AbilityNames[number] | 'None';
-
-export const SaveNames = ['Fort', 'Ref', 'Will'] as const;
-export type SaveName = typeof SaveNames[number];
-
 export interface SizeInfo {
   name: string;
   next: string;
@@ -65,90 +59,6 @@ export const SpellcasterClasses = [
   'Sacred Fist'
 ] as const;
 
-export const SkillsAbilities: Record<string, AbilityName | 'None'> = {
-  'Appraise': 'Int',
-  'Balance': 'Dex',
-  'Bluff': 'Cha',
-  'Climb': 'Str',
-  'Concentration': 'Con',
-  'Craft': 'Int',
-  'Decipher Script': 'Int',
-  'Diplomacy': 'Cha',
-  'Disable Device': 'Int',
-  'Disguise': 'Cha',
-  'Escape Artist': 'Dex',
-  'Forgery': 'Int',
-  'Gather Information': 'Cha',
-  'Handle Animal': 'Cha',
-  'Heal': 'Wis',
-  'Hide': 'Dex',
-  'Intimidate': 'Cha',
-  'Jump': 'Str',
-  'Knowledge (arcana)': 'Int',
-  'Knowledge (architecture and engineering)': 'Int',
-  'Knowledge (dungeoneering)': 'Int',
-  'Knowledge (geography)': 'Int',
-  'Knowledge (history)': 'Int',
-  'Knowledge (local)': 'Int',
-  'Knowledge (nature)': 'Int',
-  'Knowledge (nobility and royalty)': 'Int',
-  'Knowledge (religion)': 'Int',
-  'Knowledge (the planes)': 'Int',
-  'Listen': 'Wis',
-  'Move Silently': 'Dex',
-  'Open Lock': 'Dex',
-  'Perform': 'Cha',
-  'Profession': 'Wis',
-  'Ride': 'Dex',
-  'Search': 'Int',
-  'Sense Motive': 'Wis',
-  'Sleight of Hand': 'Dex',
-  'Speak Language': 'None',
-  'Spellcraft': 'Int',
-  'Spot': 'Wis',
-  'Survival': 'Wis',
-  'Swim': 'Str',
-  'Tumble': 'Dex',
-  'Use Magic Device': 'Cha',
-  'Use Rope': 'Dex'
-} as const;
-
-export const SkillsSynergyReversed: Record<string, string[]> = {
-  'Appraise': ['Craft'],
-  'Balance': ['Tumble'],
-  'Climb': ['Use Rope'],
-  'Diplomacy': [
-    'Bluff',
-    'Knowledge (nobility and royalty)',
-    'Sense Motive'
-  ],
-  'Disguise': ['Bluff'],
-  'Escape Artist': ['Use Rope'],
-  'Gather Information': ['Knowledge (local)'],
-  'Intimidate': ['Bluff'],
-  'Jump': ['Tumble'],
-  'Knowledge (nature)': ['Survival'],
-  'Ride': ['Handle Animal'],
-  'Search': ['Knowledge (architecture and engineering)'],
-  'Sleight of Hand': ['Bluff'],
-  'Spellcraft': [
-    'Knowledge (arcana)',
-    'Use Magic Device'
-  ],
-  'Survival': [
-    'Knowledge (dungeoneering)',
-    'Knowledge (geography)',
-    'Knowledge (nature)',
-    'Knowledge (the planes)',
-    'Search'
-  ],
-  'Tumble': ['Jump'],
-  'Use Magic Device': [
-    'Decipher Script',
-    'Spellcraft'
-  ],
-  'Use Rope': ['Escape Artist']
-} as const;
 
 export const SpecialAttackNames = [
   'Aid another',
@@ -203,4 +113,3 @@ export const VisionTypes = {
 } as const;
 
 export type VisionType = keyof typeof VisionTypes;
-

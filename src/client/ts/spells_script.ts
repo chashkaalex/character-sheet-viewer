@@ -28,7 +28,10 @@ export function renderSpellsUI() {
     }
 
     classDiv.innerHTML = `
-            <h3>${classTitle}</h3>
+            <div class="spellcasting-class-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+                <h3 style="margin: 0; border: none; padding: 0; font-size: 1.3em; color: var(--primary-color);">${classTitle}</h3>
+                <button class="replenish-button" style="margin: 0; padding: 6px 12px; font-size: 0.9em;" onclick="replenishClassSpellSlots(this, '${casterClassData.className}')">Replenish Slots</button>
+            </div>
             <div class="spell-slots-container">
                 ${renderSpellSlots(casterClassData.spellSlots, casterClassData.preparedSpells, casterClassData.className, casterClassData.preparation)}
             </div>
@@ -68,7 +71,7 @@ export function renderSpellSlots(spellSlots, preparedSpells = {}, className = ''
     if (String(level) !== 'songs' && (expectedSlots > 0 || slotsToRender > 0) && slotsToRender !== expectedSlots) {
       showDiscrepancyAlert = true;
       const slotType = preparation === 'Spontaneous' ? 'spontaneous slots' : 'prepared spells';
-      discrepancyMsg = `⚠ Discrepancy! Level ${level} has ${slotsToRender} ${slotType}, but ${expectedSlots} spell slots!`;
+      discrepancyMsg = `⚠ Discrepancy! Level ${level}: ${slotsToRender} parsed ${slotType} vs ${expectedSlots} calculated slots!`;
     }
 
     // Domain discrepancy logic
@@ -105,13 +108,17 @@ export function renderSpellSlots(spellSlots, preparedSpells = {}, className = ''
         // Handle both old format (string) and new format (object with spell and used properties)
         let spellName = '';
         let isUsed = false;
+        let isValid = true;
 
         if (spellData) {
           if (typeof spellData === 'string') {
             spellName = spellData;
-          } else if (typeof spellData === 'object' && spellData.spell) {
-            spellName = spellData.spell;
+          } else if (typeof spellData === 'object') {
+            spellName = spellData.spell || '';
             isUsed = spellData.used || false;
+            if (spellData.isValid === false) {
+              isValid = false;
+            }
           }
         }
 
@@ -124,11 +131,12 @@ export function renderSpellSlots(spellSlots, preparedSpells = {}, className = ''
           }
         }
 
+        const invalidClass = (!isEmpty && !isSpontaneousEmpty && !isValid) ? 'invalid' : '';
         const slotClass = (isEmpty || isSpontaneousEmpty) ? 'empty' : 'filled';
         const usedClass = isUsed ? 'used' : '';
         const displayText = (isEmpty || isSpontaneousEmpty) ? '' : spellName;
 
-        return `<div class="spell-slot ${slotClass} ${usedClass}" data-level="${level}" data-slot="${index}" data-spell="${spellName}" data-used="${isUsed}" data-class="${className}" data-preparation="${preparation}" title="${spellName || 'Empty slot'}">${displayText}</div>`;
+        return `<div class="spell-slot ${slotClass} ${usedClass} ${invalidClass}" data-level="${level}" data-slot="${index}" data-spell="${spellName}" data-used="${isUsed}" data-valid="${isValid}" data-class="${className}" data-preparation="${preparation}" title="${spellName || 'Empty slot'}">${displayText}</div>`;
       }).join('')}
                         ${hasDomainSlot ? (() => {
           let domainHtml = '';
@@ -141,23 +149,28 @@ export function renderSpellSlots(spellSlots, preparedSpells = {}, className = ''
             // Handle both old format (string) and new format (object with spell and used properties)
             let domainSpellName = '';
             let domainIsUsed = false;
+            let domainIsValid = true;
 
             if (domainSpellData) {
               if (typeof domainSpellData === 'string') {
                 domainSpellName = domainSpellData;
-              } else if (typeof domainSpellData === 'object' && domainSpellData.spell) {
-                domainSpellName = domainSpellData.spell;
+              } else if (typeof domainSpellData === 'object') {
+                domainSpellName = domainSpellData.spell || '';
                 domainIsUsed = domainSpellData.used || false;
+                if (domainSpellData.isValid === false) {
+                  domainIsValid = false;
+                }
               }
             }
 
+            const domainInvalidClass = (!isEmpty && !domainIsValid) ? 'invalid' : '';
             const domainSlotClass = isEmpty ? 'empty' : 'filled';
             const domainUsedClass = domainIsUsed ? 'used' : '';
             const domainDisplayText = isEmpty ? '' : domainSpellName;
 
             domainHtml += `
                                <div class="spell-slot-separator"></div>
-                               <div class="spell-slot domain-slot ${domainSlotClass} ${domainUsedClass}" data-level="${level}" data-slot="${d}" data-spell="${domainSpellName}" data-used="${domainIsUsed}" data-class="${className}" data-preparation="${preparation}" title="${domainSpellName || 'Empty domain slot'}">${domainDisplayText}</div>
+                               <div class="spell-slot domain-slot ${domainSlotClass} ${domainUsedClass} ${domainInvalidClass}" data-level="${level}" data-slot="${d}" data-spell="${domainSpellName}" data-used="${domainIsUsed}" data-valid="${domainIsValid}" data-class="${className}" data-preparation="${preparation}" title="${domainSpellName || 'Empty domain slot'}">${domainDisplayText}</div>
                            `;
           }
           return domainHtml;
@@ -172,6 +185,7 @@ export function renderSpellSlots(spellSlots, preparedSpells = {}, className = ''
 }
 
 export function PrepareSpellsUI() {
+  renderGeneralActionsUI();
   renderSpellsUI();
   initializeSpellSlotHandlers();
 }
@@ -220,16 +234,29 @@ export function initializeSpellSlotHandlers() {
       /**
              * @type {UISlotData}
              */
+      const rawLevel = target.dataset.level;
       const uiSlotData = {
-        level: parseInt(target.dataset.level),
-        slot: parseInt(target.dataset.slot),
+        level: (rawLevel === 'songs' || rawLevel === 'actions') ? rawLevel : parseInt(rawLevel || '0'),
+        slot: parseInt(target.dataset.slot || '0'),
         spell: target.dataset.spell || '',
         isUsed: target.dataset.used === 'true',
+        isValid: target.dataset.valid !== 'false',
         isEmpty: target.classList.contains('empty'),
         isDomain: target.classList.contains('domain-slot'),
         casterClass: target.dataset.class || '',
         preparation: target.dataset.preparation || 'Prepared'
       };
+
+      const metadata = (characterRep as any).actionsMetadata && (characterRep as any).actionsMetadata[uiSlotData.spell];
+      if (metadata && metadata.acceptsNumber) {
+        showNumberActionPopup(target, uiSlotData.spell, metadata);
+        return;
+      }
+
+      if (uiSlotData.spell === 'Move') {
+        showMovePopup(target);
+        return;
+      }
 
       showSpellPopup(target, uiSlotData);
     }
@@ -238,8 +265,9 @@ export function initializeSpellSlotHandlers() {
   // Close popup when clicking outside
   document.addEventListener('click', function (event) {
     if (!(event.target instanceof HTMLElement)) return;
-    if (!event.target.closest('.spell-popup') && !event.target.classList.contains('spell-slot')) {
+    if (!event.target.closest('.spell-popup') && !event.target.closest('#movePopup') && !event.target.classList.contains('spell-slot')) {
       hideSpellPopup();
+      hideMovePopup();
     }
   });
 }
@@ -262,6 +290,7 @@ export function showSpellPopup(targetElement, uiSlotData) {
   // If it's a cast menu, also store the spell name
   if (!uiSlotData.isEmpty) {
     slotData.spellName = uiSlotData.spell;
+    slotData.isValid = uiSlotData.isValid;
   }
 
   window.currentSlotData = slotData;
@@ -388,8 +417,36 @@ export function createSpontaneousCastMenu(slotData) {
 
 export function createCastMenu(slotData) {
   const isUsed = slotData.isUsed || false;
-  const castButtonDisabled = isUsed ? 'disabled' : '';
-  const castButtonClass = isUsed ? 'spell-button cast disabled' : 'spell-button cast';
+  const isValid = slotData.isValid !== false;
+  const castButtonDisabled = (isUsed || !isValid) ? 'disabled' : '';
+  const castButtonClass = (isUsed || !isValid) ? 'spell-button cast disabled' : 'spell-button cast';
+
+  if (slotData.casterClassName === 'Actions' || slotData.casterClass === 'Actions') {
+    let statusText = '';
+    if (isUsed) {
+      statusText = '<br><strong>Status:</strong> <span style="color: var(--text-muted); text-decoration: line-through;">Active</span>';
+    }
+
+    return `
+          <h3>Use Action</h3>
+          <div class="spell-info">
+              <strong>Action:</strong> ${slotData.spell}
+              ${statusText}
+          </div>
+          
+          <div class="spell-actions">
+              <button class="spell-button cancel" onclick="window.hideSpellPopup()">Cancel</button>
+              <button class="${castButtonClass}" onclick="window.useAction()" ${castButtonDisabled}>Use</button>
+          </div>
+      `;
+  }
+
+  let statusText = '';
+  if (isUsed) {
+    statusText = '<br><strong>Status:</strong> <span style="color: var(--text-muted); text-decoration: line-through;">Used</span>';
+  } else if (!isValid) {
+    statusText = '<br><strong>Status:</strong> <span style="color: #dc3545; font-weight: bold;">Invalid</span>';
+  }
 
   return `
         <h3>Cast Spell</h3>
@@ -397,7 +454,7 @@ export function createCastMenu(slotData) {
             <strong>Spell:</strong> ${slotData.spell}
             <br><strong>Level:</strong> ${slotData.level}${slotData.isDomain ? ' Domain' : ''}
             <br><strong>Slot:</strong> ${slotData.slot}
-            ${isUsed ? '<br><strong>Status:</strong> <span style="color: var(--text-muted); text-decoration: line-through;">Used</span>' : ''}
+            ${statusText}
         </div>
         
         <div class="spell-actions">
@@ -413,13 +470,37 @@ export function generateSpellOptions(className, maxLevel, isDomain, selectedLeve
   }
 
   const casterClassData = characterRep.spellCasting.classSpellCastingData.find(c => c.className === className);
-  if (!casterClassData || !casterClassData.availableSpells) {
+  if (!casterClassData || !casterClassData.knownSpells) {
     return '<option value="">No spells available</option>';
+  }
+
+  if (maxLevel === 'songs') {
+    const spells = casterClassData.knownSpells['songs'] || [];
+    const sortedSpells = [...spells].sort((a, b) => {
+      const nameA = typeof a === 'string' ? a : a.spellName;
+      const nameB = typeof b === 'string' ? b : b.spellName;
+      return nameA.localeCompare(nameB);
+    });
+
+    const songOptions = sortedSpells.map(entry => {
+      let spellName = '';
+      let isValid = true;
+      if (typeof entry === 'string') {
+        spellName = entry;
+      } else {
+        spellName = entry.spellName;
+        isValid = entry.isValid !== false;
+      }
+      const style = isValid ? '' : ' style="color: #dc3545; font-weight: bold;"';
+      const label = isValid ? spellName : `${spellName} (Invalid)`;
+      return `<option value="${spellName}" data-level="songs" data-domain="${isDomain}"${style}>${label}</option>`;
+    });
+    return songOptions.join('');
   }
 
   // If no selectedLevels provided, show all levels from maxLevel down to 0
   if (!selectedLevels) {
-    selectedLevels = Array.from({ length: maxLevel + 1 }, (_, i) => i);
+    selectedLevels = Array.from({ length: (maxLevel as number) + 1 }, (_, i) => i);
   }
 
   const options = [];
@@ -436,7 +517,7 @@ export function generateSpellOptions(className, maxLevel, isDomain, selectedLeve
     }
 
     const levelKey = isDomain && level > 0 ? `${level} - domain` : level;
-    const spells = casterClassData.availableSpells[levelKey] || [];
+    const spells = casterClassData.knownSpells[levelKey] || [];
 
     if (spells.length > 0) {
       if (!isDomain) {
@@ -444,8 +525,24 @@ export function generateSpellOptions(className, maxLevel, isDomain, selectedLeve
         options.push(`<optgroup label="${levelLabel}">`);
       }
 
-      spells.sort().forEach(spell => {
-        options.push(`<option value="${spell}" data-level="${level}" data-domain="${isDomain}">${spell}</option>`);
+      const sortedSpells = [...spells].sort((a, b) => {
+        const nameA = typeof a === 'string' ? a : a.spellName;
+        const nameB = typeof b === 'string' ? b : b.spellName;
+        return nameA.localeCompare(nameB);
+      });
+
+      sortedSpells.forEach(entry => {
+        let spellName = '';
+        let isValid = true;
+        if (typeof entry === 'string') {
+          spellName = entry;
+        } else {
+          spellName = entry.spellName;
+          isValid = entry.isValid !== false;
+        }
+        const style = isValid ? '' : ' style="color: #dc3545; font-weight: bold;"';
+        const label = isValid ? spellName : `${spellName} (Invalid)`;
+        options.push(`<option value="${spellName}" data-level="${level}" data-domain="${isDomain}"${style}>${label}</option>`);
       });
 
       if (!isDomain) {
@@ -492,7 +589,7 @@ export function updateSpellDropdown(popup, slotData) {
   }
 
   const casterClassData = characterRep.spellCasting.classSpellCastingData.find(c => c.className === className);
-  if (!casterClassData || !casterClassData.availableSpells) {
+  if (!casterClassData || !casterClassData.knownSpells) {
     return;
   }
 
@@ -653,4 +750,266 @@ export function castSpell() {
     .OnCastSpell(characterRep.docId, slotData);
 
   hideSpellPopup();
+}
+
+/**
+ * Replenishes spell slots for a specific caster class of the loaded character.
+ */
+export function replenishClassSpellSlots(buttonElement: HTMLButtonElement, className: string) {
+  if (!characterRep || !characterRep.docId) {
+    console.error('No character loaded');
+    return;
+  }
+
+  console.log('Replenishing spell slots for class:', className, 'on button:', buttonElement);
+
+  if (buttonElement) {
+    buttonElement.disabled = true;
+    buttonElement.style.opacity = '0.5';
+  }
+
+  google.script.run
+    .withSuccessHandler(function (updatedRep) {
+      if (buttonElement) {
+        buttonElement.disabled = false;
+        buttonElement.style.opacity = '1';
+      }
+      onCharacterRepresentation(updatedRep);
+    })
+    .withFailureHandler(function (error) {
+      if (buttonElement) {
+        buttonElement.disabled = false;
+        buttonElement.style.opacity = '1';
+      }
+      console.error('Error replenishing spell slots:', error);
+      alert('Error replenishing spell slots: ' + error.message);
+    })
+    .OnReplenishClassSpellSlots(characterRep.docId, className);
+}
+
+/**
+ * Renders the general actions UI grid.
+ */
+export function renderGeneralActionsUI() {
+  const container = document.getElementById('generalActionsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!characterRep || !characterRep.actions || characterRep.actions.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'block';
+
+  const classDiv = document.createElement('div');
+  classDiv.className = 'spellcasting-class';
+
+  let html = `
+    <div class="spellcasting-class-header" style="border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+        <h3 style="margin: 0; border: none; padding: 0; font-size: 1.3em; color: var(--primary-color);">General Actions</h3>
+    </div>
+    <div class="spell-slots-container">
+      <div class="spell-level-slots">
+        <div class="spell-slot-grid">
+  `;
+
+  characterRep.actions.forEach((actionName, index) => {
+    const isActive = characterRep.statuses && characterRep.statuses.some((s: any) => s.name === actionName);
+    const slotClass = 'filled';
+    const usedClass = isActive ? 'used' : '';
+
+    html += `<div class="spell-slot ${slotClass} ${usedClass}" data-level="actions" data-slot="${index}" data-spell="${actionName}" data-used="${isActive}" data-valid="true" data-class="Actions" data-preparation="Actions" title="${actionName}">${actionName}</div>`;
+  });
+
+  html += `
+        </div>
+      </div>
+    </div>
+  `;
+
+  classDiv.innerHTML = html;
+  container.appendChild(classDiv);
+}
+
+/**
+ * Client-side handler to trigger using a general action.
+ */
+export function useAction() {
+  const slotData = window.currentSlotData;
+  if (!slotData || !slotData.spellName) {
+    console.error('No action selected');
+    return;
+  }
+
+  console.log('Using action:', slotData.spellName);
+
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error('Error using action:', error);
+      alert('Error using action: ' + error.message);
+    })
+    .OnUseAction(characterRep.docId, slotData.spellName);
+
+  hideSpellPopup();
+}
+
+/**
+ * Shows the dedicated Move action modal popup near the clicked element.
+ */
+export function showMovePopup(targetElement: HTMLElement) {
+  // Hide any existing spell popup
+  hideSpellPopup();
+  // Hide any existing move popup
+  hideMovePopup();
+
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'spell-popup-overlay show';
+  overlay.id = 'movePopupOverlay';
+  document.body.appendChild(overlay);
+
+  // Create popup
+  const popup = document.createElement('div');
+  popup.className = 'spell-popup show';
+  popup.id = 'movePopup';
+
+  const maxSpeed = characterRep && characterRep.speed ? characterRep.speed.currentScore : 30;
+
+  popup.innerHTML = `
+        <h3>Use Move Action</h3>
+        <div class="spell-info" style="margin-bottom: 15px;">
+            <strong>Action:</strong> Move
+            <br><strong>Max Speed:</strong> ${maxSpeed} ft.
+            <div style="margin-top: 10px;">
+              <label for="moveFeetInput" style="font-weight: bold; display: block; margin-bottom: 5px;">Distance (feet):</label>
+              <input type="number" id="moveFeetInput" min="5" step="5" value="${maxSpeed}" max="${maxSpeed}" style="width: 80px; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--background-secondary); color: var(--text-color);">
+            </div>
+        </div>
+        
+        <div class="spell-actions">
+            <button class="spell-button cancel" onclick="window.hideMovePopup()">Cancel</button>
+            <button class="spell-button cast" onclick="window.moveAction()">Move</button>
+        </div>
+    `;
+
+  document.body.appendChild(popup);
+  positionPopup(popup, targetElement);
+
+  // Close when clicking overlay
+  overlay.addEventListener('click', hideMovePopup);
+}
+
+/**
+ * Hides the dedicated Move action modal popup.
+ */
+export function hideMovePopup() {
+  const overlay = document.getElementById('movePopupOverlay');
+  const popup = document.getElementById('movePopup');
+  if (overlay) overlay.remove();
+  if (popup) popup.remove();
+}
+
+/**
+ * Client-side handler to trigger the move action.
+ */
+export function moveAction() {
+  const input = document.getElementById('moveFeetInput') as HTMLInputElement;
+  if (!input) return;
+  const feet = parseInt(input.value || '0', 10);
+  const maxSpeed = characterRep && characterRep.speed ? characterRep.speed.currentScore : 30;
+  if (isNaN(feet) || feet <= 0 || feet > maxSpeed) {
+    alert(`Please enter a valid distance between 5 and ${maxSpeed} feet.`);
+    return;
+  }
+
+  console.log('Executing Move Action:', feet);
+
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error('Error executing move:', error);
+      alert('Error: ' + error.message);
+    })
+    .OnMoveAction(characterRep.docId, feet);
+
+  hideMovePopup();
+}
+
+/**
+ * Shows the generic number action modal popup.
+ */
+export function showNumberActionPopup(targetElement: HTMLElement, actionName: string, metadata: any) {
+  hideSpellPopup();
+  hideMovePopup();
+  hideNumberActionPopup();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'numberActionPopupOverlay';
+  overlay.className = 'spell-popup-overlay show';
+  document.body.appendChild(overlay);
+
+  const popup = document.createElement('div');
+  popup.id = 'numberActionPopup';
+  popup.className = 'spell-popup show';
+
+  popup.innerHTML = `
+        <h3>${actionName}</h3>
+        <div class="spell-info">
+            <strong>Max:</strong> ${metadata.maxNumber}
+        </div>
+        <div style="margin: 15px 0;">
+            <label for="numberActionInput" style="display: block; margin-bottom: 5px; font-weight: bold;">${metadata.label}</label>
+            <input type="number" id="numberActionInput" value="${metadata.maxNumber}" min="${metadata.minNumber}" max="${metadata.maxNumber}" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-card); color: var(--text-color); box-sizing: border-box;" />
+        </div>
+        <div class="spell-actions">
+            <button class="spell-button cancel" onclick="window.hideNumberActionPopup()">Cancel</button>
+            <button class="spell-button cast" onclick="window.useNumberAction('${actionName}')">Use</button>
+        </div>
+    `;
+
+  document.body.appendChild(popup);
+  positionPopup(popup, targetElement);
+
+  overlay.addEventListener('click', hideNumberActionPopup);
+}
+
+/**
+ * Hides the generic number action modal popup.
+ */
+export function hideNumberActionPopup() {
+  const overlay = document.getElementById('numberActionPopupOverlay');
+  const popup = document.getElementById('numberActionPopup');
+  if (overlay) overlay.remove();
+  if (popup) popup.remove();
+}
+
+/**
+ * Client-side handler to trigger the generic number action.
+ */
+export function useNumberAction(actionName: string) {
+  const input = document.getElementById('numberActionInput') as HTMLInputElement;
+  if (!input) return;
+
+  const value = parseInt(input.value || '0', 10);
+  const metadata = characterRep.actionsMetadata && characterRep.actionsMetadata[actionName];
+  if (!metadata) return;
+
+  if (isNaN(value) || value < metadata.minNumber || value > metadata.maxNumber) {
+    alert(`Please enter a valid value between ${metadata.minNumber} and ${metadata.maxNumber}.`);
+    return;
+  }
+
+  console.log(`Executing Number Action ${actionName}:`, value);
+
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error(`Error executing number action ${actionName}:`, error);
+      alert('Error: ' + error.message);
+    })
+    .OnUseNumberAction(characterRep.docId, actionName, value);
+
+  hideNumberActionPopup();
 }

@@ -3,18 +3,21 @@
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "ignoreDeprecations": "6.0",
     "strict": false,
     "noImplicitAny": false,
     "strictNullChecks": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "rootDir": "../src",
+    "rootDir": "..",
     "paths": {
       "@server/*": ["../src/server/*"],
       "@client/*": ["../src/client/*"]
     },
-    "types": ["google-apps-script", "jest"]
+    "types": ["google-apps-script", "jest", "node"],
+
+    "isolatedModules": true
   },
   "include": ["../src/**/*"],
   "exclude": ["../node_modules", "../dist", "../dist_new"]

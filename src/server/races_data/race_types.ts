@@ -1,19 +1,28 @@
-import { CreatureSize } from '../character/property';
-import { StaticallyApplicableEffect, DynamicallyApplicableEffect, BaseEffect } from '../character/state';
+import { CreatureSize } from '../character/00_property';
 import { ModifierType } from '../character/_constants';
+import {
+    StaticPropertyEffectData,
+    PermanentPropertyEffectData,
+    DynamicPropertyEffectData,
+    MutatingEffectData,
+    DescriptionEffectData
+} from '../character/state/effects';
 
-export interface SpecialEffect extends Omit<BaseEffect, 'status'> {
+export interface SpecialEffect extends Omit<DescriptionEffectData, 'status'> {
     property: 'Special';
     description: string;
     status?: string;
     // For Special properties, these might be missing in legacy data
     modifierType?: ModifierType;
-    value?: any;
+    value?: unknown;
 }
 
 export type RacialEffectData =
-    (Omit<StaticallyApplicableEffect, 'status'> & { status?: string }) |
-    (Omit<DynamicallyApplicableEffect, 'status'> & { status?: string }) |
+    (Omit<StaticPropertyEffectData, 'status'> & { status?: string }) |
+    (Omit<PermanentPropertyEffectData, 'status'> & { status?: string }) |
+    (Omit<DynamicPropertyEffectData, 'status'> & { status?: string }) |
+    (Omit<MutatingEffectData, 'status'> & { status?: string }) |
+    (Omit<DescriptionEffectData, 'status'> & { status?: string }) |
     SpecialEffect;
 
 /**

@@ -1,4 +1,4 @@
-import { CreatureSize } from '../character/property';
+import { CreatureSize } from '../character/00_property';
 import { Sizes } from '../character/_constants';
 import { RacesData } from './_races_general_data';
 import { RaceData } from './race_types';
@@ -22,9 +22,3 @@ export const Dwarf: RaceData = {
 
 RacesData.set('Dwarf', Dwarf);
 
-// for CommonJS compatibility
-// @ts-ignore
-if (typeof module !== 'undefined') {
-    // @ts-ignore
-    module.exports = Dwarf;
-}
