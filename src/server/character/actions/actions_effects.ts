@@ -1,5 +1,5 @@
 import { ICharacter } from '../icharacter';
-import { EffectData } from '../state/effects';
+import { EffectData, StaticPropertyEffect } from '../state/effects';
 import { registerStatusEffects } from '../_general_effects';
 
 export interface ActionData {
@@ -82,6 +82,99 @@ export const ActionsData: Record<string, ActionData> = {
   'Turn Undead': {
     statusName: 'Turn Undead',
     calculateDuration: (_character) => 1
+  },
+  'Feat of Strength': {
+    statusName: 'Feat of Strength',
+    calculateDuration: (_character) => 1,
+    effects: [
+      {
+        status: 'Feat of Strength',
+        property: 'Str',
+        modifierType: 'Enhancement',
+        valueResolver: (character: ICharacter) => {
+          const clericLevel = character.GetClassLevel('Cleric');
+          const sfLevel = character.GetClassLevel('Sacred Fist');
+          return clericLevel + Math.floor(sfLevel / 2);
+        }
+      }
+    ]
+  },
+  'Protective Ward': {
+    statusName: 'Protective Ward',
+    calculateDuration: (_character) => 600,
+    effects: [
+      {
+        status: 'Protective Ward',
+        property: 'Fort',
+        modifierType: 'Resistance',
+        valueResolver: (character: ICharacter) => {
+          const clericLevel = character.GetClassLevel('Cleric');
+          const sfLevel = character.GetClassLevel('Sacred Fist');
+          return clericLevel + Math.floor(sfLevel / 2);
+        }
+      },
+      {
+        status: 'Protective Ward',
+        property: 'Ref',
+        modifierType: 'Resistance',
+        valueResolver: (character: ICharacter) => {
+          const clericLevel = character.GetClassLevel('Cleric');
+          const sfLevel = character.GetClassLevel('Sacred Fist');
+          return clericLevel + Math.floor(sfLevel / 2);
+        }
+      },
+      {
+        status: 'Protective Ward',
+        property: 'Will',
+        modifierType: 'Resistance',
+        valueResolver: (character: ICharacter) => {
+          const clericLevel = character.GetClassLevel('Cleric');
+          const sfLevel = character.GetClassLevel('Sacred Fist');
+          return clericLevel + Math.floor(sfLevel / 2);
+        }
+      }
+    ]
+  },
+  'Use Thror\'s Holy Symbol': {
+    statusName: 'Use Thror\'s Holy Symbol',
+    calculateDuration: (_character) => 10,
+    effects: [
+      {
+        status: 'Use Thror\'s Holy Symbol',
+        property: 'Weapons',
+        callback: (character: ICharacter, _args: Record<string, unknown>) => {
+          const unarmed = character.weapons.find(w => w.name === 'Unarmed');
+          if (unarmed) {
+            unarmed.enhancement = 2;
+            unarmed.critical = '19-20/x2';
+          }
+        }
+      }
+    ]
+  },
+  'Sacred Flames': {
+    statusName: 'Sacred Flames',
+    calculateDuration: (_character) => 10,
+    effects: [
+      {
+        status: 'Sacred Flames',
+        property: 'Weapons',
+        callback: (character: ICharacter, _args: Record<string, unknown>) => {
+          const unarmed = character.weapons.find(w => w.name === 'Unarmed');
+          if (unarmed) {
+            const sfLevel = character.GetClassLevel('Sacred Fist');
+            const wisMod = character.abilities.Wis?.modifier || 0;
+            const extraDamage = sfLevel + Math.max(0, wisMod);
+            unarmed.featDamageBonus.applyEffect(new StaticPropertyEffect({
+              status: 'Sacred Flames',
+              property: 'featDamageBonus',
+              modifierType: 'Generic',
+              value: extraDamage
+            }));
+          }
+        }
+      }
+    ]
   }
 };
 

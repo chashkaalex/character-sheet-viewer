@@ -1,6 +1,8 @@
 import { characterRep } from './state';
 import { onCharacterRepresentation, addTooltip, UpdateValueAndTooltip } from './character_script';
 
+let showFullAttack = false;
+
 /**
  * Converts duration from various time units to rounds
  * @param {number} duration - The duration value
@@ -109,6 +111,19 @@ export function RemoveStatus(button, statusName) {
     statusDiv.remove();
     console.log('RemoveStatus for ' + characterRep.name);
   }
+}
+
+export function ClearAllStatuses() {
+  if (!confirm('Are you sure you want to clear all active statuses?')) {
+    return;
+  }
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error('Error clearing statuses:', error);
+      alert('Error clearing statuses: ' + error.message);
+    })
+    .RemoveAllStatusesFromCharacter(characterRep.docId);
 }
 
 export function PromprForPositiveInteger(message) {
@@ -265,46 +280,280 @@ export function populateWeaponDropdown() {
 }
 
 /**
+ * Populates the off-hand weapon dropdown with melee weapons, excluding the main-hand selection.
+ */
+function populateOffHandDropdown() {
+  const offHandSelect = document.getElementById('offHandSelect') as HTMLSelectElement;
+  const mainSelect = document.getElementById('weaponSelect') as HTMLSelectElement;
+  if (!offHandSelect || !characterRep.twf) return;
+
+  const mainIndex = mainSelect.value;
+  offHandSelect.innerHTML = '';
+
+  // Add "None" option
+  const noneOption = document.createElement('option');
+  noneOption.value = '';
+  noneOption.textContent = 'None';
+  offHandSelect.appendChild(noneOption);
+
+  // Add weapons that appear as valid off-hand in at least one TWF combination
+  const validOffIndices = new Set(
+    characterRep.twf.combinations
+      .filter(c => String(c.mainWeaponIndex) === mainIndex)
+      .map(c => c.offWeaponIndex)
+  );
+
+  const weapons = characterRep.weapons || [];
+  weapons.forEach((weapon, index) => {
+    if (validOffIndices.has(index) && weapon && weapon.name) {
+      const option = document.createElement('option');
+      option.value = String(index);
+      option.textContent = weapon.name;
+      offHandSelect.appendChild(option);
+    }
+  });
+}
+
+/**
+ * Toggles the full attack representation display.
+ */
+export function onFullAttackToggle(checkbox: HTMLInputElement) {
+  showFullAttack = checkbox.checked;
+  updateWeaponStatsDisplay();
+}
+
+/**
+ * Renders weapon stats into a stats element (shared between main-hand and off-hand).
+ */
+function renderWeaponStats(
+  statsElement: HTMLElement,
+  atkValue: string, dmgValue: string, critValue: string,
+  atkTooltip: string, dmgTooltip: string,
+  idPrefix: string,
+  atkRolzRollMessage?: string,
+  dmgRolzRollMessage?: string
+) {
+  statsElement.innerHTML = `
+    <div class="weapon-stat-item">
+      <label>Attack:</label>
+      <span id="${idPrefix}AtkValue">${atkValue}</span>
+    </div>
+    <div class="weapon-stat-item">
+      <label>Damage:</label>
+      <span id="${idPrefix}DmgValue">${dmgValue}</span>
+    </div>
+    <div class="weapon-stat-item">
+      <label>Crit:</label>
+      <span id="${idPrefix}CritValue">${critValue}</span>
+    </div>
+    ${idPrefix === 'weapon' ? `
+      <label class="full-attack-toggle">
+        <input type="checkbox" id="fullAttackToggle" onchange="onFullAttackToggle(this)" ${showFullAttack ? 'checked' : ''}>
+        show full
+      </label>
+    ` : ''}
+  `;
+
+  addTooltip(document.getElementById(`${idPrefix}AtkValue`), atkTooltip, atkRolzRollMessage);
+  addTooltip(document.getElementById(`${idPrefix}DmgValue`), dmgTooltip, dmgRolzRollMessage);
+}
+
+/**
+ * Dynamically updates the weapon display based on selections and showFullAttack state.
+ */
+function updateWeaponStatsDisplay() {
+  const mainSelect = document.getElementById('weaponSelect') as HTMLSelectElement;
+  const offHandSelect = document.getElementById('offHandSelect') as HTMLSelectElement;
+  const mainStats = document.getElementById('weaponCombinedStats');
+  const offHandStats = document.getElementById('offHandStats');
+  const offHandRow = document.getElementById('offHandRow');
+
+  if (!mainSelect || !mainStats) return;
+
+  const mainIdx = parseInt(mainSelect.value);
+  if (isNaN(mainIdx) || !characterRep.weapons || !characterRep.weapons[mainIdx]) {
+    mainStats.innerHTML = '-';
+    if (offHandStats) offHandStats.innerHTML = '-';
+    if (offHandRow) offHandRow.style.display = 'none';
+    return;
+  }
+
+  const mainWeapon = characterRep.weapons[mainIdx];
+  const offHandIdx = offHandSelect ? parseInt(offHandSelect.value) : NaN;
+  const isTwfActive = !isNaN(offHandIdx) && characterRep.weapons && characterRep.weapons[offHandIdx];
+
+  // 1. Show/hide off-hand row based on TWF and full attack settings
+  if (offHandRow) {
+    if (characterRep.twf && characterRep.twf.hasTWF) {
+      if (showFullAttack && isTwfActive) {
+        offHandRow.style.display = 'none';
+      } else {
+        offHandRow.style.display = '';
+      }
+    } else {
+      offHandRow.style.display = 'none';
+    }
+  }
+
+  // 2. Render weapon stats based on showFullAttack
+  if (showFullAttack) {
+    if (isTwfActive) {
+      // Unified TWF Full Attack Display
+      const offWeapon = characterRep.weapons[offHandIdx];
+      const combo = characterRep.twf.combinations.find(
+        (c: any) => c.mainWeaponIndex === mainIdx && c.offWeaponIndex === offHandIdx
+      );
+
+      const mhSequence = mainWeapon.fullAttack?.twfMain?.[offHandIdx] || { attacks: [], summaryString: '-' };
+      const ohSequence = offWeapon.fullAttack?.twfOff?.[mainIdx] || { attacks: [], summaryString: '-' };
+
+      const mhSpans = mhSequence.attacks.map((a: any, idx: number) => `<span id="mhAtkValue_${idx}" class="multi-atk-span">${a.atkValue}</span>`).join('/');
+      const ohSpans = ohSequence.attacks.map((a: any, idx: number) => `<span id="ohAtkValue_${idx}" class="multi-atk-span">${a.atkValue}</span>`).join('/');
+
+      mainStats.innerHTML = `
+        <div class="weapon-twf-full-container">
+          <div class="weapon-row-full main-hand-full">
+            <span class="weapon-hand-label">MH ${mainWeapon.name}:</span>
+            <div class="weapon-stat-item">
+              <label>Attack:</label>
+              <span class="weapon-atk-value-multi">${mhSpans}</span>
+            </div>
+            <div class="weapon-stat-item">
+              <label>Damage:</label>
+              <span id="mhDmgValue">${mainWeapon.dmgValue}</span>
+            </div>
+            <div class="weapon-stat-item">
+              <label>Crit:</label>
+              <span id="mhCritValue">${mainWeapon.critValue}</span>
+            </div>
+          </div>
+          <div class="weapon-row-full off-hand-full">
+            <span class="weapon-hand-label">OH ${offWeapon.name}:</span>
+            <div class="weapon-stat-item">
+              <label>Attack:</label>
+              <span class="weapon-atk-value-multi">${ohSpans}</span>
+            </div>
+            <div class="weapon-stat-item">
+              <label>Damage:</label>
+              <span id="ohDmgValue">${combo ? combo.offDmgValue : offWeapon.dmgValue}</span>
+            </div>
+            <div class="weapon-stat-item">
+              <label>Crit:</label>
+              <span id="ohCritValue">${offWeapon.critValue}</span>
+            </div>
+          </div>
+          <label class="full-attack-toggle">
+            <input type="checkbox" id="fullAttackToggle" onchange="onFullAttackToggle(this)" checked>
+            show full
+          </label>
+        </div>
+      `;
+
+      // Apply tooltips for MH
+      mhSequence.attacks.forEach((a: any, idx: number) => {
+        addTooltip(document.getElementById(`mhAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
+      });
+      addTooltip(document.getElementById('mhDmgValue'), mainWeapon.damageBonus.string, mhSequence.attacks[0]?.rolzDmgRollMessage);
+
+      // Apply tooltips for OH
+      ohSequence.attacks.forEach((a: any, idx: number) => {
+        addTooltip(document.getElementById(`ohAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
+      });
+      addTooltip(document.getElementById('ohDmgValue'), combo ? combo.offDamageString : offWeapon.damageBonus.string, ohSequence.attacks[0]?.rolzDmgRollMessage);
+
+    } else {
+      // Normal/Single Weapon Full Attack Display
+      const sequence = mainWeapon.fullAttack?.normal || { attacks: [], summaryString: '-' };
+      const spans = sequence.attacks.map((a: any, idx: number) => `<span id="normalAtkValue_${idx}" class="multi-atk-span">${a.atkValue}</span>`).join('/');
+
+      mainStats.innerHTML = `
+        <div class="weapon-stat-item">
+          <label>Attack:</label>
+          <span class="weapon-atk-value-multi">${spans}</span>
+        </div>
+        <div class="weapon-stat-item">
+          <label>Damage:</label>
+          <span id="weaponDmgValue">${mainWeapon.dmgValue}</span>
+        </div>
+        <div class="weapon-stat-item">
+          <label>Crit:</label>
+          <span id="weaponCritValue">${mainWeapon.critValue}</span>
+        </div>
+        <label class="full-attack-toggle">
+          <input type="checkbox" id="fullAttackToggle" onchange="onFullAttackToggle(this)" checked>
+          show full
+        </label>
+      `;
+
+      sequence.attacks.forEach((a: any, idx: number) => {
+        addTooltip(document.getElementById(`normalAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
+      });
+      addTooltip(document.getElementById('weaponDmgValue'), mainWeapon.damageBonus.string, sequence.attacks[0]?.rolzDmgRollMessage);
+    }
+  } else {
+    // Single Attack Display (Normal / TWF separate)
+    if (isTwfActive) {
+      // Show main-hand stats
+      const offWeapon = characterRep.weapons[offHandIdx];
+      const combo = characterRep.twf.combinations.find(
+        (c: any) => c.mainWeaponIndex === mainIdx && c.offWeaponIndex === offHandIdx
+      );
+
+      if (combo) {
+        renderWeaponStats(
+          mainStats,
+          combo.mainAtkValue, mainWeapon.dmgValue, mainWeapon.critValue,
+          combo.mainAttackString, mainWeapon.damageBonus.string,
+          'weapon',
+          `#d20${combo.mainAttackBonus >= 0 ? '+' : ''}${combo.mainAttackBonus} #${mainWeapon.name} Attack (MH)`,
+          mainWeapon.rolzDmgRollMessage
+        );
+        if (offHandStats && offWeapon) {
+          renderWeaponStats(
+            offHandStats,
+            combo.offAtkValue, combo.offDmgValue, offWeapon.critValue,
+            combo.offAttackString, combo.offDamageString,
+            'offHand',
+            `#d20${combo.offAttackBonus >= 0 ? '+' : ''}${combo.offAttackBonus} #${offWeapon.name} Attack (OH)`,
+            `#${combo.offDmgValue.replace(/\s+/g, '').replace(/[+-]0$/, '')} #${offWeapon.name} Damage (OH)`
+          );
+        }
+      }
+    } else {
+      // Normal single weapon stats
+      renderWeaponStats(
+        mainStats,
+        mainWeapon.atkValue, mainWeapon.dmgValue, mainWeapon.critValue,
+        mainWeapon.attackBonus.string, mainWeapon.damageBonus.string,
+        'weapon',
+        mainWeapon.rolzAtkRollMessage,
+        mainWeapon.rolzDmgRollMessage
+      );
+      if (offHandStats) offHandStats.innerHTML = '-';
+    }
+  }
+}
+
+/**
  * Handles weapon selection change and updates the displayed stats in a unified string
  */
 export function onWeaponChange() {
-  const weaponSelect = document.getElementById('weaponSelect') as HTMLSelectElement;
-  const selectedIndex = weaponSelect.value;
+  const mainSelect = document.getElementById('weaponSelect') as HTMLSelectElement;
+  if (!mainSelect) return;
 
-  const statsElement = document.getElementById('weaponCombinedStats');
-  if (selectedIndex === '' || !characterRep.weapons || !characterRep.weapons[selectedIndex]) {
-    if (statsElement) statsElement.innerHTML = '-';
-    return;
+  // Update off-hand dropdown choices
+  if (characterRep.twf && characterRep.twf.hasTWF) {
+    populateOffHandDropdown();
   }
 
-  const weapon = characterRep.weapons[selectedIndex];
+  updateWeaponStatsDisplay();
+}
 
-  if (!weapon.statsString) {
-    if (statsElement) statsElement.innerHTML = weapon.name;
-    return;
-  }
-
-  // Construct unified display with separate labels and values for styling and tooltips
-  if (statsElement) {
-    statsElement.innerHTML = `
-            <div class="weapon-stat-item">
-                <label>Attack:</label>
-                <span id="weaponAtkValue">${weapon.atkValue}</span>
-            </div>
-            <div class="weapon-stat-item">
-                <label>Damage:</label>
-                <span id="weaponDmgValue">${weapon.dmgValue}</span>
-            </div>
-            <div class="weapon-stat-item">
-                <label>Crit:</label>
-                <span id="weaponCritValue">${weapon.critValue}</span>
-            </div>
-        `;
-
-    // Apply tooltips ONLY to the specific value elements
-    addTooltip(document.getElementById('weaponAtkValue'), weapon.attackBonus.string);
-    addTooltip(document.getElementById('weaponDmgValue'), weapon.damageBonus.string);
-  }
+/**
+ * Handles off-hand weapon selection change.
+ */
+export function onOffHandChange() {
+  updateWeaponStatsDisplay();
 }
 
 /**
@@ -373,7 +622,14 @@ export function onSpecialAttackChange() {
 export function showPartyModal() {
   if (!characterRep || !characterRep.partyName) return;
 
-  document.getElementById('partyModalTitle').innerText = characterRep.partyName;
+  console.log(`Quick Statuses for ${characterRep.partyName}:`, characterRep.quickStatuses);
+
+  const titleEl = document.getElementById('partyModalTitle');
+  if (characterRep.partiesDocId) {
+    titleEl.innerHTML = `<a href="https://docs.google.com/document/d/${characterRep.partiesDocId}/edit" target="_blank" style="color: inherit; text-decoration: underline;">${characterRep.partyName}</a>`;
+  } else {
+    titleEl.innerText = characterRep.partyName;
+  }
 
   const list = document.getElementById('partyModalList');
   list.innerHTML = '';

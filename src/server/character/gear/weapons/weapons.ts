@@ -157,10 +157,12 @@ export function FindWeaponBaseName(fullName: string): string | null {
     }
   }
 
-  // 2. Substring match (case-insensitive)
+  // 2. Substring match (case-insensitive) with word boundaries
   const sortedNames = Array.from(WeaponsData.keys()).sort((a, b) => b.length - a.length);
   for (const baseName of sortedNames) {
-    if (lowerBasic.includes(baseName.toLowerCase())) {
+    const escaped = baseName.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escaped}\\b`);
+    if (regex.test(lowerBasic)) {
       return baseName;
     }
   }
@@ -184,6 +186,7 @@ export class Weapon {
   public name: string;
   public baseName: string | null;
   public rangeType: 'Melee' | 'Ranged' = 'Melee';
+  public fullAttack?: any;
   public encumbrance: 'Light' | 'One-Handed' | 'Two-Handed' | 'ranged' = 'Light';
   public enhancement: number = 0;
   public damage: string = '1d3';
@@ -372,6 +375,13 @@ export class Weapon {
     this.atkPartString = `Attack: ${this.atkValue}`;
     this.dmgPartString = `Damage: ${this.dmgValue}`;
     this.statsString = `${this.atkPartString} ${this.dmgPartString} Crit. ${this.critValue}`;
+  }
+
+  public isMonkWeapon(): boolean {
+    const monkWeapons = ['unarmed', 'kama', 'nunchaku', 'sai', 'siangham', 'quarterstaff', 'kusarigama'];
+    const nameLower = this.name.toLowerCase();
+    const baseLower = this.baseName ? this.baseName.toLowerCase() : '';
+    return monkWeapons.some(mw => nameLower.includes(mw) || baseLower.includes(mw));
   }
 }
 

@@ -34,9 +34,9 @@ export class LocalAdapter extends DocumentAdapter {
         if (!lines) return { success: false, error: 'File not found' };
 
         for (let i = 0; i < lines.length; i++) {
-            if (lines[i].startsWith('Hp:')) {
-                // E.g., "Hp: 10/24" -> Replace the first number
-                lines[i] = lines[i].replace(/\d+/, newHp.toString());
+            if (lines[i].includes('Hp:')) {
+                // E.g., "Hp: 10/24" or "BAb: +9; Hp: 74/74" -> Replace the first number after "Hp:"
+                lines[i] = lines[i].replace(/(Hp:\s*)\d+/, `$1${newHp}`);
                 break;
             }
         }
@@ -292,13 +292,138 @@ export class LocalAdapter extends DocumentAdapter {
         return res;
     }
 
-    GetPartyMembers(partyName: string, _currentDocId: string): string[] {
+    GetPartyData(partyName: string, _currentDocId: string): { memberNames: string[]; quickStatuses: string[] } {
         //return the local file names of the characters in the party
         if (partyName === 'TeamD20_T&E') {
-            return ['thror_test', 'bess_test'];
+            return {
+                memberNames: ['thror_test', 'bess_test'],
+                quickStatuses: ['Thror is preparing spells', 'Bess is ready']
+            };
         }
-        return [];
+        return { memberNames: [], quickStatuses: [] };
     }
+
+    MoveItem(docId: string, itemName: string, fromSection: string, toSection: string): AdapterResult {
+        const lines = this._readLines(docId);
+        if (!lines) return { success: false, error: 'File not found' };
+
+        const fromIdx = lines.findIndex(l => l.trim() === fromSection || l.trim() === `${fromSection}:`);
+        const toIdx = lines.findIndex(l => l.trim() === toSection || l.trim() === `${toSection}:`);
+
+        if (fromIdx === -1) return { success: false, error: `Source section ${fromSection} not found` };
+        if (toIdx === -1) return { success: false, error: `Target section ${toSection} not found` };
+
+        // Find the item line under fromSection
+        let itemIdx = -1;
+        for (let i = fromIdx + 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (IsSectionLine(line)) break;
+            if (line.toLowerCase().includes(itemName.toLowerCase())) {
+                itemIdx = i;
+                break;
+            }
+        }
+
+        if (itemIdx === -1) {
+            return { success: false, error: `Item '${itemName}' not found in ${fromSection}` };
+        }
+
+        const itemLine = lines[itemIdx];
+        // Remove item from source
+        lines.splice(itemIdx, 1);
+
+        // Re-find target section index since index might have shifted
+        const newToIdx = lines.findIndex(l => l.trim() === toSection || l.trim() === `${toSection}:`);
+
+        // Find insert index (end of toSection)
+        let insertIdx = newToIdx + 1;
+        while (insertIdx < lines.length && !IsSectionLine(lines[insertIdx])) {
+            insertIdx++;
+        }
+
+        // Insert at end of target section
+        lines.splice(insertIdx, 0, itemLine);
+
+        this._writeLines(docId, lines);
+        return { success: true };
+    }
+
+    ConsumeItem(docId: string, itemName: string, sectionName: string): AdapterResult & { removedLineText?: string } {
+        const lines = this._readLines(docId);
+        if (!lines) return { success: false, error: 'File not found' };
+
+        const sectionIdx = lines.findIndex(l => l.trim() === sectionName || l.trim() === `${sectionName}:`);
+        if (sectionIdx === -1) return { success: false, error: `Section ${sectionName} not found` };
+
+        let itemIdx = -1;
+        for (let i = sectionIdx + 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (IsSectionLine(line)) break;
+            if (line.toLowerCase().includes(itemName.toLowerCase())) {
+                itemIdx = i;
+                break;
+            }
+        }
+
+        if (itemIdx === -1) {
+            return { success: false, error: `Item '${itemName}' not found in ${sectionName}` };
+        }
+
+        const originalLine = lines[itemIdx];
+        const decrementedLine = decrementOrRemoveLine(originalLine);
+
+        if (decrementedLine === null) {
+            lines.splice(itemIdx, 1);
+        } else {
+            lines[itemIdx] = decrementedLine;
+        }
+
+        this._writeLines(docId, lines);
+        return { success: true, removedLineText: originalLine };
+    }
+
+    PostRollToRolz(room: string, text: string, from: string): string | null {
+        const url = 'https://rolz.org/api/post';
+        try {
+            // @ts-ignore
+            const { spawnSync } = require('child_process');
+            const payload = `room=${encodeURIComponent(room)}&text=${encodeURIComponent(text)}&from=${encodeURIComponent(from)}`;
+            const result = spawnSync('curl', ['-s', '-X', 'POST', '-d', payload, url], { encoding: 'utf8' });
+            if (result.status !== 0) {
+                console.error('Curl execution failed:', result.stderr);
+                return null;
+            }
+            return result.stdout;
+        } catch (e) {
+            console.error('Rolz API local curl failed:', e);
+            return null;
+        }
+    }
+}
+
+export function decrementOrRemoveLine(line: string): string | null {
+    const xMatch = line.match(/\b([xX×]\s*)(\d+)\b/);
+    if (xMatch) {
+        const prefix = xMatch[1];
+        const count = parseInt(xMatch[2]);
+        if (count > 1) {
+            return line.replace(/\b([xX×]\s*)(\d+)\b/, `${prefix}${count - 1}`);
+        } else {
+            return null;
+        }
+    }
+
+    const parenMatch = line.match(/\(\s*(\d+)\s*\)/);
+    if (parenMatch) {
+        const count = parseInt(parenMatch[1]);
+        if (count > 1) {
+            return line.replace(/\(\s*(\d+)\s*\)/, `(${count - 1})`);
+        } else {
+            return null;
+        }
+    }
+
+    return null;
 }
 
 export const adapter = new LocalAdapter();

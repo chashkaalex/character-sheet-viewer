@@ -4,7 +4,7 @@ Bess Mockston
 (Half-Elf Bard 13)
 
 Init: +9; Senses: Listen +11, Spot +12, Low-light vision; 
-BAb: 	+9/+4; Grapple: +4; Hp: 74/74 ; Speed: 30 ft.
+BAb: 	+9/+4; Grapple: +4; Hp: 64/74 ; Speed: 30 ft.
 Attack: +13 Short Sword (1d6 + 1 + 2/19-20) or +13 Light Crossbow (1d8/19-20).
 Full Attack: +13/+8 Short Sword (1d6 + 1 + 2/19-20) or +13/+8 Light Crossbow (1d8/19-20), with a 4-bolts magazine, semi-automatic, with a spray gun.
 AC: 17 (+3 Dex +4 Armor +1 Deflection -1 AC) +4 temp natural ac , Touch 13, Flat-footed 14.
@@ -106,7 +106,6 @@ Wand of Magic Missile ( Evocation | Magic Missile |  1 X (1d4 +1)  | 7 missiles 
 Wand of Fear (18),  
 Wand of Disguise Self  (22),
 Blessed Bandage (2) (stabilize to 0 hp). 
-Potion of Cure Light Wounds (2) (1d8 + 3), 
 Potion of Blur, 
 Potion of RemoveFear x 2,
 Potion of  Resist energy (Lightning 10)
@@ -230,3 +229,5 @@ Patron Deity: Pelor and Set
 Can carry to battle: 17 lbs
 Parties Membership
 TeamD20_T&E
+
+Rolz Room ID: oy2gymrcju

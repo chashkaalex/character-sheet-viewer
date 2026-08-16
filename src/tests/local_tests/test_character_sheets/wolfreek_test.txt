@@ -1,0 +1,77 @@
+Wolfreek
+"Aim twice, shoot once."
+
+(Human Fighter 3)
+
+Init: +7; Senses: Listen +3, Spot +8; 
+BAb: +3; Grapple: +5; Hp: 22/29 ; Speed: 30 ft.
+Attack: +7 Composite Longbow (masterwork, +2 Str) (1d8 + 2/X3).
+Full Attack: +5/+5 Composite Longbow (masterwork, +2 Str) (1d8 + 2/X3).
+AC: 16 (+3 Armor +3 Dex), Touch 13, Flat-footed 13.
+Saves: Fort +6; Ref +3; Will +3.
+Str: 14 (+2)
+Dex: 17 (+3)
+Con: 16 (+3)
+Int: 13 (+1)
+Wis: 16 (+3)
+Cha: 13 (+1)
+Action Points: 1.
+
+Statuses:
+
+Feats:
+Improved Initiative,
+Point Blank Shot,
+Precise Shot,
+Rapid Shot,
+Weapon Focus: Longbow
+Special Abilities:
+Weapon Proficiency (Fighter).
+Racial Traits:
+Bonus Feat, +1 Skill Point per level.
+Bonus Abilities:
+Flaws, Traits, Quirks:
+Languages:
+Common, Dwarven, Orc.
+
+Skills:
+Climb (Str): 5
+Jump (Str): 5
+Ride (Dex): 4
+Spot (Wis): 5
+Survival (Wis): 5
+
+Battle Gear:
+Dagger (1d4/19-20) x 2,
+Studded Leather Armor (+3 AC, -1 penalty, 10% spell failure),
+Short sword (1d6/X2),
+Composite Longbow (1d8/X3, 100 ft. range, piercing),
+Composite longbow (masterwork, +2 Str) (+1, 1d8 + 2/X3, 100 ft. range, piercing),
+Arrows (19 X 2 +1) - 16,
+Bolas (1d3 non lethal, trip)
+
+Possessions:
+Backpack,
+Belt Pouch (2),
+Bedroll,
+Climbing Kit,
+Cold Weather Outfit,
+Flint and Steel,
+Hammer,
+Iron Pot,
+Soap,
+Waterskin,
+Whetstone,
+Winter Blanket
+
+Money: 6 gp, 1 sp, 1 cp
+
+Food: Dried Rations (6 days), Wine mixed with water (waterskin).
+
+Personal Information
+Height/Weight: 5'9"/140 lb.
+Eyes/Hair color: Brown/Brown
+Age: 25
+Alignment: Neutral
+ExP: 3500/5200
+Deity worshiped: Obad-Hai

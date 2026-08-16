@@ -7,13 +7,16 @@ import {
     UpdateHp,
     AddStatusToCharacter,
     RemoveStatusFromCharacter,
+    RemoveAllStatusesFromCharacter,
     OnRoundsElapsed,
     OnPrepareSpell,
     OnCastSpell,
     OnReplenishClassSpellSlots,
     OnUseAction,
     OnMoveAction,
-    OnUseNumberAction
+    OnUseNumberAction,
+    MoveInventoryItem,
+    UsePotion
 } from '../character/character_manipulation';
 
 const LOG_DEBUG = false;
@@ -119,6 +122,33 @@ export function include(filename: string): string {
     return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+function PostRollToRolz(room: string, text: string, from: string): string {
+    // Convert rollable dice commands (e.g. #d20+5 #Str Check) to the inline format expected by Rolz API (e.g. Str Check [d20+5])
+    let apiText = text;
+    if (text.startsWith('#')) {
+        const parts = text.split(' ').map(p => p.trim()).filter(Boolean);
+        if (parts.length > 0) {
+            const diceExpr = parts[0].substring(1); // remove leading '#'
+            const labelParts = parts.slice(1).map(p => p.startsWith('#') ? p.substring(1) : p);
+            const label = labelParts.join(' ');
+            apiText = label ? `${label} [${diceExpr}]` : `[${diceExpr}]`;
+        }
+    }
+
+    const url = 'https://rolz.org/api/post';
+    const payload = {
+        room: room,
+        text: apiText,
+        from: from
+    };
+    const options = {
+        method: 'post' as const,
+        payload: payload
+    };
+    const response = UrlFetchApp.fetch(url, options);
+    return response.getContentText();
+}
+
 // Re-export character manipulation functions for GAS global scope
 export {
     GetCharacterByDocId,
@@ -126,12 +156,16 @@ export {
     UpdateHp,
     AddStatusToCharacter,
     RemoveStatusFromCharacter,
+    RemoveAllStatusesFromCharacter,
     OnRoundsElapsed,
     OnPrepareSpell,
     OnCastSpell,
     OnReplenishClassSpellSlots,
     OnUseAction,
     OnMoveAction,
-    OnUseNumberAction
+    OnUseNumberAction,
+    PostRollToRolz,
+    MoveInventoryItem,
+    UsePotion
 };
 

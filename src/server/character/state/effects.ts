@@ -50,6 +50,7 @@ export interface DynamicPropertyEffectData extends BaseEffectData {
 
 export interface MutatingEffectData extends BaseEffectData {
     callback: MutatingEffectCallback;
+    property?: EffectPropertyName;
     /** Runtime-injected arguments resolved at parse time (e.g. { casterClassName: 'Cleric' }) */
     args?: Record<string, unknown>;
 }
@@ -250,14 +251,26 @@ export class DynamicPropertyEffect extends BaseEffect {
 export class MutatingEffect extends BaseEffect {
     public callback: MutatingEffectCallback;
     public args: Record<string, unknown>;
+    public property?: EffectPropertyName;
 
     constructor(data: MutatingEffectData) {
         super(data.status, data.description);
         this.callback = data.callback;
         this.args = data.args ?? {};
+        this.property = data.property;
     }
 
     public ApplyEffect(character: ICharacter): void {
+        if (this.property) {
+            const hasInitMethod = typeof character.HasPropertyInitialized === 'function';
+            const isParsing = currentRegistry !== null;
+            const isPropInitialized = !isParsing || !hasInitMethod || character.HasPropertyInitialized(this.property);
+
+            if (!isPropInitialized) {
+                character.QueuePendingEffect(this.property, this);
+                return;
+            }
+        }
         this.callback(character, this.args);
     }
 }

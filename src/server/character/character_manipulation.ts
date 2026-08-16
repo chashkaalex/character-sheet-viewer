@@ -22,9 +22,11 @@ export function GetCharacterByDocId(docId: string): Character | CharacterError {
     return new CharacterError('Failed to parse character', character.parseErrors);
   }
 
-  // Fetch Party Members if applicable
+  // Fetch Party Data if applicable
   if (character.partyName) {
-    character.partyMembers = adapter.GetPartyMembers(character.partyName, docId);
+    const partyData = adapter.GetPartyData(character.partyName, docId);
+    character.partyMembers = partyData.memberNames;
+    character.quickStatuses = partyData.quickStatuses;
   }
 
   return character;
@@ -107,6 +109,22 @@ function _removeStatusFromCharacter(docId: string, statusName: string): void {
  */
 export function RemoveStatusFromCharacter(docId: string, statusName: string): CharacterRep | CharacterError {
   _removeStatusFromCharacter(docId, statusName);
+  return GetCharacterRepByDocId(docId);
+}
+
+/**
+ * Removes all active statuses from the character
+ */
+export function RemoveAllStatusesFromCharacter(docId: string): CharacterRep | CharacterError {
+  const character = GetCharacterByDocId(docId);
+  if (character instanceof CharacterError) {
+    return character;
+  }
+  if (character.statuses && character.statuses.length > 0) {
+    character.statuses.forEach(status => {
+      _removeStatusFromCharacter(docId, status.name);
+    });
+  }
   return GetCharacterRepByDocId(docId);
 }
 
@@ -370,5 +388,142 @@ export function OnUseNumberAction(docId: string, actionName: string, value: numb
 
   _addStatusToCharacter(docId, targetStatusName, duration);
   return GetCharacterRepByDocId(docId);
+}
+
+/**
+ * Moves an item between Battle Gear and Possessions sections.
+ */
+export function MoveInventoryItem(docId: string, itemName: string, fromSection: string, toSection: string): CharacterRep | CharacterError {
+  const character = GetCharacterByDocId(docId);
+  if (character instanceof CharacterError) {
+    return character;
+  }
+
+  if (fromSection !== 'Battle Gear' && fromSection !== 'Possessions') {
+    return new CharacterError(`Invalid source section: ${fromSection}`);
+  }
+  if (toSection !== 'Battle Gear' && toSection !== 'Possessions') {
+    return new CharacterError(`Invalid target section: ${toSection}`);
+  }
+
+  const result = adapter.MoveItem(docId, itemName, fromSection, toSection);
+  if (!result.success) {
+    console.error('Failed to move item in document:', result.error);
+    return new CharacterError(`Failed to move item in document: ${result.error}`);
+  }
+
+  return GetCharacterRepByDocId(docId);
+}
+
+export function RollWithRolz(room: string, formula: string, characterName: string): { total: number; detail: string } | null {
+  const rollText = `Potion Heal [${formula}]`;
+  const responseText = adapter.PostRollToRolz(room, rollText, characterName);
+  if (!responseText) return null;
+
+  try {
+    const data = JSON.parse(responseText);
+    if (data && data.message && data.message.content) {
+      const item = data.message.content.items?.[0];
+      if (item && item.type === 'dicemsg') {
+        const result = parseInt(item.result);
+        const details = item.details || '';
+        if (isNaN(result)) {
+          console.error('Rolz returned invalid result:', item.result);
+          return null;
+        }
+        return {
+          total: result,
+          detail: `rolled ${formula} ${details} = ${result}`
+        };
+      }
+    }
+  } catch (e) {
+    console.error('Failed to parse Rolz response:', e, 'Response was:', responseText);
+  }
+
+  return null;
+}
+
+/**
+ * Uses a potion from the character's Battle Gear.
+ * Heals the character (if it is a healing potion) and decrements/removes it from the sheet.
+ */
+export function UsePotion(docId: string, potionName: string): CharacterRep | CharacterError {
+  const character = GetCharacterByDocId(docId);
+  if (character instanceof CharacterError) {
+    return character;
+  }
+
+  // Ensure Rolz Room ID is configured
+  if (!character.rolzRoomId || character.rolzRoomId.trim() === '') {
+    return new CharacterError('Potion consumption requires a Rolz Room ID to be configured in your character sheet.');
+  }
+
+  const potion = character.battleGear.find(item => item.name === potionName && item.isPotion);
+  if (!potion) {
+    return new CharacterError(`Potion '${potionName}' not found in Battle Gear`);
+  }
+
+  // Determine healing formula first (so we roll before consuming)
+  let healingMessage = '';
+  const isHealing = potionName.toLowerCase().includes('cure') || potionName.toLowerCase().includes('healing');
+  let roll: { total: number; detail: string } | null = null;
+
+  if (isHealing) {
+    let formula = '';
+    // Check parsed description or fallback
+    const formulaMatch = potion.description.match(/(\d+d\d+\s*(?:[+-]\s*\d+)?)/i);
+    if (formulaMatch) {
+      formula = formulaMatch[1];
+    } else {
+      // Fallback standard formulas
+      if (potionName.toLowerCase().includes('light')) {
+        formula = '1d8+1';
+      } else if (potionName.toLowerCase().includes('moderate')) {
+        formula = '2d8+3';
+      } else if (potionName.toLowerCase().includes('serious')) {
+        formula = '3d8+5';
+      } else if (potionName.toLowerCase().includes('critical')) {
+        formula = '4d8+7';
+      } else {
+        formula = '1d8+1';
+      }
+    }
+
+    // Roll via Rolz. If fails, disable the consuming action completely!
+    roll = RollWithRolz(character.rolzRoomId, formula, character.name);
+    if (!roll) {
+      return new CharacterError('Rolz API is unavailable. Potion consumption has been disabled.');
+    }
+  }
+
+  // Consume the potion from the document
+  const result = adapter.ConsumeItem(docId, potionName, 'Battle Gear');
+  if (!result.success) {
+    return new CharacterError(`Failed to consume potion: ${result.error}`);
+  }
+
+  // Apply healing if roll was made
+  if (isHealing && roll) {
+    const oldHp = character.hp.current;
+    const updateResult = UpdateHp(docId, roll.total, 'cure');
+    if (updateResult instanceof CharacterError) {
+      return updateResult;
+    }
+
+    const newChar = GetCharacterByDocId(docId);
+    const newHp = !(newChar instanceof CharacterError) ? newChar.hp.current : oldHp;
+    const healedAmount = newHp - oldHp;
+
+    healingMessage = `Healed for ${healedAmount} HP (${roll.detail}). HP is now ${newHp}/${character.hp.max}.`;
+  }
+
+  const updatedRep = GetCharacterRepByDocId(docId);
+  if (updatedRep instanceof CharacterError) {
+    return updatedRep;
+  }
+
+  updatedRep.mutationMessage = `Successfully consumed ${potionName}. ` + healingMessage;
+  return updatedRep;
 }
 

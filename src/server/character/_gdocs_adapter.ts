@@ -9,8 +9,11 @@ import {
     GetSpellListItem,
     DecrementSpontaneousSlotsInGDoc,
     GetPartyMembersFromGDoc,
+    PartyData,
     ReplenishPreparedSpellsInGDoc,
-    ReplenishSpontaneousSlotsInGDoc
+    ReplenishSpontaneousSlotsInGDoc,
+    MoveItemInGDoc,
+    ConsumeItemInGDoc
 } from '../services/gdoc_utilities';
 
 /**
@@ -95,7 +98,36 @@ export class GDocsAdapter extends DocumentAdapter {
         return ParseGDocToRawLines(docId);
     }
 
-    GetPartyMembers(partyName: string, currentDocId: string): string[] {
+    GetPartyData(partyName: string, currentDocId: string): PartyData {
         return GetPartyMembersFromGDoc(partyName, currentDocId);
+    }
+
+    MoveItem(docId: string, itemName: string, fromSection: string, toSection: string): AdapterResult {
+        return MoveItemInGDoc(docId, itemName, fromSection, toSection);
+    }
+
+    ConsumeItem(docId: string, itemName: string, sectionName: string): AdapterResult & { removedLineText?: string } {
+        return ConsumeItemInGDoc(docId, itemName, sectionName);
+    }
+
+    PostRollToRolz(room: string, text: string, from: string): string | null {
+        const url = 'https://rolz.org/api/post';
+        const payload = {
+            room: room,
+            text: text,
+            from: from
+        };
+        const options = {
+            method: 'post' as const,
+            payload: payload,
+            muteHttpExceptions: true
+        };
+        try {
+            const response = UrlFetchApp.fetch(url, options);
+            return response.getContentText();
+        } catch (e) {
+            console.error('Rolz API fetch failed:', e);
+            return null;
+        }
     }
 }

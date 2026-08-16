@@ -5,6 +5,7 @@ import { BardicSpecial } from '../character/common_types';
 import { ParsePreparedSlotsSpontaneous } from '../character/parsers/prepared_spells';
 import { ICharacter } from '../character/icharacter';
 import { ParseKnownSpellsSpontaneous } from '../character/parsers/known_spells';
+import { Skill } from '../character/properties/skills';
 
 export const Bard: ClassData = createClassData({
   name: 'Bard',
@@ -144,6 +145,25 @@ export const Bard: ClassData = createClassData({
         }
       });
 
+      // Add Bardic Knowledge skill
+      const bardLevel = runtimeData.level.currentScore;
+      if (bardLevel > 0) {
+        let bk = character.skills.find(s => s.name === 'Bardic Knowledge');
+        if (!bk) {
+          bk = new Skill('Bardic Knowledge', bardLevel, character.abilities.Int!, character.acp);
+          character.skills.push(bk);
+        } else {
+          bk.score = bardLevel;
+          bk.currentScore = bardLevel;
+        }
+
+        // Set up synergy for Bardic Knowledge
+        const historySkill = character.skills.find(s => s.name === 'Knowledge (history)');
+        if (historySkill && !bk.synergySkills.some(s => s.name === historySkill.name)) {
+          bk.synergySkills.push(historySkill);
+        }
+      }
+
       character.manipulationCallbacks.OnCastSpell.push((char, slotData, context, helpers) => {
         if (slotData.casterClassName === 'Bard' && slotData.spellLevel === 'songs') {
           const bardCasterData = char.spellCasting.GetSpellCasterClassData('Bard');
@@ -174,11 +194,11 @@ function resolveBardicSpecials(level: number): BardicSpecial[] {
 
   //Inspire Courage
   let inspireCourageBonus = 1;
-  if (level >= 19) {
+  if (level >= 20) {
     inspireCourageBonus = 4;
-  } else if (level >= 13) {
+  } else if (level >= 14) {
     inspireCourageBonus = 3;
-  } else if (level >= 7) {
+  } else if (level >= 8) {
     inspireCourageBonus = 2;
   }
   bardicSpecials.push({ name: 'Inspire Courage', value: new ModifiableProperty(inspireCourageBonus) });

@@ -147,6 +147,7 @@ Tumble: + 2 Balance, Jump
 Battle Gear: 
 Kusarigama (+2 to Trip and Disarm, +5 ft. reach),
 Boots of Agile Leaping (+5 Jump, if has 5 Balance ranks, stand from prone as a swift action, Dex instead of Str to Jump, Leaping Climber),
+Thror's Holy Symbol of Moradin (Fist hitting an anvil surrounded by flames) - once in three days for a minute become a weapon +2 with increased crit range (19-20),
 Bracers of Armor +3 (10 fire resistance),
 Ring of Protection +2 (+2 AC deflection, abj.), 
 Cloak of Resistance +2,

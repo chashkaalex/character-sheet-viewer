@@ -5,7 +5,7 @@ export class Ability extends ModifiableProperty {
   public name: AbilityName;
 
   constructor(baseScore: number, name: AbilityName) {
-    super(baseScore, name);
+    super(baseScore, name, true);
     this.name = name;
   }
 
@@ -15,10 +15,13 @@ export class Ability extends ModifiableProperty {
 
   // Extend base state with ability-specific properties
   public override get state(): any {
+    const parentState = super.state;
+    const sign = this.modifier >= 0 ? '+' : '';
     return {
-      ...super.state,
+      ...parentState,
       name: this.name,
-      modifier: this.modifier
+      modifier: this.modifier,
+      rolzRollMessage: `#d20${sign}${this.modifier} #${this.name} Check`
     };
   }
 
@@ -32,7 +35,7 @@ export class AbilityBasedProperty extends ModifiableProperty {
   public ability: Ability;
 
   constructor(name: string, ability: Ability) {
-    super(0, name);
+    super(0, name, true);
     this.name = name;
     this.ability = ability;
   }
@@ -46,9 +49,13 @@ export class AbilityBasedProperty extends ModifiableProperty {
   }
 
   public override get state(): any {
+    const parentState = super.state;
+    const sign = this.bonus >= 0 ? '+' : '';
+
     return {
-      ...super.state,
-      bonus: this.bonus
+      ...parentState,
+      bonus: this.bonus,
+      rolzRollMessage: `#d20${sign}${this.bonus} #${this.name}`
     };
   }
 }

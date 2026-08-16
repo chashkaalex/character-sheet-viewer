@@ -129,8 +129,17 @@ export function ParseDocLines(lines: string[]): ParseDocResult {
 
   let currentSection: string | null = null;
 
+  // Normalize typographic curly symbols to standard ASCII
+  const normalizedLines = lines.map(line => {
+    let cleaned = line.replace(/[\u2018\u2019]/g, '\'');
+    cleaned = cleaned.replace(/[\u201c\u201d]/g, '"');
+    cleaned = cleaned.replace(/[\u2013\u2014]/g, '-');
+    cleaned = cleaned.replace(/[\u00a0\u2007\u202f]/g, ' ');
+    return cleaned;
+  });
+
   // Single-pass iteration
-  for (const line of lines) {
+  for (const line of normalizedLines) {
     // Check for section start
     if (IsSectionLine(line)) {
       currentSection = SECTION_NAMES.find(name => {

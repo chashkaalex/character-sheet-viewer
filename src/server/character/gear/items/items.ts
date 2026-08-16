@@ -51,6 +51,17 @@ export type BodySlotsMap = Map<BodySlotNames, number>;
  * @type {Object.<string, EffectData[]>}
  */
 export const ItemEffects: Record<string, EffectData[]> = {
+  'Thror\'s Holy Symbol of Moradin': [
+    {
+      status: 'Thror\'s Holy Symbol of Moradin',
+      callback: (character: ICharacter, _args: Record<string, unknown>) => {
+        if (!character.actions.includes('Use Thror\'s Holy Symbol')) {
+          character.actions.push('Use Thror\'s Holy Symbol');
+        }
+      }
+    }
+  ],
+
   'Amulet of Mighty Fists': [
     { status: 'Amulet of Mighty Fists', property: 'bab', modifierType: 'Generic', value: 1 },
     { status: 'Amulet of Mighty Fists', property: 'damageBonus', modifierType: 'Generic', value: 1 }
@@ -127,6 +138,10 @@ export const ItemEffects: Record<string, EffectData[]> = {
     { status: 'Cloak of Charisma +4', property: 'Cha', modifierType: 'Enhancement', value: 4 }
   ],
 
+  'Goggles of the Golden Sun': [
+    { status: 'Goggles of the Golden Sun', property: 'Special', description: 'While wearing "goggles of the golden sun", you are immune to blindness and dazzling effects. This is a continuous effect and requires no activation.In addition, three times per day you can activate these goggles and sacrifice a prepared spell or spell slot of 3rd level or higher to use fireball (as the spell; Reflex DC 14 half), using your own caster level or that of the goggles, whichever is higher. The fireball created by the goggles resembles a hurtling, exploding comet.' }
+  ],
+
   'Monks Chain Belt': [
     {
       status: 'Monks Chain Belt',
@@ -148,13 +163,13 @@ export const ItemEffects: Record<string, EffectData[]> = {
   ],
 
   'Hand Wraps with Adamantine Plates': [
-    { status: 'Hand Wraps with Adamantine Plates', property: 'Str', modifierType: 'Ability', value: 2 },
-    { status: 'Hand Wraps with Adamantine Plates', property: 'Dex', modifierType: 'Ability', value: 2 },
+    { status: 'Hand Wraps with Adamantine Plates', property: 'Str', modifierType: 'Enhancement', value: 2 },
+    { status: 'Hand Wraps with Adamantine Plates', property: 'Dex', modifierType: 'Enhancement', value: 2 },
     { status: 'Hand Wraps with Adamantine Plates', property: 'Special', description: '+2 to DC of the stunning fist attack.' }
   ],
 
   'Periapt of Wisdom': [
-    { status: 'Periapt of Wisdom', property: 'Wis', modifierType: 'Ability', value: 4 }
+    { status: 'Periapt of Wisdom', property: 'Wis', modifierType: 'Enhancement', value: 4 }
   ],
 
   'Silver Signet Ring': [

@@ -97,6 +97,23 @@ describe('ModifiableProperty', () => {
     expect(modifiableProperty.currentScore).toBe(10);
     expect(modifiableProperty.string).toContain('-2 (PenaltyStrengthDebuff)');
   });
+
+  test('should generate correct rolzRollMessage only when isRollable is true', () => {
+    // Non-rollable by default
+    modifiableProperty = new ModifiableProperty(10, 'AC');
+    expect(modifiableProperty.state.rolzRollMessage).toBeUndefined();
+
+    // Rollable explicitly
+    modifiableProperty = new ModifiableProperty(10, 'Initiative', true);
+    expect(modifiableProperty.state.rolzRollMessage).toBe('#d20+10 #Initiative');
+
+    modifiableProperty.applyPermanentEffect(2);
+    expect(modifiableProperty.state.rolzRollMessage).toBe('#d20+12 #Initiative');
+
+    const penalty: any = { status: 'Fatigued', property: 'Dex', modifierType: 'Generic', value: -4 };
+    modifiableProperty.applyEffect(penalty);
+    expect(modifiableProperty.state.rolzRollMessage).toBe('#d20+8 #Initiative');
+  });
 });
 
 describe('CreatureSize', () => {

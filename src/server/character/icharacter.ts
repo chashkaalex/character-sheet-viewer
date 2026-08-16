@@ -1,6 +1,6 @@
 import { CharacterClass } from './properties/race_and_classes';
 import { AbilitiesMap } from './properties/abilities/ability_types';
-import { ModifiableProperty, CreatureSize, ListOfSpecialProperties, GearItem } from './00_property';
+import { ModifiableProperty, BaseProperty, CreatureSize, ListOfSpecialProperties, GearItem } from './00_property';
 import { ArmorClass } from './properties/armorClass';
 import { Skill } from './properties/skills';
 import { SpellCasting } from './spells';
@@ -19,6 +19,7 @@ export interface ICharacter {
     parseErrors: string[];
     parseWarnings: string[];
     name: string;
+    rolzRoomId?: string;
     size: CreatureSize;
     abilities: AbilitiesMap;
     bodySlots: BodySlotsMap;
@@ -45,6 +46,7 @@ export interface ICharacter {
     speed: ModifiableProperty;
     partyName: string | null;
     partyMembers: string[];
+    quickStatuses: string[];
     InitiativeBonus: ModifiableProperty;
     attacksOfOpportunity: ModifiableProperty;
     ac: ArmorClass;
@@ -56,6 +58,7 @@ export interface ICharacter {
 
     ParseCharacter(): void;
     GetNamedProperty(propertyName: string): any;
+    registerProperty(name: string, property: BaseProperty<any>): void;
     GetModifiableProperty(propertyName: string): ModifiableProperty;
     HasPropertyInitialized(propertyName: string): boolean;
     QueuePendingEffect(propertyName: string, effect: BaseEffect): void;

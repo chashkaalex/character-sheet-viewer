@@ -2,7 +2,7 @@ import { ClassesData } from '../classes_data/_classes_general_data';
 import { ModifiableProperty } from './00_property';
 import { Ability } from './properties/abilities/ability';
 import { registerStatusEffects } from './_general_effects';
-import { EffectData } from './state/effects';
+import { EffectData, StaticPropertyEffect } from './state/effects';
 import { ParsedLevelSpellSlots, BardicSpecial, KnownSpellEntry, SpellSlotData, CharacterSpellSlots } from './common_types';
 import { ICharacter } from './icharacter';
 import { SpellCastingData } from '../classes_data/class_types';
@@ -104,11 +104,11 @@ const SpellsData: Record<string, SpellData> = {
   'Enlarge Person': {
     effects: [
       { status: 'Enlarge Person', property: 'size', modifierType: 'Size', value: 1 },
-      { status: 'Enlarge Person', property: 'Str', modifierType: 'Ability', value: 2 },
+      { status: 'Enlarge Person', property: 'Str', modifierType: 'Size', value: 2 },
       {
         status: 'Enlarge Person',
         property: 'Dex',
-        modifierType: 'Ability',
+        modifierType: 'Size',
         valueResolver: (character: ICharacter) => {
           const updated = character.abilities.Dex.score - 2;
           if (updated < 1) {
@@ -129,8 +129,9 @@ const SpellsData: Record<string, SpellData> = {
         property: 'Str',
         modifierType: 'Enhancement',
         valueResolver: (character: ICharacter) => {
-          const clericData = character.spellCasting.GetSpellCasterClassData('Cleric');
-          return clericData ? clericData.level.currentScore : 0;
+          const clericLevel = character.GetClassLevel('Cleric');
+          const sfLevel = character.GetClassLevel('Sacred Fist');
+          return clericLevel + Math.floor(sfLevel / 2);
         }
       }
     ],
@@ -156,9 +157,38 @@ const SpellsData: Record<string, SpellData> = {
   },
   'Prayer': {
     effects: [
-      { status: 'Prayer', property: 'Will', modifierType: 'Luck', value: 1 },
-      { status: 'Prayer', property: 'bab', modifierType: 'Luck', value: 1 },
-      { status: 'Prayer', property: 'damageBonus', modifierType: 'Luck', value: 1 }
+      {
+        status: 'Prayer',
+        callback: (character: ICharacter) => {
+          const bonus = 1;
+          const modifierType = 'Luck';
+          const status = 'Prayer';
+
+          // Attack (bab), saves (Fort, Ref, Will), weapon damage (damageBonus)
+          const targetProps = ['bab', 'damageBonus', 'Fort', 'Ref', 'Will'];
+          targetProps.forEach(propName => {
+            const prop = character.GetNamedProperty(propName);
+            if (prop) {
+              prop.applyEffect(new StaticPropertyEffect({
+                status,
+                property: propName,
+                value: bonus,
+                modifierType
+              }));
+            }
+          });
+
+          // All skills
+          character.skills.forEach(skill => {
+            skill.applyEffect(new StaticPropertyEffect({
+              status,
+              property: skill.name,
+              value: bonus,
+              modifierType
+            }));
+          });
+        }
+      }
     ],
     calculateDuration: function (spellCasting) {
       return spellCasting.level.currentScore * ROUNDS;
@@ -176,13 +206,13 @@ const SpellsData: Record<string, SpellData> = {
       { status: 'Haste', property: 'ac', modifierType: 'Dodge', value: 1 },
       { status: 'Haste', property: 'Ref', modifierType: 'Dodge', value: 1 }
     ],
-    calculateDuration: function (_spellCasting) {
-      return 1;
+    calculateDuration: function (spellCasting) {
+      return spellCasting.level.currentScore * ROUNDS;
     }
   },
   'Inspire Courage': {
     calculateDuration: function (_spellCasting) {
-      return 5;
+      return -1;
     }
   },
   'Fascinate': {
@@ -541,8 +571,8 @@ export function ExtractAndValidateSpell(
     const correctSpells: string[] = [];
     if (spellLevelName.includes('domain')) {
       domains.forEach(domain => {
-        if (casterClassSpells.domainSpells && casterClassSpells.domainSpells[domain]) {
-          correctSpells.push(...casterClassSpells.domainSpells[domain].slice(0, spellLevel));
+        if (classData!.domainsData && classData!.domainsData[domain]) {
+          correctSpells.push(...classData!.domainsData[domain].spells.slice(0, spellLevel));
         }
       });
     } else {

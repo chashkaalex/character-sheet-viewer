@@ -32,7 +32,10 @@ export function ParseWeapons(character: ICharacter): void {
 
 
 
-    // 4. Recalculate weapon bonuses to update statsString with new feat bonuses
+    // Register 'Weapons' property as initialized, which triggers any pending weapon effects
+    character.registerProperty('Weapons', {} as any);
+
+    // 4. Recalculate weapon bonuses to update statsString with new feat/status/flaw bonuses
     character.weapons.forEach(weapon => {
         weapon.calculateBonuses(character);
     });

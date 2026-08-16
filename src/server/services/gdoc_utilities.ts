@@ -478,12 +478,25 @@ export function DecrementPropertyWithUpdateProperty(docId: string, propertyName:
  * @param currentDocId The calling character's doc ID for validation
  * @returns List of valid character names in the party
  */
-export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string): string[] {
+export interface PartyData {
+    memberNames: string[];
+    quickStatuses: string[];
+}
+
+const PARTY_SECTION_NAMES = ['Party Members', 'Quick Statuses', 'Events Log'] as const;
+
+/**
+ * Gets the party members and quick statuses from the parties configuration Google Doc.
+ * @param partyName - Name of the party (matches a tab in the doc)
+ * @param currentDocId - Google Doc ID of the current character sheet
+ * @returns Object with list of character names and list of status strings
+ */
+export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string): PartyData {
     try {
         const partiesDocId = PropertiesService.getScriptProperties().getProperty('PARTIES_DOC_ID');
         if (!partiesDocId) {
             console.error('PARTIES_DOC_ID not set in script properties');
-            return [];
+            return { memberNames: [], quickStatuses: [] };
         }
         const doc = DocumentApp.openById(partiesDocId);
         let targetTab: any = null;
@@ -499,29 +512,36 @@ export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string)
 
         if (!targetTab) {
             console.error(`Party "${partyName}" not found in Parties document`);
-            return [];
+            return { memberNames: [], quickStatuses: [] };
         }
 
         const body = targetTab.asDocumentTab().getBody();
         const text = body.getText();
         const lines = text.split(/\r?\n/).map(line => line.trim());
 
-        let isMember = false;
-        const memberNames: string[] = [];
-        let inMembersSection = false;
+        const sectionLines: Record<string, string[]> = {};
+        let currentSection: string | null = null;
 
-        // Format: "Character_Sheet_Name gdoc_id"
         for (const line of lines) {
-            if (line === 'Party Members') {
-                inMembersSection = true;
+            if (PARTY_SECTION_NAMES.includes(line as any)) {
+                currentSection = line;
+                sectionLines[currentSection] = [];
                 continue;
             }
-            if (line === 'Events Log') {
-                break;
+
+            if (currentSection && line !== '') {
+                sectionLines[currentSection].push(line);
             }
+        }
 
-            if (!inMembersSection || line === '') continue;
+        const memberLines = sectionLines['Party Members'] || [];
+        const quickStatuses = sectionLines['Quick Statuses'] || [];
 
+        let isMember = false;
+        const memberNames: string[] = [];
+
+        // Format: "Character_Sheet_Name gdoc_id"
+        for (const line of memberLines) {
             const parts = line.split(' ');
             if (parts.length < 2) continue; // skip malformed lines
 
@@ -536,13 +556,13 @@ export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string)
 
         if (!isMember) {
             console.error(`Validation failed: Current doc ID ${currentDocId} not found in party list for ${partyName}`);
-            return [];
+            return { memberNames: [], quickStatuses: [] };
         }
 
-        return memberNames;
+        return { memberNames, quickStatuses };
     } catch (e) {
         console.error('Error fetching party members:', e);
-        return [];
+        return { memberNames: [], quickStatuses: [] };
     }
 }
 
@@ -681,5 +701,155 @@ export function ReplenishSpontaneousSlotsInGDoc(docId: string, casterClass: stri
         console.error('Error replenishing spontaneous slots in GDoc:', error);
         return { success: false, error: (error as Error).toString() };
     }
+}
+
+/**
+ * Moves an item line from one section to another inside Google Docs
+ */
+export function MoveItemInGDoc(docId: string, itemName: string, fromSection: string, toSection: string): AdapterResult {
+    try {
+        const doc = DocumentApp.openById(docId);
+        const body = doc.getBody();
+        const paragraphs = body.getParagraphs();
+
+        // 1. Find fromSection
+        const fromSectionStartIndex = paragraphs.findIndex(paragraph =>
+            paragraph.getText().includes(fromSection)
+        );
+        if (fromSectionStartIndex === -1) {
+            return { success: false, error: `Section '${fromSection}' not found in document` };
+        }
+
+        let fromSectionEndIndex = fromSectionStartIndex + 1;
+        while (fromSectionEndIndex < paragraphs.length &&
+            !SECTION_NAMES.some(name => paragraphs[fromSectionEndIndex].getText().includes(name))) {
+            fromSectionEndIndex++;
+        }
+
+        // Find item paragraph inside fromSection
+        let itemParagraphIndex = -1;
+        for (let i = fromSectionStartIndex + 1; i < fromSectionEndIndex; i++) {
+            if (paragraphs[i].getText().toLowerCase().includes(itemName.toLowerCase())) {
+                itemParagraphIndex = i;
+                break;
+            }
+        }
+
+        if (itemParagraphIndex === -1) {
+            return { success: false, error: `Item '${itemName}' not found in ${fromSection} section` };
+        }
+
+        const itemParagraph = paragraphs[itemParagraphIndex];
+        const itemText = itemParagraph.getText();
+
+        // 2. Find toSection
+        const toSectionStartIndex = paragraphs.findIndex(paragraph =>
+            paragraph.getText().includes(toSection)
+        );
+        if (toSectionStartIndex === -1) {
+            return { success: false, error: `Section '${toSection}' not found in document` };
+        }
+
+        let toSectionEndIndex = toSectionStartIndex + 1;
+        while (toSectionEndIndex < paragraphs.length &&
+            !SECTION_NAMES.some(name => paragraphs[toSectionEndIndex].getText().includes(name))) {
+            toSectionEndIndex++;
+        }
+
+        // 3. Mutate: Remove from fromSection, insert into toSection
+        itemParagraph.removeFromParent();
+
+        // Adjust target index if it was after the removed paragraph
+        let finalInsertIndex = toSectionEndIndex;
+        if (itemParagraphIndex < toSectionEndIndex) {
+            finalInsertIndex--;
+        }
+
+        body.insertParagraph(finalInsertIndex, itemText);
+
+        return { success: true, message: `Successfully moved '${itemName}' from ${fromSection} to ${toSection}` };
+    } catch (error) {
+        console.error('Error moving item in GDoc:', error);
+        return { success: false, error: (error as Error).toString() };
+    }
+}
+
+/**
+ * Consumes an item from a section (decrements or removes it).
+ */
+export function ConsumeItemInGDoc(docId: string, itemName: string, sectionName: string): AdapterResult & { removedLineText?: string } {
+    try {
+        const doc = DocumentApp.openById(docId);
+        const body = doc.getBody();
+        const paragraphs = body.getParagraphs();
+
+        // Find the section start
+        const sectionStartIndex = paragraphs.findIndex(paragraph =>
+            paragraph.getText().includes(sectionName)
+        );
+        if (sectionStartIndex === -1) {
+            return { success: false, error: `Section '${sectionName}' not found in document` };
+        }
+
+        let sectionEndIndex = sectionStartIndex + 1;
+        while (sectionEndIndex < paragraphs.length &&
+            !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
+            sectionEndIndex++;
+        }
+
+        // Find item paragraph inside section
+        let itemParagraphIndex = -1;
+        for (let i = sectionStartIndex + 1; i < sectionEndIndex; i++) {
+            if (paragraphs[i].getText().toLowerCase().includes(itemName.toLowerCase())) {
+                itemParagraphIndex = i;
+                break;
+            }
+        }
+
+        if (itemParagraphIndex === -1) {
+            return { success: false, error: `Item '${itemName}' not found in ${sectionName} section` };
+        }
+
+        const itemParagraph = paragraphs[itemParagraphIndex];
+        const originalLine = itemParagraph.getText();
+
+        const decrementedLine = decrementOrRemoveLine(originalLine);
+
+        if (decrementedLine === null) {
+            itemParagraph.removeFromParent();
+        } else {
+            itemParagraph.setText(decrementedLine);
+        }
+
+        return { success: true, removedLineText: originalLine };
+    } catch (error) {
+        console.error('Error consuming item in GDoc:', error);
+        return { success: false, error: (error as Error).toString() };
+    }
+}
+
+function decrementOrRemoveLine(line: string): string | null {
+    const xMatch = line.match(/\b([xX×]\s*)(\d+)\b/);
+    if (xMatch) {
+        const prefix = xMatch[1];
+        const count = parseInt(xMatch[2]);
+        if (count > 1) {
+            return line.replace(/\b([xX×]\s*)(\d+)\b/, `${prefix}${count - 1}`);
+        } else {
+            return null;
+        }
+    }
+
+    const parenMatch = line.match(/\(\s*(\d+)\s*\)/);
+    if (parenMatch) {
+        const count = parseInt(parenMatch[1]);
+        if (count > 1) {
+            return line.replace(/\(\s*(\d+)\s*\)/, `(${count - 1})`);
+        } else {
+            return null;
+        }
+    }
+
+    return null;
 }
 

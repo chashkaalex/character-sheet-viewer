@@ -25,12 +25,30 @@ export function onCharacterRepresentation(response) {
 
   setCharacterRep(response);
 
+  if (response.mutationMessage) {
+    alert(response.mutationMessage);
+  }
+
+  // Populate quick statuses datalist for adding new statuses
+  const datalist = document.getElementById('quickStatusesList') as HTMLDataListElement;
+  if (datalist) {
+    datalist.innerHTML = '';
+    if (characterRep.quickStatuses && characterRep.quickStatuses.length > 0) {
+      characterRep.quickStatuses.forEach(status => {
+        const option = document.createElement('option');
+        option.value = status;
+        datalist.appendChild(option);
+      });
+    }
+  }
+
   // Always render statuses from server (this will clear existing ones and show only server statuses)
   renderServerStatuses(characterRep.statuses || []);
 
   //parsing and rendering
   // Format: Name, race classname1 classlevel1/classname2 classlevel2 etc.
-  let nameDisplay = characterRep.name;
+  const docUrl = `https://docs.google.com/document/d/${characterRep.docId}/edit`;
+  let nameDisplay = `<a href="${docUrl}" target="_blank" rel="noopener noreferrer">${characterRep.name}</a>`;
 
   if (characterRep.race) {
     nameDisplay += ` ( ${characterRep.race}`;
@@ -104,7 +122,10 @@ export function onCharacterRepresentation(response) {
 
         // Add tooltips to ability properties
         const currentScoreElement = row.querySelector('.ability-current');
-        addTooltip(currentScoreElement, ability.string);
+        addTooltip(currentScoreElement, ability.string, ability.rolzRollMessage);
+
+        const modifierElement = row.querySelector('.ability-modifier');
+        addTooltip(modifierElement, ability.string, ability.rolzRollMessage);
       }
     });
   }
@@ -127,7 +148,7 @@ export function onCharacterRepresentation(response) {
 
         // Add tooltips to skill properties
         const bonusElement = row.querySelector('.skill-bonus');
-        addTooltip(bonusElement, skill.string);
+        addTooltip(bonusElement, skill.string, skill.rolzRollMessage);
       });
   }
 
@@ -148,19 +169,32 @@ export function onCharacterRepresentation(response) {
   console.log(characterRep.partyName);
   console.log(characterRep.partyMembers);
 
+  // Trigger top bar ready animation
+  const header = document.querySelector('.header');
+  if (header) {
+    header.classList.remove('ui-ready');
+    void (header as HTMLElement).offsetWidth; // force reflow to restart animation
+    header.classList.add('ui-ready');
+  }
 }
 
 export function UpdateValueAndTooltip(element, property) {
-  const value = property.bonus || property.currentScore || '-';
+  const value = property.bonus !== undefined ? property.bonus : (property.currentScore !== undefined ? property.currentScore : '-');
   document.getElementById(element).innerHTML = value;
   if (property) {
-    addTooltip(element, property.string);
+    addTooltip(element, property.string, property.rolzRollMessage);
   }
 }
 
 export function renderServerStatuses(statuses) {
   const statusesList = document.getElementById('statusesList');
   const emptyStatus = document.getElementById('emptyStatus');
+
+  // Enable/disable the clear all button based on status presence
+  const clearAllBtn = document.getElementById('clearAllStatusesButton') as HTMLButtonElement;
+  if (clearAllBtn) {
+    clearAllBtn.disabled = (!statuses || statuses.length === 0);
+  }
 
   // Clear any existing statuses (except the empty template)
   const existingStatuses = statusesList.querySelectorAll('.status-item:not(#emptyStatus)');
@@ -191,6 +225,9 @@ export function renderServerStatuses(statuses) {
  * @returns {string} - Formatted time string
  */
 export function formatRoundsToReadable(rounds) {
+  if (rounds < 0) {
+    return 'endless';
+  }
   if (rounds >= 360) {
     const hours = Math.floor(rounds / 360);
     const remainingRounds = rounds % 360;
@@ -248,7 +285,7 @@ export function createStatusDisplay(containerElement, statusData) {
 // Custom Tooltip Logic
 let activeTooltipElement = null;
 
-export function addTooltip(element, tooltipText) {
+export function addTooltip(element, tooltipText, rolzRollMessage?: string) {
   // If element is an ID string, get the element
   if (typeof element === 'string') {
     element = document.getElementById(element);
@@ -258,6 +295,11 @@ export function addTooltip(element, tooltipText) {
     // Remove native title to prevent default browser tooltip
     element.removeAttribute('title');
     element.dataset.tooltip = tooltipText;
+    if (rolzRollMessage) {
+      element.dataset.rolzRollMessage = rolzRollMessage;
+    } else {
+      delete element.dataset.rolzRollMessage;
+    }
     element.style.cursor = 'help';
 
     // Desktop: Hover events
@@ -299,7 +341,77 @@ export function showTooltip(element) {
 
   if (!tooltip || !text) return;
 
-  tooltip.textContent = text;
+  tooltip.innerHTML = '';
+  const textDiv = document.createElement('div');
+  textDiv.textContent = text;
+  tooltip.appendChild(textDiv);
+
+  const rollMessage = element.dataset.rolzRollMessage;
+  if (rollMessage) {
+    const divider = document.createElement('hr');
+    divider.className = 'tooltip-divider';
+    tooltip.appendChild(divider);
+
+    const rollBtn = document.createElement('button');
+    rollBtn.className = 'tooltip-roll-btn';
+
+    if (characterRep && characterRep.rolzRoomId) {
+      rollBtn.innerHTML = `🎲 <span class="roll-expr">Roll to Rolz (${characterRep.rolzRoomId})</span>`;
+      rollBtn.title = `Click to roll ${rollMessage} directly in room ${characterRep.rolzRoomId}`;
+
+      rollBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        rollBtn.disabled = true;
+        rollBtn.textContent = '🎲 Rolling...';
+
+        // @ts-ignore
+        google.script.run
+          .withSuccessHandler((responseStr: string) => {
+            rollBtn.disabled = false;
+            rollBtn.innerHTML = `🎲 <span class="roll-expr">Roll to Rolz (${characterRep.rolzRoomId})</span>`;
+
+            try {
+              const res = JSON.parse(responseStr);
+              const item = res.message?.content?.items?.[0];
+              if (item) {
+                const resultVal = item.result;
+                const detailsVal = item.details || '';
+                const preVal = item.pre || '';
+                const commentVal = item.comment || '';
+                const label = preVal || (commentVal ? `${commentVal}: ` : '');
+                alert(`Roll Result: ${label}${resultVal} ${detailsVal}`);
+              } else {
+                alert(`API response did not contain a roll: ${responseStr}`);
+              }
+            } catch (err: any) {
+              console.error(err);
+              alert(`Error parsing Rolz response: ${err.message}\nRaw: ${responseStr}`);
+            }
+          })
+          .withFailureHandler((err: any) => {
+            rollBtn.disabled = false;
+            rollBtn.innerHTML = `🎲 <span class="roll-expr">Roll to Rolz (${characterRep.rolzRoomId})</span>`;
+            alert(`Error communicating with server: ${err.message}`);
+          })
+          .PostRollToRolz(characterRep.rolzRoomId, rollMessage, characterRep.name);
+      });
+    } else {
+      rollBtn.innerHTML = `🎲 <span class="roll-expr">${rollMessage}</span>`;
+      rollBtn.title = 'Click to copy Rolz command';
+
+      rollBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Avoid closing/toggling
+        navigator.clipboard.writeText(rollMessage).then(() => {
+          showToast(`Copied roll code: ${rollMessage}`);
+        }).catch(err => {
+          console.error('Could not copy text: ', err);
+        });
+      });
+    }
+    tooltip.appendChild(rollBtn);
+  }
+
   tooltip.classList.add('show');
 
   // Position logic
@@ -337,6 +449,34 @@ export function hideTooltip() {
   }
 }
 
+export function showToast(message: string) {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'toast-notification';
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  // Trigger transition
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+
+  // Remove after 2.5 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 2500);
+}
+
 // Close tooltip when clicking anywhere else
 document.addEventListener('click', function (e) {
   if (activeTooltipElement && !activeTooltipElement.contains(e.target)) {
@@ -355,6 +495,7 @@ export function populateInventory() {
 
   populateInventoryList(battleGearList, characterRep.battleGear, 'battleGear');
   populateInventoryList(possessionsList, characterRep.possessions, 'possessions');
+  populateBodySlots(characterRep.battleGear);
 
   // Update filter button appearances based on current filters
   updateFilterButtonAppearance('battleGear', currentFilters.battleGear);
@@ -441,67 +582,39 @@ export function createInventoryItem(item, index, listType) {
 
   const amountText = item.amount > 1 ? `x ${item.amount}` : '';
 
+  const actionIcon = listType === 'battleGear' ? '🎒' : '⚔';
+  const actionTitle = listType === 'battleGear' ? 'Move to Possessions' : 'Move to Battle Gear';
+
+  let buttonsHtml = `<button class="inventory-item-action" onclick="event.stopPropagation(); moveInventoryItem('${listType}', ${index})" title="${actionTitle}">${actionIcon}</button>`;
+
+  if (listType === 'battleGear' && item.isPotion) {
+    buttonsHtml += `<button class="inventory-item-action" onclick="event.stopPropagation(); usePotion(${index})" title="Drink Potion">🧪</button>`;
+  }
+
   itemElement.innerHTML = `
     <label>${nameText}</label>
     <span style="text-align: right; margin-left: auto;">${amountText}</span>
+    ${buttonsHtml}
   `;
 
   return itemElement;
 }
 
 // Inventory management functions
-let selectedItem = null;
-
 export function initializeInventory() {
-  // Remove any existing event listeners first
-  const items = document.querySelectorAll('.inventory-item');
-  items.forEach(item => {
-    // Clone the element to remove all event listeners
-    const newItem = item.cloneNode(true);
-    item.parentNode.replaceChild(newItem, item);
-  });
-
-  // Add click handlers to all inventory items
-  const newItems = document.querySelectorAll('.inventory-item');
-  console.log('Initializing inventory with', newItems.length, 'items');
-
-  newItems.forEach(item => {
-    item.addEventListener('click', function () {
-      // Remove previous selection
-      document.querySelectorAll('.inventory-item').forEach(i => i.classList.remove('selected'));
-
-      // Select this item
-      this.classList.add('selected');
-      selectedItem = this;
-
-      console.log('Selected item:', this.dataset.item);
-    });
-  });
+  // Inventory selection/movement is removed.
 }
 
-export function moveItem(fromList, toList) {
-  if (!selectedItem) {
-    alert('Please select an item first by clicking on it.');
-    return;
-  }
+/**
+ * Collapses or expands an inventory section
+ */
+export function toggleCollapse(listType: string) {
+  const section = document.getElementById(`${listType}Section`);
+  const btn = document.getElementById(`${listType}CollapseBtn`);
+  if (!section || !btn) return;
 
-  const fromListElement = document.getElementById(fromList + 'List');
-  const toListElement = document.getElementById(toList + 'List');
-
-  // Check if the selected item is in the correct source list
-  if (!fromListElement.contains(selectedItem)) {
-    alert(`Selected item is not in the ${fromList} list.`);
-    return;
-  }
-
-  // Move the item
-  toListElement.appendChild(selectedItem);
-
-  // Clear selection
-  selectedItem.classList.remove('selected');
-  selectedItem = null;
-
-  console.log(`Moved item to ${toList} list`);
+  const isCollapsed = section.classList.toggle('collapsed');
+  btn.textContent = isCollapsed ? '▼' : '▲';
 }
 
 // Filter functionality
@@ -572,3 +685,125 @@ document.addEventListener('click', function (event) {
 document.addEventListener('DOMContentLoaded', function () {
   initializeInventory();
 });
+
+/**
+ * Populates the equipped slots visual depiction based on Battle Gear items
+ */
+export function populateBodySlots(battleGear) {
+  const slotsListElement = document.getElementById('slotsList');
+  if (!slotsListElement) return;
+  slotsListElement.innerHTML = '';
+
+  const OFFICIAL_SLOTS = [
+    { name: 'Head', possibleAmount: 1 },
+    { name: 'Eyes', possibleAmount: 1 },
+    { name: 'Neck', possibleAmount: 1 },
+    { name: 'Torso', possibleAmount: 1 },
+    { name: 'Body', possibleAmount: 1 },
+    { name: 'Shoulders', possibleAmount: 1 },
+    { name: 'Arms', possibleAmount: 1 },
+    { name: 'Hands', possibleAmount: 1 },
+    { name: 'Fingers', possibleAmount: 2 },
+    { name: 'Waist', possibleAmount: 1 },
+    { name: 'Feet', possibleAmount: 1 },
+    { name: 'Holy Symbol', possibleAmount: 1 }
+  ];
+
+  const SLOT_ICONS = {
+    'Head': '🪖',
+    'Eyes': '👓',
+    'Neck': '📿',
+    'Torso': '👕',
+    'Body': '👘',
+    'Shoulders': '🧣',
+    'Arms': '🦾',
+    'Hands': '🧤',
+    'Fingers': '💍',
+    'Waist': '🎗',
+    'Feet': '🥾',
+    'Holy Symbol': '⛪'
+  };
+
+  const assignedItems = new Set();
+
+  OFFICIAL_SLOTS.forEach(slot => {
+    // Find matching items in battleGear that haven't been assigned yet
+    const matchingItems = (battleGear || []).filter(item =>
+      item.bodySlot === slot.name && !assignedItems.has(item)
+    );
+
+    for (let i = 0; i < slot.possibleAmount; i++) {
+      const item = matchingItems[i];
+      const slotItemDiv = document.createElement('div');
+
+      const displayName = slot.possibleAmount > 1 ? `${slot.name} ${i + 1}` : slot.name;
+      const icon = SLOT_ICONS[slot.name] || '📦';
+
+      if (item) {
+        assignedItems.add(item);
+        slotItemDiv.className = 'slot-item occupied';
+
+        const itemNameText = item.material && !item.name.includes(item.material) ? `${item.material} ${item.name}` : item.name;
+
+        slotItemDiv.innerHTML = `
+          <span class="slot-icon">${icon}</span>
+          <span class="slot-name">${displayName}</span>
+          <span class="slot-item-name" title="${itemNameText}">${itemNameText}</span>
+        `;
+      } else {
+        slotItemDiv.className = 'slot-item vacant';
+        slotItemDiv.innerHTML = `
+          <span class="slot-icon">${icon}</span>
+          <span class="slot-name">${displayName}</span>
+          <span class="slot-status">Vacant</span>
+        `;
+      }
+
+      slotsListElement.appendChild(slotItemDiv);
+    }
+  });
+}
+
+/**
+ * Invokes server-side MoveInventoryItem mutation
+ */
+export function moveInventoryItem(listType: string, index: number) {
+  const items = listType === 'battleGear' ? characterRep.battleGear : characterRep.possessions;
+  const item = items[index];
+  if (!item) return;
+
+  const fromSection = listType === 'battleGear' ? 'Battle Gear' : 'Possessions';
+  const toSection = listType === 'battleGear' ? 'Possessions' : 'Battle Gear';
+
+  console.log(`Moving item '${item.name}' from ${fromSection} to ${toSection}`);
+
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error('Error calling MoveInventoryItem:', error);
+      alert('Error moving item: ' + error.message);
+    })
+    .MoveInventoryItem(characterRep.docId, item.name, fromSection, toSection);
+}
+
+/**
+ * Invokes server-side UsePotion mutation
+ */
+export function usePotion(index: number) {
+  const item = characterRep.battleGear[index];
+  if (!item) return;
+
+  if (!confirm(`Are you sure you want to drink ${item.name}?`)) {
+    return;
+  }
+
+  console.log(`Drinking potion: ${item.name}`);
+
+  google.script.run
+    .withSuccessHandler(onCharacterRepresentation)
+    .withFailureHandler(function (error) {
+      console.error('Error calling UsePotion:', error);
+      alert('Error drinking potion: ' + error.message);
+    })
+    .UsePotion(characterRep.docId, item.name);
+}

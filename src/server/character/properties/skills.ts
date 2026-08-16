@@ -48,10 +48,12 @@ export const SkillsAbilities: Record<string, AbilityName | 'None'> = {
   'Swim': 'Str',
   'Tumble': 'Dex',
   'Use Magic Device': 'Cha',
-  'Use Rope': 'Dex'
+  'Use Rope': 'Dex',
+  'Bardic Knowledge': 'Int'
 } as const;
 
 export const SkillsSynergyReversed: Record<string, string[]> = {
+  'Bardic Knowledge': ['Knowledge (history)'],
   'Appraise': ['Craft'],
   'Balance': ['Tumble'],
   'Climb': ['Use Rope'],
@@ -95,7 +97,7 @@ export class Skill extends ModifiableProperty {
   public acp?: ModifiableProperty;
 
   constructor(name: string, rank: number, ability: Ability, acp?: ModifiableProperty) {
-    super(rank, name);
+    super(rank, name, true);
     this.name = name;
     this.ability = ability;
     this.synergySkills = [];
@@ -119,9 +121,12 @@ export class Skill extends ModifiableProperty {
   }
 
   public override get state(): any {
+    const parentState = super.state;
+    const sign = this.bonus >= 0 ? '+' : '';
     return {
-      ...super.state,
-      bonus: this.bonus
+      ...parentState,
+      bonus: this.bonus,
+      rolzRollMessage: `#d20${sign}${this.bonus} #${this.name} Check`
     };
   }
 }

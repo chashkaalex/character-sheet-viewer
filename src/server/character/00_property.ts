@@ -48,8 +48,11 @@ export abstract class BaseProperty<T> {
 }
 
 export class ModifiableProperty extends BaseProperty<number> {
-  constructor(baseScore: number, name?: string) {
+  public isRollable: boolean;
+
+  constructor(baseScore: number, name?: string, isRollable: boolean = false) {
     super(baseScore, name);
+    this.isRollable = isRollable;
   }
 
   // Removal is managed by recreating the character
@@ -96,11 +99,16 @@ export class ModifiableProperty extends BaseProperty<number> {
   }
 
   public get state(): any {
-    return {
+    const sign = this.currentScore >= 0 ? '+' : '';
+    const stateObj: any = {
       score: this.score,
       currentScore: this.currentScore,
       string: this.string
     };
+    if (this.isRollable) {
+      stateObj.rolzRollMessage = `#d20${sign}${this.currentScore}${this.name ? ' #' + this.name : ''}`;
+    }
+    return stateObj;
   }
 }
 
@@ -191,7 +199,7 @@ export class SpecialAttackBonus extends ModifiableProperty {
   public bab?: ModifiableProperty;
 
   constructor(strength: Ability, size: CreatureSize, name?: string, bab?: ModifiableProperty) {
-    super(0, name);
+    super(0, name, true);
     this.strength = strength;
     this.size = size;
     this.bab = bab;
@@ -211,9 +219,12 @@ export class SpecialAttackBonus extends ModifiableProperty {
   }
 
   public override get state(): any {
+    const parentState = super.state;
+    const sign = this.bonus >= 0 ? '+' : '';
     return {
-      ...super.state,
-      bonus: this.bonus
+      ...parentState,
+      bonus: this.bonus,
+      rolzRollMessage: `#d20${sign}${this.bonus}${this.name ? ' #' + this.name : ''}`
     };
   }
 }

@@ -2,8 +2,7 @@ import * as path from 'path';
 import { GetCharacterByDocId } from '../../server/character/character_manipulation';
 import { getCharacterRep } from '../../server/character/character_rep';
 import { Character } from '../../server/character/character';
-import { ModifiableProperty } from '../../server/character/00_property';
-import { StaticPropertyEffect } from '../../server/character/state/effects';
+import { IsAWeapon } from '../../server/character/gear/weapons/weapons';
 
 const THRORS_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'thror_test.txt');
 const BESS_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'bess_test.txt');
@@ -173,8 +172,8 @@ describe('Local Character Parsing', () => {
         // Validate Song of the Heart feat is automatically applied to Bess's bardic specials
         const bardCasterData = bess.spellCasting.GetSpellCasterClassData('Bard')!;
         const icProperty = bardCasterData.bardicSpecials!.find((s) => s.name === 'Inspire Courage')!.value!;
-        expect(icProperty.score).toBe(3); // Base +3 for lvl 13 Bard
-        expect(icProperty.currentScore).toBe(4); // +1 from Song of the Heart
+        expect(icProperty.score).toBe(2); // Base +2 for lvl 13 Bard
+        expect(icProperty.currentScore).toBe(3); // +1 from Song of the Heart
 
         const competenceProp = bardCasterData.bardicSpecials!.find((s) => s.name === 'Inspire Competence')!.value!;
         expect(competenceProp.score).toBe(2);
@@ -190,7 +189,7 @@ describe('Local Character Parsing', () => {
         const retrievedEffects = GetEffects(StatusesEffects, generatedStatusName);
         expect(retrievedEffects).not.toBeNull();
         expect(retrievedEffects!.length).toBe(3);
-        expect(retrievedEffects!.find(e => e.property === 'bab')!.value).toBe(4); // Prove numerical 4 carried over via RegExp
+        expect(retrievedEffects!.find(e => e.property === 'bab')!.value).toBe(3); // Prove numerical 3 carried over via RegExp
 
         // Verify Weapons (now parsed from items)
         const unarmed = bess.weapons.find(w => w.baseName === 'Unarmed');
@@ -214,6 +213,9 @@ describe('Local Character Parsing', () => {
 
         const characterRep = getCharacterRep(bess);
         expect(characterRep).toBeDefined();
+        expect(bess.partyMembers).toContain('thror_test');
+        expect(bess.quickStatuses).toContain('Thror is preparing spells');
+        expect(characterRep.quickStatuses).toContain('Thror is preparing spells');
     });
 
     test('should parse Morty character sheet correctly and without errors', () => {
@@ -333,7 +335,7 @@ describe('Local Character Parsing', () => {
         expect(unarmed!.attackBonus.bonus).toBe(15);
         expect(unarmed!.statsString).toBe('Attack: 15 Damage: 1d6 + 6 Crit. X2');
 
-                // Verify Frost Waraxe +1 (Dwarvencraft)
+        // Verify Frost Waraxe +1 (Dwarvencraft)
         const waraxe = char.weapons.find(w => w.name.includes('Frost Waraxe'));
         expect(waraxe).toBeDefined();
         expect(waraxe!.damage).toBe('1d10');
@@ -379,6 +381,44 @@ describe('Local Character Parsing', () => {
         if (char.parseWarnings.length > 0) {
             console.warn('Dein Parse Warnings:', char.parseWarnings);
         }
+    });
+
+    test('should parse Rolz Room ID from document lines if present', () => {
+        const dummyLines = [
+            'Test Hero',
+            'Rolz Room ID: oy2gymrcju',
+            'Init: +4; Senses: Listen +15; Spot +15;',
+            'BAb: +9; Grapple: +10; Hp: 85/85; Speed: 50 ft.',
+            'Attack: +12 Unarmed (2d10 + 3/X2).',
+            'AC: 28, Touch 25, Flat-footed 24',
+            'Saves: Fort +17; Ref +14; Will +15.',
+            'Str: 14',
+            'Dex: 16',
+            'Con: 14',
+            'Int: 12',
+            'Wis: 18',
+            'Char: 10',
+            'Statuses:',
+            'Feats:',
+            'Special Abilities:',
+            'Racial Traits:',
+            'Bonus Abilities:',
+            'Skills:',
+            'Personal Information:'
+        ];
+        const char = new Character(dummyLines);
+        expect(char.rolzRoomId).toBe('oy2gymrcju');
+
+        const rep = getCharacterRep(char);
+        expect(rep.rolzRoomId).toBe('oy2gymrcju');
+    });
+
+    test('should classify weapons correctly and ignore items that contain weapon names as substrings', () => {
+        expect(IsAWeapon('Short Sword')).toBe(true);
+        expect(IsAWeapon('Longsword')).toBe(true);
+        expect(IsAWeapon('Net')).toBe(true);
+        expect(IsAWeapon('Silver Signet Ring')).toBe(false);
+        expect(IsAWeapon('Cabinet')).toBe(false);
     });
 
 });

@@ -1,11 +1,10 @@
 1. Implement "Feat of Strength" status for Thror, add tests etc. V
-2. Change the way gdoc styles are parsed.
-2. Refactor character parsing function to separate files. 
-3. Re-implement weapons parsing and weapon-specific effects.
-4. Implement effects of Thror's holy symbol.
-5. Implement expendable actions.
-
-create a callbacks system to handle additional actions on top of character manipulation events.
-for example: instead of checking for Grudge Keeper during UpdateHp, Grudge Keeper should add a callback call
-to the event system forHp changes. There should be a registry for callbacks, so that every manipulation flow would 
-call it's callbacks every time it runs. 
+2. Implement effects of Thror's holy symbol.
+3. Implement Bardic Knowledge as a skill for Bards.
+   - For characters with Bard class levels, Bardic Knowledge should be automatically added to the skills list.
+   - The rank/score of Bardic Knowledge equals the character's Bard class level.
+   - The key ability of the skill is Intelligence (Int).
+   - If the character has 5 or more ranks in Knowledge (history), they gain a +2 synergy bonus.
+4. Implement removing all the statuses from a character.
+5. ROLZ integration.
+6. Implement damage types (vs. resistances).

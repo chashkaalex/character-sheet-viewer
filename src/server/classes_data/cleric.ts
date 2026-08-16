@@ -6,6 +6,322 @@ import { ICharacter } from '../character/icharacter';
 import { ExtractAndValidateSpell } from '../character/spells';
 import { KnownSpellEntry } from '../character/common_types';
 
+export type DomainNames =
+  | 'Air'
+  | 'Animal'
+  | 'Chaos'
+  | 'Death'
+  | 'Destruction'
+  | 'Earth'
+  | 'Evil'
+  | 'Fire'
+  | 'Good'
+  | 'Healing'
+  | 'Knowledge'
+  | 'Law'
+  | 'Luck'
+  | 'Magic'
+  | 'Plant'
+  | 'Protection'
+  | 'Strength'
+  | 'Sun'
+  | 'Travel'
+  | 'Trickery'
+  | 'War'
+  | 'Water';
+
+const clericDomainsData: Record<DomainNames, { spells: string[]; action?: string }> = {
+  Air: {
+    spells: [
+      'Obscuring Mist',
+      'Wind Wall',
+      'Gaseous Form',
+      'Air Walk',
+      'Control Winds',
+      'Chain Lightning',
+      'Control Weather',
+      'Whirlwind',
+      'Elemental Swarm'
+    ]
+  },
+  Animal: {
+    spells: [
+      'Calm Animals',
+      'Hold Animal',
+      'Dominate Animal',
+      'Summon Nature\'s Ally IV',
+      'Commune with Nature',
+      'Antilife Shell',
+      'Animal Shapes',
+      'Summon Nature\'s Ally VIII',
+      'Shapechange'
+    ]
+  },
+  Chaos: {
+    spells: [
+      'Protection from Law',
+      'Shatter',
+      'Magic Circle against Law',
+      'Chaos Hammer',
+      'Dispel Law',
+      'Animate Objects',
+      'Word of Chaos',
+      'Cloak of Chaos',
+      'Summon Monster IX'
+    ]
+  },
+  Death: {
+    spells: [
+      'Cause Fear',
+      'Death Knell',
+      'Animate Dead',
+      'Death Ward',
+      'Slay Living',
+      'Create Undead',
+      'Destruction',
+      'Create Greater Undead',
+      'Wail of the Banshee'
+    ]
+  },
+  Destruction: {
+    spells: [
+      'Inflict Light Wounds',
+      'Shatter',
+      'Contagion',
+      'Inflict Critical Wounds',
+      'Inflict Light Wounds, Mass',
+      'Harm',
+      'Disintegrate',
+      'Earthquake',
+      'Implosion'
+    ]
+  },
+  Earth: {
+    spells: [
+      'Magic Stone',
+      'Soften Earth and Stone',
+      'Stone Shape',
+      'Spike Stones',
+      'Wall of Stone',
+      'Stoneskin',
+      'Earthquake',
+      'Iron Body',
+      'Elemental Swarm'
+    ]
+  },
+  Evil: {
+    spells: [
+      'Protection from Good',
+      'Desecrate',
+      'Magic Circle against Good',
+      'Unholy Blight',
+      'Dispel Good',
+      'Create Undead',
+      'Blasphemy',
+      'Unholy Aura',
+      'Summon Monster IX'
+    ]
+  },
+  Fire: {
+    spells: [
+      'Burning Hands',
+      'Produce Flame',
+      'Resist Energy',
+      'Wall of Fire',
+      'Fire Shield',
+      'Fire Seeds',
+      'Fire Storm',
+      'Incendiary Cloud',
+      'Elemental Swarm'
+    ]
+  },
+  Good: {
+    spells: [
+      'Protection from Evil',
+      'Aid',
+      'Magic Circle against Evil',
+      'Holy Smite',
+      'Dispel Evil',
+      'Blade Barrier',
+      'Holy Word',
+      'Holy Aura',
+      'Summon Monster IX'
+    ]
+  },
+  Healing: {
+    spells: [
+      'Cure Light Wounds',
+      'Cure Moderate Wounds',
+      'Cure Serious Wounds',
+      'Cure Critical Wounds',
+      'Cure Light Wounds, Mass',
+      'Heal',
+      'Regenerate',
+      'Cure Critical Wounds, Mass',
+      'Heal, Mass'
+    ]
+  },
+  Knowledge: {
+    spells: [
+      'Detect Secret Doors',
+      'Detect Thoughts',
+      'Clairaudience/Clairvoyance',
+      'Divination',
+      'True Seeing',
+      'Find the Path',
+      'Legend Lore',
+      'Discern Location',
+      'Foresight'
+    ]
+  },
+  Law: {
+    spells: [
+      'Protection from Chaos',
+      'Calm Emotions',
+      'Magic Circle against Chaos',
+      'Order\'s Wrath',
+      'Dispel Chaos',
+      'Hold Monster',
+      'Dictum',
+      'Shield of Law',
+      'Summon Monster IX'
+    ]
+  },
+  Luck: {
+    spells: [
+      'Entropic Shield',
+      'Aid',
+      'Protection from Energy',
+      'Freedom of Movement',
+      'Break Enchantment',
+      'Mislead',
+      'Spell Turning',
+      'Moment of Prescience',
+      'Miracle'
+    ]
+  },
+  Magic: {
+    spells: [
+      'Magic Aura',
+      'Identify',
+      'Dispel Magic',
+      'Imbue with Spell Ability',
+      'Spell Resistance',
+      'Antimagic Field',
+      'Spell Turning',
+      'Protection from Spells',
+      'Mordenkainen\'s Disjunction'
+    ]
+  },
+  Plant: {
+    spells: [
+      'Entangle',
+      'Barkskin',
+      'Plant Growth',
+      'Command Plants',
+      'Wall of Thorns',
+      'Repel Wood',
+      'Animate Plants',
+      'Control Plants',
+      'Shambler'
+    ]
+  },
+  Protection: {
+    spells: [
+      'Sanctuary',
+      'Shield Other',
+      'Protection from Energy',
+      'Spell Immunity',
+      'Spell Resistance',
+      'Antimagic Field',
+      'Repulsion',
+      'Mind Blank',
+      'Prismatic Sphere'
+    ],
+    action: 'Protective Ward'
+  },
+  Strength: {
+    spells: [
+      'Enlarge Person',
+      'Bull\'s Strength',
+      'Magic Vestment',
+      'Spell Immunity',
+      'Righteous Might',
+      'Stoneskin',
+      'Grasping Hand',
+      'Clenched Fist',
+      'Crushing Hand'
+    ],
+    action: 'Feat of Strength'
+  },
+  Sun: {
+    spells: [
+      'Endure Elements',
+      'Heat Metal',
+      'Searing Light',
+      'Fire Shield',
+      'Flame Strike',
+      'Fire Seeds',
+      'Sunbeam',
+      'Sunburst',
+      'Prismatic Sphere'
+    ]
+  },
+  Travel: {
+    spells: [
+      'Longstrider',
+      'Locate Object',
+      'Fly',
+      'Dimension Door',
+      'Teleport',
+      'Find the Path',
+      'Teleport, Greater',
+      'Phase Door',
+      'Astral Projection'
+    ]
+  },
+  Trickery: {
+    spells: [
+      'Disguise Self',
+      'Invisibility',
+      'Nondetection',
+      'Confusion',
+      'False Vision',
+      'Mislead',
+      'Screen',
+      'Polymorph Any Object',
+      'Time Stop'
+    ]
+  },
+  War: {
+    spells: [
+      'Magic Weapon',
+      'Spiritual Weapon',
+      'Magic Vestment',
+      'Divine Power',
+      'Flame Strike',
+      'Blade Barrier',
+      'Power Word Blind',
+      'Power Word Stun',
+      'Power Word Kill'
+    ]
+  },
+  Water: {
+    spells: [
+      'Obscuring Mist',
+      'Fog Cloud',
+      'Water Breathing',
+      'Control Water',
+      'Ice Storm',
+      'Cone of Cold',
+      'Acid Fog',
+      'Horrid Wilting',
+      'Elemental Swarm'
+    ]
+  }
+};
+
+
 export const Cleric: ClassData = createClassData({
   name: 'Cleric',
   HD: '1d8',
@@ -46,6 +362,7 @@ export const Cleric: ClassData = createClassData({
     /*level: 19*/{ bab: 14, Fort: 11, Ref: 6, Will: 11 },
     /*level: 20*/{ bab: 15, Fort: 12, Ref: 6, Will: 12 }
   ],
+  domainsData: clericDomainsData,
   spellCastingData: {
     casterClass: 'Cleric',
     type: 'Divine',
@@ -63,7 +380,7 @@ export const Cleric: ClassData = createClassData({
 
       if (domainLine) {
         const parsedDomains = GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
-        const validDomains = parsedDomains.filter(d => (Cleric.spellCastingData!.spells!.domainSpells as any)[d]) as DomainNames[];
+        const validDomains = parsedDomains.filter(d => clericDomainsData[d as keyof typeof clericDomainsData]) as DomainNames[];
         runtimeData.domains = validDomains;
       } else {
         character.LogParseError('No domains found for Cleric class');
@@ -72,6 +389,17 @@ export const Cleric: ClassData = createClassData({
 
       if (!character.actions.includes('Turn Undead')) {
         character.actions.push('Turn Undead');
+      }
+
+      if (runtimeData.domains) {
+        runtimeData.domains.forEach((domain: DomainNames) => {
+          const domainInfo = clericDomainsData[domain];
+          if (domainInfo && domainInfo.action) {
+            if (!character.actions.includes(domainInfo.action)) {
+              character.actions.push(domainInfo.action);
+            }
+          }
+        });
       }
     },
 
@@ -341,251 +669,7 @@ export const Cleric: ClassData = createClassData({
         'Storm of Vengeance',
         'Summon Monster IX',
         'True Resurrection'
-      ],
-      domainSpells: {
-        Air: [
-          'Obscuring Mist',
-          'Wind Wall',
-          'Gaseous Form',
-          'Air Walk',
-          'Control Winds',
-          'Chain Lightning',
-          'Control Weather',
-          'Whirlwind',
-          'Elemental Swarm'
-        ],
-        Animal: [
-          'Calm Animals',
-          'Hold Animal',
-          'Dominate Animal',
-          'Summon Nature\'s Ally IV',
-          'Commune with Nature',
-          'Antilife Shell',
-          'Animal Shapes',
-          'Summon Nature\'s Ally VIII',
-          'Shapechange'
-        ],
-        Chaos: [
-          'Protection from Law',
-          'Shatter',
-          'Magic Circle against Law',
-          'Chaos Hammer',
-          'Dispel Law',
-          'Animate Objects',
-          'Word of Chaos',
-          'Cloak of Chaos',
-          'Summon Monster IX'
-        ],
-        Death: [
-          'Cause Fear',
-          'Death Knell',
-          'Animate Dead',
-          'Death Ward',
-          'Slay Living',
-          'Create Undead',
-          'Destruction',
-          'Create Greater Undead',
-          'Wail of the Banshee'
-        ],
-        Destruction: [
-          'Inflict Light Wounds',
-          'Shatter',
-          'Contagion',
-          'Inflict Critical Wounds',
-          'Inflict Light Wounds, Mass',
-          'Harm',
-          'Disintegrate',
-          'Earthquake',
-          'Implosion'
-        ],
-        Earth: [
-          'Magic Stone',
-          'Soften Earth and Stone',
-          'Stone Shape',
-          'Spike Stones',
-          'Wall of Stone',
-          'Stoneskin',
-          'Earthquake',
-          'Iron Body',
-          'Elemental Swarm'
-        ],
-        Evil: [
-          'Protection from Good',
-          'Desecrate',
-          'Magic Circle against Good',
-          'Unholy Blight',
-          'Dispel Good',
-          'Create Undead',
-          'Blasphemy',
-          'Unholy Aura',
-          'Summon Monster IX'
-        ],
-        Fire: [
-          'Burning Hands',
-          'Produce Flame',
-          'Resist Energy',
-          'Wall of Fire',
-          'Fire Shield',
-          'Fire Seeds',
-          'Fire Storm',
-          'Incendiary Cloud',
-          'Elemental Swarm'
-        ],
-        Good: [
-          'Protection from Evil',
-          'Aid',
-          'Magic Circle against Evil',
-          'Holy Smite',
-          'Dispel Evil',
-          'Blade Barrier',
-          'Holy Word',
-          'Holy Aura',
-          'Summon Monster IX'
-        ],
-        Healing: [
-          'Cure Light Wounds',
-          'Cure Moderate Wounds',
-          'Cure Serious Wounds',
-          'Cure Critical Wounds',
-          'Cure Light Wounds, Mass',
-          'Heal',
-          'Regenerate',
-          'Cure Critical Wounds, Mass',
-          'Heal, Mass'
-        ],
-        Knowledge: [
-          'Detect Secret Doors',
-          'Detect Thoughts',
-          'Clairaudience/Clairvoyance',
-          'Divination',
-          'True Seeing',
-          'Find the Path',
-          'Legend Lore',
-          'Discern Location',
-          'Foresight'
-        ],
-        Law: [
-          'Protection from Chaos',
-          'Calm Emotions',
-          'Magic Circle against Chaos',
-          'Order\'s Wrath',
-          'Dispel Chaos',
-          'Hold Monster',
-          'Dictum',
-          'Shield of Law',
-          'Summon Monster IX'
-        ],
-        Luck: [
-          'Entropic Shield',
-          'Aid',
-          'Protection from Energy',
-          'Freedom of Movement',
-          'Break Enchantment',
-          'Mislead',
-          'Spell Turning',
-          'Moment of Prescience',
-          'Miracle'
-        ],
-        Magic: [
-          'Magic Aura',
-          'Identify',
-          'Dispel Magic',
-          'Imbue with Spell Ability',
-          'Spell Resistance',
-          'Antimagic Field',
-          'Spell Turning',
-          'Protection from Spells',
-          'Mordenkainen\'s Disjunction'
-        ],
-        Plant: [
-          'Entangle',
-          'Barkskin',
-          'Plant Growth',
-          'Command Plants',
-          'Wall of Thorns',
-          'Repel Wood',
-          'Animate Plants',
-          'Control Plants',
-          'Shambler'
-        ],
-        Protection: [
-          'Sanctuary',
-          'Shield Other',
-          'Protection from Energy',
-          'Spell Immunity',
-          'Spell Resistance',
-          'Antimagic Field',
-          'Repulsion',
-          'Mind Blank',
-          'Prismatic Sphere'
-        ],
-        Strength: [
-          'Enlarge Person',
-          'Bull\'s Strength',
-          'Magic Vestment',
-          'Spell Immunity',
-          'Righteous Might',
-          'Stoneskin',
-          'Grasping Hand',
-          'Clenched Fist',
-          'Crushing Hand'
-        ],
-        Sun: [
-          'Endure Elements',
-          'Heat Metal',
-          'Searing Light',
-          'Fire Shield',
-          'Flame Strike',
-          'Fire Seeds',
-          'Sunbeam',
-          'Sunburst',
-          'Prismatic Sphere'
-        ],
-        Travel: [
-          'Longstrider',
-          'Locate Object',
-          'Fly',
-          'Dimension Door',
-          'Teleport',
-          'Find the Path',
-          'Teleport, Greater',
-          'Phase Door',
-          'Astral Projection'
-        ],
-        Trickery: [
-          'Disguise Self',
-          'Invisibility',
-          'Nondetection',
-          'Confusion',
-          'False Vision',
-          'Mislead',
-          'Screen',
-          'Polymorph Any Object',
-          'Time Stop'
-        ],
-        War: [
-          'Magic Weapon',
-          'Spiritual Weapon',
-          'Magic Vestment',
-          'Divine Power',
-          'Flame Strike',
-          'Blade Barrier',
-          'Power Word Blind',
-          'Power Word Stun',
-          'Power Word Kill'
-        ],
-        Water: [
-          'Obscuring Mist',
-          'Fog Cloud',
-          'Water Breathing',
-          'Control Water',
-          'Ice Storm',
-          'Cone of Cold',
-          'Acid Fog',
-          'Horrid Wilting',
-          'Elemental Swarm'
-        ]
-      }
+      ]
     },
     getKnownSpells(character: Readonly<ICharacter>, maxLevel: number, domains?: string[]) {
       const knownSpells: Record<string, KnownSpellEntry[]> = {};
@@ -601,7 +685,7 @@ export const Cleric: ClassData = createClassData({
           const domainLevelName = domainSpellLevel + ' - domain';
           knownSpells[domainLevelName] = [];
           for (const domain of domains) {
-            const domainList = (this.spells.domainSpells as any)[domain];
+            const domainList = clericDomainsData[domain as keyof typeof clericDomainsData]?.spells;
             if (domainList) {
               const domainSpell = domainList[domainSpellLevel - 1];
               if (domainSpell) {
@@ -631,7 +715,4 @@ export const Cleric: ClassData = createClassData({
   }
 });
 
-export type DomainNames = keyof typeof Cleric.spellCastingData.spells.domainSpells;
-
 ClassesData.set('Cleric', Cleric);
-

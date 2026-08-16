@@ -67,6 +67,7 @@ export class Character implements ICharacter, IPropertyRegistry {
     public hpLine: string | null;
     public abilitiesLines: Record<string, string>;
     public name: string;
+    public rolzRoomId?: string;
     public size: CreatureSize;
     public abilities: AbilitiesMap = {};
     public bodySlots: BodySlotsMap;
@@ -93,6 +94,7 @@ export class Character implements ICharacter, IPropertyRegistry {
     public speed: ModifiableProperty;
     public partyName: string | null = null;
     public partyMembers: string[] = [];
+    public quickStatuses: string[] = [];
     public manipulationCallbacks = {
         UpdateHp: [] as UpdateHpCallback[],
         OnCastSpell: [] as OnCastSpellCallback[]
@@ -203,6 +205,11 @@ export class Character implements ICharacter, IPropertyRegistry {
         }
 
         this.name = this.lines[0];
+
+        const rolzRoomLine = this.lines.find(line => line.toLowerCase().startsWith('rolz room id:'));
+        if (rolzRoomLine) {
+            this.rolzRoomId = rolzRoomLine.split(':')[1].trim();
+        }
 
         setPropertyRegistry(this);
         try {
@@ -415,7 +422,7 @@ export class Character implements ICharacter, IPropertyRegistry {
         const statusesToKeep: Status[] = [];
         this.statuses.forEach(status => {
             status.elapsed += amount;
-            if (status.elapsed <= status.duration) {
+            if (status.duration < 0 || status.elapsed <= status.duration) {
                 statusesToKeep.push(status);
             }
         });

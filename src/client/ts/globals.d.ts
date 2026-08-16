@@ -8,12 +8,15 @@ interface Window {
   addTooltip: (element: any, text: string) => void;
   UpdateValueAndTooltip: (element: any, property: any) => void;
   populateInventory: () => void;
-  moveItem: (fromList: string, toList: string) => void;
+  toggleCollapse: (listType: string) => void;
   toggleFilterDropdown: (listType: string) => void;
+  moveInventoryItem: (listType: string, index: number) => void;
+  usePotion: (index: number) => void;
   filterItems: (listType: string, filterType: string) => void;
   NewStatus: () => void;
   AddStatus: () => void;
   RemoveStatus: (element: any, statusName: string) => void;
+  ClearAllStatuses: () => void;
   inflict: (effectName: string, duration?: any) => void;
   cure: (effectName: string) => void;
   refreshCharacterData: () => void;
@@ -26,8 +29,6 @@ interface Window {
   hideSpellPopup: () => void;
   prepareSpell: (casterClassName: string, spellLevel: string, slotIndex: number, spellName: string) => void;
   castSpell: (casterClassName: string, spellLevel: string, slotIndex: number) => void;
-  nextSection: () => void;
-  prevSection: () => void;
   showSection: (sectionId: string) => void;
   loadCharacterData: () => void;
   showError: (message: string) => void;

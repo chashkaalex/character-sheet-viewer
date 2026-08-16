@@ -30,7 +30,7 @@ export function ParseStatusesLines(statusesLines: string[], character: ICharacte
 
     const name = line.substring(0, line.indexOf(':')).trim();
     const duration = GetFirstNumberFromALine(line.substring(line.indexOf('/')));
-    const elapsed = GetFirstNumberFromALine(line);
+    const elapsed = GetFirstNumberFromALine(line.substring(line.indexOf(':')));
 
     if (name !== '' && !isNaN(duration) && !isNaN(elapsed)) {
       statuses.push({

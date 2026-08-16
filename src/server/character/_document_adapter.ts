@@ -77,12 +77,12 @@ export abstract class DocumentAdapter {
     abstract GetCharacterLines(docId: string): string[];
 
     /**
-     * Gets the names of the members of a specific party from the 'Parties' document.
+     * Gets the names and quick statuses of a specific party from the 'Parties' document.
      * @param partyName - The name of the party
      * @param currentDocId - The document ID of the character making the request (for validation)
-     * @returns An array of character names in the party
+     * @returns An object containing memberNames and quickStatuses
      */
-    abstract GetPartyMembers(partyName: string, currentDocId: string): string[];
+    abstract GetPartyData(partyName: string, currentDocId: string): { memberNames: string[]; quickStatuses: string[] };
 
     /**
      * Replenishes prepared spells (removes strikethroughs).
@@ -93,6 +93,34 @@ export abstract class DocumentAdapter {
      * Replenishes spontaneous spell slots (restores counts to max).
      */
     abstract ReplenishSpontaneousSlots(docId: string, casterClass: string): AdapterResult;
+
+    /**
+     * Moves an item from one section to another.
+     * @param docId - The character's document/storage ID
+     * @param itemName - The name of the item
+     * @param fromSection - The section name to move from
+     * @param toSection - The section name to move to
+     * @returns Result object
+     */
+    abstract MoveItem(docId: string, itemName: string, fromSection: string, toSection: string): AdapterResult;
+
+    /**
+     * Consumes an item from a section (decrements or removes it).
+     * @param docId - The character's document/storage ID
+     * @param itemName - The name of the item
+     * @param sectionName - The section name (e.g. 'Battle Gear')
+     * @returns Result object with removedLineText
+     */
+    abstract ConsumeItem(docId: string, itemName: string, sectionName: string): AdapterResult & { removedLineText?: string };
+
+    /**
+     * Posts a roll request to Rolz.org room.
+     * @param room - The Rolz Room ID
+     * @param text - The text to post (including roll formulas like [1d8+3])
+     * @param from - The sender name
+     * @returns The raw API response string, or null on error
+     */
+    abstract PostRollToRolz(room: string, text: string, from: string): string | null;
 
     /**
      * Cleans raw lines by removing empty ones.

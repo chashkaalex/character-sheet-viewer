@@ -246,9 +246,21 @@ export const FeatEffects: Record<string, EffectData[]> = {
   'Lightning Reflexes': [
     { status: 'Lightning Reflexes', property: 'Reflex Saves', modifierType: 'Generic', value: 2 }
   ],
+  'Lyric Spell': [
+    {
+      status: 'Lyric Spell',
+      description: 'You can expend daily uses of your bardic music to cast any arcane spell that you know and can cast spontaneously. Casting a spell requires one use of your bardic music ability, plus one additional use per level of the spell.'
+    }
+  ],
   'Magical Aptitude': [
     { status: 'Magical Aptitude', property: 'Spellcraft', modifierType: 'Generic', value: 2 },
     { status: 'Magical Aptitude', property: 'Use Magic Device', modifierType: 'Generic', value: 2 }
+  ],
+  'Melodic Casting': [
+    {
+      status: 'Melodic Casting',
+      description: 'Whenever a Concentration check would be required to cast a spell or use a spell-like ability (such as when you cast defensively or are distracted or injured while casting), you can make a Perform check instead. In addition, you can cast spells and activate magic items by command word or spell completion while using a bardic music ability. Bardic music abilities that require concentration still take a standard action to perform.'
+    }
   ],
   'Martial Weapon Proficiency': [
     { status: 'Martial Weapon Proficiency', property: 'Attack Rolls (specific martial weapon)', modifierType: 'Generic', value: 0, description: 'Removes the –4 nonproficiency penalty when using the selected martial weapon [26]. This feat can be gained multiple times for different weapons [27].' }
@@ -559,6 +571,20 @@ export const FeatEffects: Record<string, EffectData[]> = {
   ],
   'Scribe Scroll': [
     { status: 'Scribe Scroll', description: 'You can create a scroll of any spell that you know or have in your spellbook (Caster Level 1st prerequisite) [32, 35].' }
+  ],
+  'Rapid Shot': [
+    { status: 'Rapid Shot', description: 'You can get one extra attack per round with a ranged weapon at your highest BAB. All attacks in the round take a -2 penalty.' }
+  ],
+  'Sacred Flames': [
+    {
+      status: 'Sacred Flames',
+      description: 'Additional damage equal to the sacred fist\'s class level plus his Wisdom modifier (if any).',
+      callback: (character: ICharacter) => {
+        if (!character.actions.includes('Sacred Flames')) {
+          character.actions.push('Sacred Flames');
+        }
+      }
+    }
   ]
 };
 

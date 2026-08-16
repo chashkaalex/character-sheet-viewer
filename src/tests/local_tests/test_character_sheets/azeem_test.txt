@@ -1,0 +1,76 @@
+Azeem al-Rashid
+"Two blades, one purpose."
+
+(Human Fighter 12)
+
+Init: +2; Senses: Listen +0, Spot +0; 
+BAb: +12/+7/+2; Grapple: +16; Hp: 100/100; Speed: 30 ft.
+Attack: +17 Short Sword +1 (1d6 + 5/19-20).
+Full Attack: +15/+10/+5 Short Sword +1 (1d6 + 5/19-20), +15/+10/+5 Short Sword (1d6 + 6/19-20).
+AC: 20 (+6 Armor +2 Dex +1 Natural +1 Deflection), Touch 13, Flat-footed 18.
+Resistance: 
+Saves: Fort +10; Ref +6; Will +4.
+Str: 18 (+4)
+Dex: 14 (+2)
+Con: 14 (+2)
+Int: 13 (+1)
+Wis: 10 (+0)
+Char: 10 (+0)
+Action Points: 1.
+
+Statuses:
+
+Feats:
+Two-Weapon Fighting,
+Improved Two-Weapon Fighting,
+Greater Two-Weapon Fighting,
+Weapon Focus: Short Sword,
+Weapon Specialization: Short Sword,
+Weapon Finesse,
+Dodge,
+Mobility,
+Combat Reflexes,
+Improved Initiative
+Special Abilities:
+Weapon Proficiency (Fighter).
+Racial Traits:
+Bonus Feat, +1 Skill Point per level.
+Bonus Abilities:
+Flaws, Traits, Quirks:
+Languages:
+Common, Elven.
+
+Skills:
+Climb (Str): 5
+Jump (Str): 5
+Intimidate (Cha): 10
+Tumble (Dex): 8
+Balance (Dex): 4
+Swim (Str): 4
+
+Battle Gear: 
+Short Sword +1 (+1, 1d6/19-20),
+Short Sword (1d6/19-20),
+Longsword (1d8/19-20),
+Breastplate +1 (+6 AC, +3 max Dex, -3 penalty, 25% spell failure),
+Amulet of Natural Armor +1,
+Ring of Protection +1 (+1 AC deflection),
+Cloak of Resistance +2
+
+Possessions: 
+Backpack,
+Belt Pouch (2),
+Bedroll,
+Flint and Steel,
+Waterskin
+
+Money: 500 gp, 20 sp
+
+Food: Dried Rations (5 days), Water (waterskin).
+
+Personal Information
+Height/Weight: 5'11"/175 lb.
+Eyes/Hair color: Brown/Black
+Age: 28
+Alignment: Neutral
+ExP: 66000/78000

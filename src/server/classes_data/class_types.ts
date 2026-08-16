@@ -26,7 +26,6 @@ export interface SpellCastingData {
     spellSlots?: number[][];
     spells?: {
         [level: number]: string[];
-        domainSpells?: Record<string, string[]>;
     };
     spellsKnown?: number[][]; // For Spontaneous casters like Beguiler/Bard
     getKnownSpells?: (character: Readonly<ICharacter>, maxLevel: number, domains?: string[]) => Record<string, KnownSpellEntry[]>;
@@ -56,6 +55,7 @@ export interface ClassData {
     acAbilityName?: AbilityName;
     levelTable: ClassLevelData[];
     spellCastingData?: SpellCastingData;
+    domainsData?: Record<string, { spells: string[]; action?: string }>;
     /**
      * Optional hook to add class-specific properties to a character during initialization
      */

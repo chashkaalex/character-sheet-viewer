@@ -82,7 +82,6 @@ export interface ModifierTypeInfo {
 }
 
 export const ModifierTypes = {
-  'Ability': { isStackable: true, againstTouch: false },
   'Alchemical': { isStackable: false, againstTouch: false },
   'Circumstance': { isStackable: true, againstTouch: false },
   'Competence': { isStackable: false, againstTouch: false },

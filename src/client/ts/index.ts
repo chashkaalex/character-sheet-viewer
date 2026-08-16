@@ -17,8 +17,6 @@ const globalRegistry: Record<string, any> = {
     showError: Landing.showError,
 
     // Section Navigation
-    nextSection: SectionNav.nextSection,
-    prevSection: SectionNav.prevSection,
     showSection: SectionNav.showSection,
 
     // Character
@@ -26,19 +24,24 @@ const globalRegistry: Record<string, any> = {
     addTooltip: Character.addTooltip,
     UpdateValueAndTooltip: Character.UpdateValueAndTooltip,
     populateInventory: Character.populateInventory,
-    moveItem: Character.moveItem,
+    toggleCollapse: Character.toggleCollapse,
     toggleFilterDropdown: Character.toggleFilterDropdown,
+    moveInventoryItem: Character.moveInventoryItem,
+    usePotion: Character.usePotion,
     filterItems: Character.filterItems,
 
     // Dashboard
     NewStatus: Dashboard.NewStatus,
     AddStatus: Dashboard.AddStatus,
     RemoveStatus: Dashboard.RemoveStatus,
+    ClearAllStatuses: Dashboard.ClearAllStatuses,
     inflict: Dashboard.inflict,
     cure: Dashboard.cure,
     refreshCharacterData: Dashboard.refreshCharacterData,
     onTimePassed: Dashboard.onTimePassed,
     onWeaponChange: Dashboard.onWeaponChange,
+    onOffHandChange: Dashboard.onOffHandChange,
+    onFullAttackToggle: Dashboard.onFullAttackToggle,
     onSpecialAttackChange: Dashboard.onSpecialAttackChange,
     showPartyModal: Dashboard.showPartyModal,
     closePartyModal: Dashboard.closePartyModal,

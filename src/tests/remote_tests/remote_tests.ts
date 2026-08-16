@@ -87,10 +87,35 @@ async function runRemoteTests(env: Environment) {
                  totalFailed++;
             }
 
+            // Verify Thror has "Use Thror's Holy Symbol" action available
+            if (docId === THRORS_TEST_ID) {
+                if (charRep.actions && charRep.actions.includes('Use Thror\'s Holy Symbol')) {
+                    console.log('✅ Passed: Action "Use Thror\'s Holy Symbol" is available.');
+                } else {
+                    console.error('❌ Failed: Action "Use Thror\'s Holy Symbol" is not available on Thror.');
+                    totalFailed++;
+                }
+            }
+
         } catch (e: any) {
             console.error(`❌ Failed with error: ${e.message}`);
             totalFailed++;
         }
+    }
+
+    // Verify direct Rolz API posting via UrlFetchApp
+    console.log('\n[Test] Verifying direct Rolz API posting via UrlFetchApp...');
+    try {
+        const rolzResponse = await callGasFunction(env, 'PostRollToRolz', ['oy2gymrcju', '#d20+5 #Test Roll', 'Test Character']);
+        if (rolzResponse && rolzResponse.includes('dicemsg')) {
+            console.log('✅ Passed: PostRollToRolz returned a valid Rolz JSON response with a dice message.');
+        } else {
+            console.error(`❌ Failed: PostRollToRolz response did not match expectations. Got: ${rolzResponse}`);
+            totalFailed++;
+        }
+    } catch (e: any) {
+        console.error(`❌ Failed to verify direct Rolz API posting: ${e.message}`);
+        totalFailed++;
     }
 
     if (totalFailed > 0) {
