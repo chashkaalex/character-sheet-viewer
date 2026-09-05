@@ -33,6 +33,15 @@ function copyConfig(env: 'test' | 'prod') {
 import * as readline from 'readline';
 
 function getCommitMessageArg(): string | null {
+    // 1. Check npm configuration environment variables (set by npm when invoked like `npm run deploy -m "message"`)
+    if (process.env.npm_config_message && typeof process.env.npm_config_message === 'string' && process.env.npm_config_message.trim() !== '') {
+        return process.env.npm_config_message.trim();
+    }
+    if (process.env.DEPLOY_MSG && typeof process.env.DEPLOY_MSG === 'string' && process.env.DEPLOY_MSG.trim() !== '') {
+        return process.env.DEPLOY_MSG.trim();
+    }
+
+    // 2. Check CLI arguments (set when passed directly or via quoted `--`)
     const args = process.argv.slice(2);
     for (let i = 0; i < args.length; i++) {
         if (args[i] === '-m' || args[i] === '--message') {
