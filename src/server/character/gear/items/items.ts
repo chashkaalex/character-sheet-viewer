@@ -5,6 +5,7 @@ import { currentRegistry } from '../../00_property';
 import { Monk } from '../../../classes_data/monk';
 import { IsAWeapon, GetSpecialWeaponMaterial } from '../weapons/weapons';
 import { ICharacter } from '@server/character/icharacter';
+import { ActionsData } from '../../actions/actions_effects';
 
 const BodySlotNames = [
   'Head',
@@ -57,6 +58,31 @@ export const ItemEffects: Record<string, EffectData[]> = {
       callback: (character: ICharacter, _args: Record<string, unknown>) => {
         if (!character.actions.includes('Use Thror\'s Holy Symbol')) {
           character.actions.push('Use Thror\'s Holy Symbol');
+        }
+      }
+    }
+  ],
+
+  'Ring of Storing': [
+    {
+      status: 'Ring of Storing',
+      callback: (character: ICharacter) => {
+        const ringItem = character.battleGear.find(i => i.name === 'Ring of Storing');
+        const ringLine = ringItem?.line || character.sectionLines['Battle Gear']?.find(l => l.includes('Ring of Storing'));
+        if (!ringLine) return;
+        const match = ringLine.match(/\[(?:(\d+)x\s*)?([^\]]+)\]/);
+        if (match) {
+          const spellName = match[2].trim();
+          const actionName = `Cast ${spellName}`;
+          if (!ActionsData[actionName]) {
+            ActionsData[actionName] = {
+              statusName: spellName,
+              calculateDuration: () => 10
+            };
+          }
+          if (!character.actions.includes(actionName)) {
+            character.actions.push(actionName);
+          }
         }
       }
     }
@@ -268,6 +294,7 @@ export class Item {
   public isPotion: boolean;
   public isScroll: boolean;
   public weight: number;
+  public line?: string;
 
   constructor(name: string, amount = 1, description = '') {
     this.amount = amount;

@@ -8,19 +8,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-
+  build-and-test:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [20.x, 22.x]
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout Repository
+      uses: actions/checkout@v4
     
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -28,61 +28,11 @@ jobs:
     - name: Install Dependencies
       run: npm ci
       
-    - name: Run Unit Tests (Jest)
+    - name: Run Linter
+      run: npm run lint
+
+    - name: Run Unit Tests
       run: npm test
 
-    - name: Setup Clasp
-      run: npm install -g @google/clasp
-
-    - name: Create Clasp Credentials
-      env:
-        CLASP_SECRET: ${{ secrets.CLASP_SECRET }}
-      run: |
-        echo "$CLASP_SECRET" > ~/.clasprc.json
-        
-        # Handle "tokens.default" structure (seen in some environments)
-        # Handle "tokens.default" structure (seen in some environments)
-        if jq -e '.tokens.default' ~/.clasprc.json > /dev/null; then
-          echo "Detected nested token structure. Reformatting to standard Clasp format..."
-          jq '{
-            token: {
-              access_token: .tokens.default.access_token,
-              refresh_token: .tokens.default.refresh_token,
-              scope: "https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/script.webapp.deploy https://www.googleapis.com/auth/service.management https://www.googleapis.com/auth/logging.read https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/script.deployments https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/script.external_request https://www.googleapis.com/auth/userinfo.email",
-              token_type: "Bearer",
-              expiry_date: 1999999999999
-            },
-            oauth2ClientSettings: {
-              clientId: .tokens.default.client_id,
-              clientSecret: .tokens.default.client_secret,
-              redirectUri: "http://localhost"
-            },
-            isLocalCreds: true
-          }' ~/.clasprc.json > ~/.clasprc.json.new && mv ~/.clasprc.json.new ~/.clasprc.json
-          
-          # DEBUG: Verify output structure (safe print)
-          echo "Generated Clasprc Properties:"
-          jq 'walk(if type == "string" then "REDACTED" else . end)' ~/.clasprc.json
-        fi
-        
-        # StackOverflow Fix: Clasp run might need local .clasprc.json too
-        cp ~/.clasprc.json ./.clasprc.json
-
-    - name: Validate Clasp Credentials
-      run: |
-        if ! jq -e .token ~/.clasprc.json > /dev/null; then
-          echo "::error::Invalid Clasp Secret! The ~/.clasprc.json file is missing the 'token' property."
-          echo "Check that you copied the ENTIRE content of the file, starting with '{' and containing 'token': {...}'"
-          exit 1
-        fi
-
-
-    
-    - name: Configure Test Environment
-      run: echo '{"scriptId":"1zbeOxqz_idbx9ngWy9wowUigNW94-G0o5FNWXRi-IJ3L35h7dCQpUicO","rootDir":"."}' > .clasp.json
-
-    - name: Deploy to Test Script
-      run: clasp push --force
-
-    - name: Run Integration Test (Thror Sheet)
-      run: clasp run TestThorsRealSheet
+    - name: Build Bundle
+      run: npm run build

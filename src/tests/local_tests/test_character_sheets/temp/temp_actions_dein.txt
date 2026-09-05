@@ -138,7 +138,7 @@ Adamantine suriken.
 
 Heavy mace +2 (each blade in a shape of dragon) (Shamann - magic item, Identified by SuperBabka )
 
-Ring of Storing 1lvl [1x Expeditious Retreat]
+Ring of Storing (1lvl) [1x Expeditious Retreat]
 
 1 x Cure Serious ( 3d8 +6 ) 
 Potion of Moderate Wounds ( 2d8+5 ),

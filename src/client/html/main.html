@@ -53,7 +53,10 @@
   <div id="characterSheetContainer" class="character-sheet-container">
     <div class="container">
       <div class="header">
-        <h1 id="characterName">Loading...</h1>
+        <div class="header-top-row">
+          <h1 id="characterName">Loading...</h1>
+          <button class="refresh-button" onclick="refreshCharacterData()" title="Refresh Data" aria-label="Refresh Data">🔄</button>
+        </div>
         <div class="section-titles">
           <span class="section-title active" data-section="0">Dashboard</span>
           <span class="section-title" data-section="1">Abilities</span>
@@ -153,7 +156,6 @@
           </div>
 
           <div class="dashboard-controls">
-            <button class="refresh-button" onclick="refreshCharacterData()">🔄 Refresh Data</button>
             <div class="time-progression-controls">
               <button class="passed-button" onclick="onTimePassed()">Passed</button>
               <input type="number" class="time-amount-input" value="1" min="1" />

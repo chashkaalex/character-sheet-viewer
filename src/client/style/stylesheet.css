@@ -49,6 +49,15 @@
         transition: background-color 0.3s ease, border-bottom-color 0.3s ease, box-shadow 0.3s ease;
     }
 
+    .header-top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
     @keyframes headerReadyFlash {
         0% {
             background-color: var(--header-bg);
@@ -419,6 +428,47 @@
         background: var(--background-primary);
         color: var(--text-color);
         font-size: 0.9em;
+    }
+
+    .spell-popup .spell-targets-container {
+        margin-bottom: 16px;
+        padding: 8px 12px;
+        background: var(--background-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+    }
+
+    .spell-popup .spell-targets-title {
+        font-size: 0.85em;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: var(--text-color);
+        display: block;
+    }
+
+    .spell-popup .spell-targets-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+    }
+
+    .spell-popup .spell-target-option {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.85em;
+        cursor: pointer;
+        color: var(--text-color);
+    }
+
+    .spell-popup .spell-target-option.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .spell-popup .spell-target-note {
+        font-size: 0.85em;
+        color: var(--text-muted);
     }
 
     .spell-popup .spell-actions {
@@ -885,20 +935,25 @@
     }
 
     .refresh-button {
-        background-color: var(--header-bg);
+        background-color: rgba(255, 255, 255, 0.05);
         color: var(--header-text);
         border: 2px solid var(--border-color);
-        padding: 10px 20px;
+        padding: 6px 10px;
         border-radius: 5px;
         cursor: pointer;
         font-family: inherit;
-        font-size: 1em;
+        font-size: 1.1em;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
         transition: all 0.2s ease;
     }
 
     .refresh-button:hover {
         background-color: var(--accent-color);
-        transform: scale(1.05);
+        color: #ffffff;
+        transform: scale(1.03);
     }
 
     .time-progression-controls {
@@ -1603,4 +1658,64 @@
     .replenish-button:hover {
         background-color: var(--accent-color);
         transform: scale(1.03);
-    }
+    }
+
+    /* Party Sync Notifications */
+    .party-notification-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+    }
+
+    .party-toast {
+        min-width: 280px;
+        max-width: 400px;
+        padding: 12px 18px;
+        border-radius: 8px;
+        background: #1e293b;
+        color: #f8fafc;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+        font-size: 0.95em;
+        line-height: 1.4;
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: auto;
+        border-left: 4px solid #3b82f6;
+    }
+
+    .party-toast.party-toast-success {
+        border-left-color: #10b981;
+        background: #0f172a;
+    }
+
+    .party-toast.party-toast-error {
+        border-left-color: #ef4444;
+        background: #1e1b1e;
+    }
+
+    .party-toast.show {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    .party-toast-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .party-toast-icon {
+        font-size: 1.2em;
+        flex-shrink: 0;
+    }
+
+    .party-toast-text {
+        flex: 1;
+    }
+

@@ -8,6 +8,7 @@ import { ModifierTypes } from '../_constants';
 export class ArmorClass extends ModifiableProperty {
   public abilities: Ability[];
   public size: CreatureSize;
+  public applyShieldToTouch: boolean = false;
 
   constructor(abilities: Ability[], size: CreatureSize) {
     super(10, 'ac');
@@ -25,7 +26,8 @@ export class ArmorClass extends ModifiableProperty {
     const activeTouchEffectsValue = this.activeEffects
       .filter(e => {
         const typeInfo = ModifierTypes[e.modifierType];
-        return (typeInfo && typeInfo.againstTouch) || e.value < 0;
+        const isShield = e.modifierType === 'Shield' || e.status.startsWith('Shield Specialization');
+        return (typeInfo && typeInfo.againstTouch) || e.value < 0 || (this.applyShieldToTouch && isShield);
       })
       .reduce((acc, e) => acc + e.value, 0);
 
@@ -56,7 +58,8 @@ export class ArmorClass extends ModifiableProperty {
   public get touchString(): string {
     const activeTouchEffects = this.activeEffects.filter(e => {
       const typeInfo = ModifierTypes[e.modifierType];
-      return (typeInfo && typeInfo.againstTouch) || e.value < 0;
+      const isShield = e.modifierType === 'Shield' || e.status.startsWith('Shield Specialization');
+      return (typeInfo && typeInfo.againstTouch) || e.value < 0 || (this.applyShieldToTouch && isShield);
     });
     const effectsStr = activeTouchEffects.length > 0
       ? activeTouchEffects.map(e => `${e.value >= 0 ? '+' : ''}${e.value} (${e.status})`).join(', ')

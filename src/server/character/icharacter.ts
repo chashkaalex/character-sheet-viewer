@@ -47,6 +47,7 @@ export interface ICharacter {
     partyName: string | null;
     partyMembers: string[];
     quickStatuses: string[];
+    partyNickname?: string | null;
     InitiativeBonus: ModifiableProperty;
     attacksOfOpportunity: ModifiableProperty;
     ac: ArmorClass;

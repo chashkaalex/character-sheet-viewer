@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://character-sheet-viewer/schemas/party-sync-db.json",
+  "title": "Firebase Realtime Database Party Status Sync Schema",
+  "description": "Schema for party members exchanging statuses and spells directly via member nodes.",
+  "type": "object",
+  "properties": {
+    "parties": {
+      "type": "object",
+      "description": "Parties map keyed directly by party name (e.g. 'TeamD20_T&E').",
+      "additionalProperties": {
+        "$ref": "#/$defs/Party"
+      }
+    }
+  },
+  "required": ["parties"],
+  "additionalProperties": false,
+  "$defs": {
+    "Party": {
+      "type": "object",
+      "description": "Party node containing its member nodes.",
+      "properties": {
+        "members": {
+          "type": "object",
+          "description": "Party members keyed by member/character name.",
+          "additionalProperties": {
+            "$ref": "#/$defs/PartyMember"
+          }
+        }
+      },
+      "required": ["members"],
+      "additionalProperties": false
+    },
+    "PartyMember": {
+      "type": "object",
+      "description": "Character node holding connection metadata and pending statuses to be consumed.",
+      "properties": {
+        "docId": {
+          "type": "string",
+          "description": "Google Doc ID of the character sheet (optional for identification/validation)."
+        },
+        "statuses": {
+          "type": "object",
+          "description": "Incoming statuses/spells sent to this member, keyed by unique status ID (e.g. push ID).",
+          "additionalProperties": {
+            "$ref": "#/$defs/IncomingStatus"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "IncomingStatus": {
+      "type": "object",
+      "description": "A status or spell cast by a party member waiting to be consumed and deleted by the recipient.",
+      "properties": {
+        "statusId": {
+          "type": "string",
+          "description": "Unique status message ID."
+        },
+        "statusName": {
+          "type": "string",
+          "description": "Name of the status/spell (e.g. 'Bless', 'Haste', 'Bull\\'s Strength')."
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Name of the caster/sender."
+        },
+        "duration": {
+          "type": "number",
+          "description": "Duration value (rounds, minutes, etc., or -1 for permanent)."
+        },
+        "durationUnit": {
+          "type": "string",
+          "enum": ["rounds", "minutes", "hours", "days", "permanent", "instantaneous"],
+          "description": "Unit of measurement for duration.",
+          "default": "rounds"
+        },
+        "casterLevel": {
+          "type": "integer",
+          "description": "Caster level of the sender at the time of casting."
+        },
+        "spellLevel": {
+          "type": "integer",
+          "description": "Level of the spell cast (if applicable)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional notes or flavor text."
+        },
+        "args": {
+          "type": "object",
+          "description": "Optional dynamic parameters for the effect.",
+          "additionalProperties": true
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "Unix epoch timestamp in milliseconds when cast/sent."
+        }
+      },
+      "required": [
+        "statusId",
+        "statusName",
+        "senderName",
+        "duration",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

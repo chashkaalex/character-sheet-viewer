@@ -197,3 +197,6 @@ Age: 74
 Alignment: Lawful Neutral
 ExP: 67755/78000
 Deity worshiped: Moradin
+
+Parties Membership
+TeamD20_T&E

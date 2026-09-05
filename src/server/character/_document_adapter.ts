@@ -82,7 +82,7 @@ export abstract class DocumentAdapter {
      * @param currentDocId - The document ID of the character making the request (for validation)
      * @returns An object containing memberNames and quickStatuses
      */
-    abstract GetPartyData(partyName: string, currentDocId: string): { memberNames: string[]; quickStatuses: string[] };
+    abstract GetPartyData(partyName: string, currentDocId: string): { memberNames: string[]; quickStatuses: string[]; partyNickname?: string | null };
 
     /**
      * Replenishes prepared spells (removes strikethroughs).
@@ -121,6 +121,21 @@ export abstract class DocumentAdapter {
      * @returns The raw API response string, or null on error
      */
     abstract PostRollToRolz(room: string, text: string, from: string): string | null;
+
+    /**
+     * Pushes a status payload to a party member's node in Firebase Realtime Database.
+     * @param dbLink - Database base URL
+     * @param partyName - Name of the party
+     * @param targetMember - Name/nickname of the target party member
+     * @param payload - The status payload object
+     * @returns Result object
+     */
+    abstract PushPartyMemberStatus(
+        dbLink: string,
+        partyName: string,
+        targetMember: string,
+        payload: any
+    ): AdapterResult;
 
     /**
      * Cleans raw lines by removing empty ones.

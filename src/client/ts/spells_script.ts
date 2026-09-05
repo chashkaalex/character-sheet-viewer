@@ -1,10 +1,8 @@
-/**
- * Import type definitions from common types
- * @typedef {import('../../server/types').SpellSlotData} SpellSlotData
- */
-
 import { characterRep } from './state';
 import { onCharacterRepresentation } from './character_script';
+import { SpellSlotData } from '../../server/character/common_types';
+
+let currentSlotData: SpellSlotData | null = null;
 
 export function renderSpellsUI() {
   const container = document.getElementById('spellsDynamicContainer');
@@ -273,6 +271,139 @@ export function initializeSpellSlotHandlers() {
 }
 
 /**
+ * Retrieves range and target for a spell from loaded characterRep.spellCasting data.
+ */
+export function getSpellInfo(className: string, spellName: string): { range: string | null; target: string | null } {
+  if (!characterRep || !characterRep.spellCasting || !characterRep.spellCasting.classSpellCastingData) {
+    return { range: null, target: null };
+  }
+  const casterClassData = characterRep.spellCasting.classSpellCastingData.find((c: any) => c.className === className);
+  if (!casterClassData) {
+    return { range: null, target: null };
+  }
+
+  // Check preparedSpells
+  if (casterClassData.preparedSpells) {
+    for (const lvl of Object.keys(casterClassData.preparedSpells)) {
+      const spellEntry = casterClassData.preparedSpells[lvl]?.find((s: any) => s.spell === spellName);
+      if (spellEntry && (spellEntry.range || spellEntry.target)) {
+        return { range: spellEntry.range || null, target: spellEntry.target || null };
+      }
+    }
+  }
+
+  // Check knownSpells
+  if (casterClassData.knownSpells) {
+    for (const lvl of Object.keys(casterClassData.knownSpells)) {
+      const spellEntry = casterClassData.knownSpells[lvl]?.find((s: any) => (typeof s === 'string' ? s : s.spellName) === spellName);
+      if (spellEntry && (spellEntry.range || spellEntry.target)) {
+        return { range: spellEntry.range || null, target: spellEntry.target || null };
+      }
+    }
+  }
+
+  return { range: null, target: null };
+}
+
+/**
+ * Renders target selection options based on SpellTarget enum.
+ */
+export function renderTargetSelector(targetType: string | null): string {
+  if (!targetType) return '';
+
+  const partyMembers: string[] = (characterRep?.partyMembers || []) as string[];
+  const selfNickname = characterRep?.partyNickname || characterRep?.name || 'Self';
+  const otherMembers = partyMembers.filter(m => m !== selfNickname && m !== 'Self' && m !== characterRep?.name);
+
+  if (targetType === 'Self') {
+    return `
+      <div class="spell-targets-container" data-target-type="Self">
+        <label class="spell-targets-title">Target:</label>
+        <div class="spell-targets-list">
+          <label class="spell-target-option disabled">
+            <input type="checkbox" name="spellTarget" value="Self" checked disabled>
+            Self
+          </label>
+        </div>
+      </div>
+    `;
+  }
+
+  if (targetType === 'OneCreature' || targetType === 'OneAlly') {
+    return `
+      <div class="spell-targets-container" data-target-type="${targetType}">
+        <label class="spell-targets-title">Target (Select 1):</label>
+        <div class="spell-targets-list">
+          <label class="spell-target-option">
+            <input type="radio" name="spellTarget" value="Self">
+            Self
+          </label>
+          ${otherMembers.map(m => `
+            <label class="spell-target-option">
+              <input type="radio" name="spellTarget" value="${m}">
+              ${m}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  if (targetType === 'MultipleCreatures' || targetType === 'Party') {
+    return `
+      <div class="spell-targets-container" data-target-type="${targetType}">
+        <label class="spell-targets-title">Targets:</label>
+        <div class="spell-targets-list">
+          <label class="spell-target-option">
+            <input type="checkbox" name="spellTarget" value="Self">
+            Self
+          </label>
+          ${otherMembers.map(m => `
+            <label class="spell-target-option">
+              <input type="checkbox" name="spellTarget" value="${m}">
+              ${m}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // Area, Object, Special
+  return `
+    <div class="spell-targets-container" data-target-type="${targetType}">
+      <div class="spell-target-note"><strong>Target:</strong> ${targetType}</div>
+    </div>
+  `;
+}
+
+/**
+ * Validates whether current target selection satisfies the spell's target requirements.
+ */
+export function isTargetSelectionValid(popup: HTMLElement, targetType?: string | null): boolean {
+  if (!targetType) {
+    const container = popup.querySelector('.spell-targets-container') as HTMLElement | null;
+    targetType = container?.dataset.targetType || null;
+  }
+
+  if (!targetType || targetType === 'Self' || targetType === 'Area' || targetType === 'Object' || targetType === 'Special') {
+    return true;
+  }
+
+  if (targetType === 'OneCreature' || targetType === 'OneAlly') {
+    const checked = popup.querySelector('input[name="spellTarget"]:checked');
+    return !!checked;
+  }
+
+  if (targetType === 'MultipleCreatures' || targetType === 'Party') {
+    const checked = popup.querySelectorAll('input[name="spellTarget"]:checked');
+    return checked.length > 0;
+  }
+
+  return true;
+}
+
+/**
  * @param {HTMLElement} targetElement - The target element that was clicked
  * @param {UISlotData} uiSlotData - The slot data
 */
@@ -287,13 +418,18 @@ export function showSpellPopup(targetElement, uiSlotData) {
     slotIndex: uiSlotData.slot
   };
 
-  // If it's a cast menu, also store the spell name
+  // If it's a cast menu, also store the spell name, range, and target
   if (!uiSlotData.isEmpty) {
+    const spellInfo = getSpellInfo(uiSlotData.casterClass, uiSlotData.spell);
+    uiSlotData.range = spellInfo.range;
+    uiSlotData.target = spellInfo.target;
     slotData.spellName = uiSlotData.spell;
     slotData.isValid = uiSlotData.isValid;
+    slotData.range = spellInfo.range;
+    slotData.target = spellInfo.target;
   }
 
-  window.currentSlotData = slotData;
+  currentSlotData = slotData;
   // Create overlay
   const overlay = document.createElement('div');
   overlay.className = 'spell-popup-overlay show';
@@ -381,6 +517,10 @@ export function createSpontaneousCastMenu(slotData) {
         <div class="spell-info">
             <strong>Slot:</strong> ${slotText}
             <br><strong>Type:</strong> ${typeText}
+            <div id="spontaneousSpellDetails" style="display:none; margin-top: 4px;">
+              <strong>Range:</strong> <span id="spontaneousRangeText">-</span>
+              <br><strong>Target:</strong> <span id="spontaneousTargetText">-</span>
+            </div>
         </div>
         
         <div class="level-filters" ${isSong ? 'style="display:none;"' : ''}>
@@ -407,6 +547,8 @@ export function createSpontaneousCastMenu(slotData) {
                 ${generateSpellOptions(className, slotData.level, slotData.isDomain, [slotData.level])}
             </select>
         </div>
+
+        <div id="spellTargetContainer"></div>
         
         <div class="spell-actions">
             <button class="spell-button cancel" onclick="window.hideSpellPopup()">Cancel</button>
@@ -418,14 +560,15 @@ export function createSpontaneousCastMenu(slotData) {
 export function createCastMenu(slotData) {
   const isUsed = slotData.isUsed || false;
   const isValid = slotData.isValid !== false;
-  const castButtonDisabled = (isUsed || !isValid) ? 'disabled' : '';
-  const castButtonClass = (isUsed || !isValid) ? 'spell-button cast disabled' : 'spell-button cast';
 
   if (slotData.casterClassName === 'Actions' || slotData.casterClass === 'Actions') {
     let statusText = '';
     if (isUsed) {
       statusText = '<br><strong>Status:</strong> <span style="color: var(--text-muted); text-decoration: line-through;">Active</span>';
     }
+
+    const actionDisabled = (isUsed || !isValid) ? 'disabled' : '';
+    const actionClass = (isUsed || !isValid) ? 'spell-button cast disabled' : 'spell-button cast';
 
     return `
           <h3>Use Action</h3>
@@ -436,7 +579,7 @@ export function createCastMenu(slotData) {
           
           <div class="spell-actions">
               <button class="spell-button cancel" onclick="window.hideSpellPopup()">Cancel</button>
-              <button class="${castButtonClass}" onclick="window.useAction()" ${castButtonDisabled}>Use</button>
+              <button class="${actionClass}" onclick="window.useAction()" ${actionDisabled}>Use</button>
           </div>
       `;
   }
@@ -448,14 +591,26 @@ export function createCastMenu(slotData) {
     statusText = '<br><strong>Status:</strong> <span style="color: #dc3545; font-weight: bold;">Invalid</span>';
   }
 
+  const range = slotData.range || 'N/A';
+  const target = slotData.target || 'N/A';
+  const targetHtml = renderTargetSelector(slotData.target);
+  const targetInitiallyValid = (!slotData.target || slotData.target === 'Self' || slotData.target === 'Area' || slotData.target === 'Object' || slotData.target === 'Special');
+
+  const castButtonDisabled = (isUsed || !isValid || !targetInitiallyValid) ? 'disabled' : '';
+  const castButtonClass = (isUsed || !isValid || !targetInitiallyValid) ? 'spell-button cast disabled' : 'spell-button cast';
+
   return `
         <h3>Cast Spell</h3>
         <div class="spell-info">
             <strong>Spell:</strong> ${slotData.spell}
             <br><strong>Level:</strong> ${slotData.level}${slotData.isDomain ? ' Domain' : ''}
             <br><strong>Slot:</strong> ${slotData.slot}
+            <br><strong>Range:</strong> ${range}
+            <br><strong>Target:</strong> ${target}
             ${statusText}
         </div>
+
+        ${targetHtml}
         
         <div class="spell-actions">
             <button class="spell-button cancel" onclick="window.hideSpellPopup()">Cancel</button>
@@ -565,12 +720,40 @@ export function setupPopupEventListeners(popup, slotData) {
 
   // Spell dropdown change
   const spellSelect = popup.querySelector('#spellSelect');
-  if (spellSelect) {
+  if (spellSelect && spellSelect instanceof HTMLSelectElement) {
     spellSelect.addEventListener('change', function () {
-      updatePrepareButton(popup, this.value);
-      updateCastButton(popup, this.value);
+      const className = getCurrentSpellcastingClass();
+      const spellName = this.value;
+      updatePrepareButton(popup, spellName);
+
+      const info = getSpellInfo(className, spellName);
+      const details = popup.querySelector('#spontaneousSpellDetails') as HTMLElement | null;
+      const rangeText = popup.querySelector('#spontaneousRangeText');
+      const targetText = popup.querySelector('#spontaneousTargetText');
+      const targetContainer = popup.querySelector('#spellTargetContainer') as HTMLElement | null;
+
+      if (spellName && details && rangeText && targetText && targetContainer) {
+        details.style.display = 'block';
+        rangeText.textContent = info.range || 'N/A';
+        targetText.textContent = info.target || 'N/A';
+        targetContainer.innerHTML = renderTargetSelector(info.target);
+        targetContainer.dataset.targetType = info.target || '';
+      } else if (details && targetContainer) {
+        details.style.display = 'none';
+        targetContainer.innerHTML = '';
+        targetContainer.dataset.targetType = '';
+      }
+      updateCastButton(popup, spellName, info.target);
     });
   }
+
+  // Target radio / checkbox changes
+  popup.addEventListener('change', function (event: Event) {
+    const target = event.target as HTMLElement;
+    if (target && target.matches('input[name="spellTarget"]')) {
+      updateCastButton(popup);
+    }
+  });
 }
 
 export function updateSpellDropdown(popup, slotData) {
@@ -614,24 +797,41 @@ export function updatePrepareButton(popup, selectedSpell) {
   }
 }
 
-export function updateCastButton(popup, selectedSpell) {
-  const castButton = popup.querySelector('.spell-button.cast');
-  if (castButton) {
-    const isDisabled = !selectedSpell;
-    castButton.disabled = isDisabled;
+export function updateCastButton(popup: HTMLElement, selectedSpell?: string, targetType?: string | null) {
+  const castButton = popup.querySelector('.spell-button.cast') as HTMLButtonElement | null;
+  if (!castButton) return;
 
-    if (isDisabled) {
-      castButton.classList.add('disabled');
-    } else {
-      castButton.classList.remove('disabled');
-    }
+  let spell = selectedSpell;
+  if (spell === undefined) {
+    const spellSelect = popup.querySelector('#spellSelect') as HTMLSelectElement | null;
+    spell = spellSelect ? spellSelect.value : (currentSlotData?.spellName || '');
+  }
+
+  let tType = targetType;
+  if (tType === undefined) {
+    const targetContainer = popup.querySelector('.spell-targets-container') as HTMLElement | null;
+    tType = targetContainer?.dataset.targetType || currentSlotData?.target || null;
+  }
+
+  const hasSpell = !!spell;
+  const targetValid = isTargetSelectionValid(popup, tType);
+  const isUsed = currentSlotData?.isUsed || false;
+  const isValid = currentSlotData?.isValid !== false;
+
+  const isDisabled = !hasSpell || !targetValid || isUsed || !isValid;
+  castButton.disabled = isDisabled;
+
+  if (isDisabled) {
+    castButton.classList.add('disabled');
+  } else {
+    castButton.classList.remove('disabled');
   }
 }
 
 export function getCurrentSpellcastingClass() {
   // Get the class name from the current slot data if available
-  if (window.currentSlotData && window.currentSlotData.casterClassName) {
-    return window.currentSlotData.casterClassName;
+  if (currentSlotData && currentSlotData.casterClassName) {
+    return currentSlotData.casterClassName;
   }
 
   // Fallback to first available spellcasting class
@@ -670,7 +870,7 @@ export function hideSpellPopup() {
   if (popup) popup.remove();
 
   // Clear stored slot data
-  window.currentSlotData = null;
+  currentSlotData = null;
 }
 
 /**
@@ -694,7 +894,7 @@ export function prepareSpell() {
   }
 
   // Get the stored slot data
-  const slotData = window.currentSlotData;
+  const slotData = currentSlotData;
 
   if (!slotData) {
     console.error('No slot data available');
@@ -717,7 +917,7 @@ export function prepareSpell() {
 
 export function castSpell() {
   // Get the stored slot data (includes spellName for cast menus)
-  const slotData = window.currentSlotData;
+  const slotData = currentSlotData;
 
   if (!slotData) {
     console.error('No slot data available');
@@ -725,7 +925,7 @@ export function castSpell() {
   }
 
   // Get the selected spell if it's a dropdown (Spontaneous cast)
-  const popup = document.querySelector('.spell-popup');
+  const popup = document.querySelector('.spell-popup') as HTMLElement | null;
   if (popup) {
     const spellSelect = popup.querySelector('#spellSelect');
     if (spellSelect && spellSelect instanceof HTMLSelectElement) {
@@ -738,7 +938,24 @@ export function castSpell() {
     return;
   }
 
-  console.log('Casting spell:', slotData.spellName, 'for slot:', slotData);
+  // Extract selected targets
+  const checkedInputs = popup ? popup.querySelectorAll('input[name="spellTarget"]:checked') : [];
+  const selectedTargets: string[] = [];
+  checkedInputs.forEach((input: any) => {
+    selectedTargets.push(input.value);
+  });
+
+  // If target is Self (disabled checkbox)
+  if (selectedTargets.length === 0 && popup) {
+    const disabledSelf = popup.querySelector('input[name="spellTarget"][value="Self"][disabled]');
+    if (disabledSelf) {
+      selectedTargets.push('Self');
+    }
+  }
+
+  slotData.targets = selectedTargets;
+
+  console.log('Casting spell:', slotData.spellName, 'for slot:', slotData, 'targets:', slotData.targets);
 
   // Call server function to cast the spell
   google.script.run
@@ -815,7 +1032,9 @@ export function renderGeneralActionsUI() {
   `;
 
   characterRep.actions.forEach((actionName, index) => {
-    const isActive = characterRep.statuses && characterRep.statuses.some((s: any) => s.name === actionName);
+    const metadata = (characterRep as any).actionsMetadata && (characterRep as any).actionsMetadata[actionName];
+    const statusName = (metadata && metadata.statusName) || actionName;
+    const isActive = characterRep.statuses && characterRep.statuses.some((s: any) => s.name === statusName);
     const slotClass = 'filled';
     const usedClass = isActive ? 'used' : '';
 
@@ -836,7 +1055,7 @@ export function renderGeneralActionsUI() {
  * Client-side handler to trigger using a general action.
  */
 export function useAction() {
-  const slotData = window.currentSlotData;
+  const slotData = currentSlotData;
   if (!slotData || !slotData.spellName) {
     console.error('No action selected');
     return;

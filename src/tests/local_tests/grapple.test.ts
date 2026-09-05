@@ -16,12 +16,12 @@ describe('Grapple Bonus Calculations', () => {
         expect((char.specialAttacks['Grapple'] as SpecialAttackBonus).bonus).toBe(12);
     });
 
-    it('should calculate Dein grapple bonus correctly including Improved Grapple feat', () => {
+    it('should calculate Dein grapple bonus correctly including Improved Grapple and Shield Ward feats', () => {
         const char = GetCharacterByDocId(DEIN_TEST_FILE) as Character;
         expect(char.parseSuccess).toBe(true);
-        // BAB (9) + Str (6) + Size (0) + Improved Grapple (4) = 19
+        // BAB (9) + Str (6) + Size (0) + Improved Grapple (4) + Shield Ward (+1 from Shield Specialization) = 20
         expect(char.specialAttacks['Grapple']).toBeDefined();
-        expect((char.specialAttacks['Grapple'] as SpecialAttackBonus).bonus).toBe(19);
+        expect((char.specialAttacks['Grapple'] as SpecialAttackBonus).bonus).toBe(20);
     });
 
     it('should calculate Morty grapple bonus correctly', () => {

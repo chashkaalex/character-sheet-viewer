@@ -30,9 +30,13 @@ function ParseItemsLine(line: string): Item {
         item += ' (holy symbol)';
     }
     if (IsAnArmor(cleanItemName)) {
-        return new Armor(item, amount, description);
+        const armor = new Armor(item, amount, description);
+        armor.line = line;
+        return armor;
     }
-    return new Item(item, amount, description);
+    const parsedItem = new Item(item, amount, description);
+    parsedItem.line = line;
+    return parsedItem;
 }
 
 /**

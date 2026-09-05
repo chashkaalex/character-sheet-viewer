@@ -664,9 +664,11 @@ export function closePartyModal() {
 }
 
 // Close the modal when clicking outside of it
-window.addEventListener('click', function (event) {
-  const modal = document.getElementById('partyModal');
-  if (event.target == modal) {
-    modal.style.display = 'none';
-  }
-});
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', function (event) {
+    const modal = document.getElementById('partyModal');
+    if (modal && event.target == modal) {
+      modal.style.display = 'none';
+    }
+  });
+}

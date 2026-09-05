@@ -95,6 +95,7 @@ export class Character implements ICharacter, IPropertyRegistry {
     public partyName: string | null = null;
     public partyMembers: string[] = [];
     public quickStatuses: string[] = [];
+    public partyNickname: string | null = null;
     public manipulationCallbacks = {
         UpdateHp: [] as UpdateHpCallback[],
         OnCastSpell: [] as OnCastSpellCallback[]
@@ -157,7 +158,16 @@ export class Character implements ICharacter, IPropertyRegistry {
     }
 
     public HasPropertyInitialized(propertyName: string): boolean {
-        return this._initializedProperties.has(propertyName);
+        if (this._initializedProperties.has(propertyName)) {
+            return true;
+        }
+        const normalizedTarget = propertyName.toLowerCase().replace(/[\s-_]/g, '');
+        for (const key of this._initializedProperties.keys()) {
+            if (key.toLowerCase().replace(/[\s-_]/g, '') === normalizedTarget) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public QueuePendingEffect(propertyName: string, effect: BaseEffect): void {
@@ -168,12 +178,16 @@ export class Character implements ICharacter, IPropertyRegistry {
     }
 
     public ApplyPendingEffects(propertyName: string): void {
-        const effects = this._pendingEffects.get(propertyName);
-        if (effects && effects.length > 0) {
-            this._pendingEffects.set(propertyName, []);
-            effects.forEach(effect => {
-                effect.ApplyEffect(this);
-            });
+        const normalizedTarget = propertyName.toLowerCase().replace(/[\s-_]/g, '');
+        for (const [key, effects] of this._pendingEffects.entries()) {
+            if (key === propertyName || key.toLowerCase().replace(/[\s-_]/g, '') === normalizedTarget) {
+                if (effects && effects.length > 0) {
+                    this._pendingEffects.set(key, []);
+                    effects.forEach(effect => {
+                        effect.ApplyEffect(this);
+                    });
+                }
+            }
         }
     }
 
@@ -351,6 +365,14 @@ export class Character implements ICharacter, IPropertyRegistry {
     public GetNamedProperty(propertyName: string): any {
         if (this._initializedProperties.has(propertyName)) {
             return this._initializedProperties.get(propertyName);
+        }
+
+        // Try case-insensitive and space/dash normalized lookup for initialized properties
+        const normalizedTarget = propertyName.toLowerCase().replace(/[\s-_]/g, '');
+        for (const [key, prop] of this._initializedProperties.entries()) {
+            if (key.toLowerCase().replace(/[\s-_]/g, '') === normalizedTarget) {
+                return prop;
+            }
         }
 
         if (SkillsAbilities[propertyName] || this.skills.some(s => s.name === propertyName)) {

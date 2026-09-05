@@ -1,6 +1,7 @@
 import * as path from 'path';
 import { GetCharacterByDocId } from '../../server/character/character_manipulation';
 import { getCharacterRep } from '../../server/character/character_rep';
+import { sanitizeDbLink } from '../../server/character/parser_utils';
 import { Character } from '../../server/character/character';
 import { IsAWeapon } from '../../server/character/gear/weapons/weapons';
 
@@ -216,6 +217,8 @@ describe('Local Character Parsing', () => {
         expect(bess.partyMembers).toContain('thror_test');
         expect(bess.quickStatuses).toContain('Thror is preparing spells');
         expect(characterRep.quickStatuses).toContain('Thror is preparing spells');
+        expect(bess.partyNickname).toBe('Bess');
+        expect(characterRep.partyNickname).toBe('Bess');
     });
 
     test('should parse Morty character sheet correctly and without errors', () => {
@@ -419,6 +422,23 @@ describe('Local Character Parsing', () => {
         expect(IsAWeapon('Net')).toBe(true);
         expect(IsAWeapon('Silver Signet Ring')).toBe(false);
         expect(IsAWeapon('Cabinet')).toBe(false);
+    });
+
+    test('should sanitize database links properly for real-time DB sync', () => {
+        expect(sanitizeDbLink('https://my-rtdb.firebaseio.com/')).toBe('https://my-rtdb.firebaseio.com');
+        expect(sanitizeDbLink('https://my-rtdb.firebaseio.com///')).toBe('https://my-rtdb.firebaseio.com');
+        expect(sanitizeDbLink('my-rtdb.firebaseio.com')).toBe('https://my-rtdb.firebaseio.com');
+        expect(sanitizeDbLink('  https://my-rtdb.firebaseio.com  ')).toBe('https://my-rtdb.firebaseio.com');
+        expect(sanitizeDbLink('')).toBeNull();
+        expect(sanitizeDbLink('   ')).toBeNull();
+        expect(sanitizeDbLink(null)).toBeNull();
+        expect(sanitizeDbLink(undefined)).toBeNull();
+    });
+
+    test('should include dbLink property on character representation', () => {
+        const char = GetCharacterByDocId(THRORS_TEST_FILE) as Character;
+        const rep = getCharacterRep(char);
+        expect(rep).toHaveProperty('dbLink');
     });
 
 });

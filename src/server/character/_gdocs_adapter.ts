@@ -1,5 +1,6 @@
 import { DocumentAdapter } from './_document_adapter';
 import { AdapterResult } from './common_types';
+import { normalizeQuotes } from './parser_utils';
 
 import {
     ParseGDocToRawLines,
@@ -50,7 +51,7 @@ export class GDocsAdapter extends DocumentAdapter {
             const textElement = listItem.editAsText();
 
             // Basic validation
-            if (!isSpontaneous && !textElement.getText().includes(spellName)) {
+            if (!isSpontaneous && !normalizeQuotes(textElement.getText()).includes(normalizeQuotes(spellName))) {
                 console.warn(`Warning: Marking spell as cast, but slot text (${textElement.getText()}) doesn't match expected spell (${spellName})`);
             }
 
@@ -128,6 +129,26 @@ export class GDocsAdapter extends DocumentAdapter {
         } catch (e) {
             console.error('Rolz API fetch failed:', e);
             return null;
+        }
+    }
+
+    PushPartyMemberStatus(dbLink: string, partyName: string, targetMember: string, payload: any): AdapterResult {
+        const url = `${dbLink}/parties/${encodeURIComponent(partyName)}/members/${encodeURIComponent(targetMember)}/statuses.json`;
+        try {
+            const response = UrlFetchApp.fetch(url, {
+                method: 'post',
+                contentType: 'application/json',
+                payload: JSON.stringify(payload),
+                muteHttpExceptions: true
+            });
+            const code = response.getResponseCode();
+            if (code >= 200 && code < 300) {
+                return { success: true };
+            }
+            return { success: false, error: `Firebase RTDB responded with HTTP ${code}: ${response.getContentText()}` };
+        } catch (e) {
+            console.error('Firebase RTDB push failed:', e);
+            return { success: false, error: (e as Error).toString() };
         }
     }
 }

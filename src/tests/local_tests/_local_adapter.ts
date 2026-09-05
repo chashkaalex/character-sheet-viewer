@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { DocumentAdapter } from '../../server/character/_document_adapter';
-import { GetFirstNumberFromALine } from '../../server/character/parser_utils';
+import { GetFirstNumberFromALine, normalizeQuotes } from '../../server/character/parser_utils';
 import { IsSectionLine } from '../../server/character/parsers/doc_parser';
 import { AdapterResult } from '../../server/character/common_types';
 import { ClassesData } from '../../server/classes_data/_classes_general_data';
@@ -149,7 +149,7 @@ export class LocalAdapter extends DocumentAdapter {
         let line = lines[lineIdx];
 
         // Basic validation (optional, but good for safety as requested)
-        if (!isSpontaneous && !line.includes(spellName)) {
+        if (!isSpontaneous && !normalizeQuotes(line).includes(normalizeQuotes(spellName))) {
             console.warn(`Warning: Marking spell as cast, but slot text (${line}) doesn't match expected spell (${spellName})`);
         }
 
@@ -292,15 +292,22 @@ export class LocalAdapter extends DocumentAdapter {
         return res;
     }
 
-    GetPartyData(partyName: string, _currentDocId: string): { memberNames: string[]; quickStatuses: string[] } {
+    GetPartyData(partyName: string, _currentDocId: string): { memberNames: string[]; quickStatuses: string[]; partyNickname?: string | null } {
         //return the local file names of the characters in the party
         if (partyName === 'TeamD20_T&E') {
+            let nickname = 'Thror';
+            const lowerDocId = _currentDocId.toLowerCase();
+            if (lowerDocId.includes('bess')) nickname = 'Bess';
+            else if (lowerDocId.includes('dein')) nickname = 'Dein';
+            else if (lowerDocId.includes('morty')) nickname = 'Morty';
+
             return {
-                memberNames: ['thror_test', 'bess_test'],
-                quickStatuses: ['Thror is preparing spells', 'Bess is ready']
+                memberNames: ['thror_test', 'bess_test', 'Thror', 'Bess', 'Dein'],
+                quickStatuses: ['Thror is preparing spells', 'Bess is ready'],
+                partyNickname: nickname
             };
         }
-        return { memberNames: [], quickStatuses: [] };
+        return { memberNames: [], quickStatuses: [], partyNickname: null };
     }
 
     MoveItem(docId: string, itemName: string, fromSection: string, toSection: string): AdapterResult {
@@ -398,6 +405,13 @@ export class LocalAdapter extends DocumentAdapter {
             console.error('Rolz API local curl failed:', e);
             return null;
         }
+    }
+
+    public pushedPartyStatuses: Array<{ dbLink: string; partyName: string; targetMember: string; payload: any }> = [];
+
+    PushPartyMemberStatus(dbLink: string, partyName: string, targetMember: string, payload: any): AdapterResult {
+        this.pushedPartyStatuses.push({ dbLink, partyName, targetMember, payload });
+        return { success: true };
     }
 }
 

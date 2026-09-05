@@ -12,12 +12,14 @@ import * as path from 'path';
 (global as any).document = (global as any).window.document;
 
 import { OnCastSpell, UpdateHp, AddStatusToCharacter, GetCharacterByDocId, GetCharacterRepByDocId, OnRoundsElapsed, RemoveAllStatusesFromCharacter, MoveInventoryItem, UsePotion } from '../../server/character/character_manipulation';
+import { adapter } from '../../server/character/adapter_selector';
 
 
 import { CharacterError, Character } from '../../server/character/character';
 import { CharacterRep } from '../../server/character/character_rep';
 import { renderSpellSlots } from '../../client/ts/spells_script';
 import { IsSectionLine } from '../../server/character/parsers/doc_parser';
+import { ExtractAndValidateSpell } from '../../server/character/spells';
 
 
 describe('OnCastSpell - Local Integration Tests', () => {
@@ -25,6 +27,9 @@ describe('OnCastSpell - Local Integration Tests', () => {
     const SOURCE_FILE_PATH = path.join(__dirname, 'test_character_sheets', 'thror_test.txt');
 
     beforeEach(() => {
+        if ((adapter as any).pushedPartyStatuses) {
+            (adapter as any).pushedPartyStatuses = [];
+        }
         // Clear temp file if it exists, then copy fresh from source
         if (fs.existsSync(TEMP_FILE_PATH)) {
             fs.unlinkSync(TEMP_FILE_PATH);
@@ -195,6 +200,105 @@ describe('OnCastSpell - Local Integration Tests', () => {
         expect(statusAdded).toBe(true);
     });
 
+    it('should cast Prayer targeting all party members, consume level 3 slot, apply locally and push to party members in RTDB', () => {
+        (adapter as any).pushedPartyStatuses = [];
+
+        const slotData = {
+            casterClassName: 'Cleric',
+            spellLevel: '3',
+            spellName: 'Prayer',
+            slotIndex: 0,
+            isUsed: false,
+            isEmpty: false,
+            targets: ['Self', 'Bess', 'Dein']
+        };
+
+        const result = OnCastSpell(TEMP_FILE_PATH, slotData);
+        expect(result instanceof CharacterError).toBe(false);
+        const charRep = result as CharacterRep;
+
+        // Verify status applied locally to Thror
+        expect(charRep.statuses.some(s => s.name === 'Prayer')).toBe(true);
+        // Prayer grants +1 luck bonus to attack, damage, saves
+        const unarmed = charRep.weapons.find(w => w.name === 'Unarmed');
+        expect(unarmed).toBeDefined();
+        expect(unarmed!.attackBonus.bonus).toBe(12 + 1); // base 12 + 1 luck bonus
+        expect(charRep.saves.Fort.bonus).toBe(17 + 1); // base 17 + 1 luck bonus
+
+        // Verify slot was consumed in file (mutated to [x] Prayer)
+        const updatedLines = fs.readFileSync(TEMP_FILE_PATH, 'utf8').split('\n');
+        expect(updatedLines.some(l => l.trim() === '[x] Prayer')).toBe(true);
+
+        // Verify pushed to remote party members (Bess and Dein)
+        const pushed = (adapter as any).pushedPartyStatuses;
+        expect(pushed).toHaveLength(2);
+        expect(pushed).toContainEqual(expect.objectContaining({
+            partyName: 'TeamD20_T&E',
+            targetMember: 'Bess',
+            payload: expect.objectContaining({
+                statusName: 'Prayer',
+                senderName: 'Thror'
+            })
+        }));
+        expect(pushed).toContainEqual(expect.objectContaining({
+            partyName: 'TeamD20_T&E',
+            targetMember: 'Dein',
+            payload: expect.objectContaining({
+                statusName: 'Prayer',
+                senderName: 'Thror'
+            })
+        }));
+    });
+
+    it('should cast single-target Bull\'s Strength on Bess only, consume slot, and push to Bess without affecting Thror', () => {
+        (adapter as any).pushedPartyStatuses = [];
+
+        // Prod behavior: Raw text in the character sheet contains curly apostrophe: "Bull’s Strength".
+        // During parsing, the server extracts and normalizes it to canonical SpellsData key "Bull's Strength".
+        const rawProdSpellText = 'Bull’s Strength';
+        const { extractedName } = ExtractAndValidateSpell('Cleric', 2, '2', rawProdSpellText, []);
+        expect(extractedName).toBe('Bull\'s Strength');
+
+        // This matches what is populated in the client's prepared spell slot from CharacterRep:
+        const baseCharRep = GetCharacterRepByDocId(TEMP_FILE_PATH) as CharacterRep;
+        const clericCaster = baseCharRep.spellCasting.classSpellCastingData.find((c: any) => c.className === 'Cleric')!;
+        const preparedSlot = clericCaster.preparedSpells['2'][2];
+        expect(preparedSlot.spell).toBe(extractedName);
+
+        const slotData = {
+            casterClassName: 'Cleric',
+            spellLevel: '2',
+            spellName: preparedSlot.spell,
+            slotIndex: 2,
+            isUsed: false,
+            isEmpty: false,
+            targets: ['Bess']
+        };
+
+        const result = OnCastSpell(TEMP_FILE_PATH, slotData);
+        expect(result instanceof CharacterError).toBe(false);
+        const charRep = result as CharacterRep;
+
+        // Verify Thror did NOT receive Bull's Strength locally
+        expect(charRep.statuses.some(s => s.name.includes('Bull'))).toBe(false);
+
+        // Verify slot consumed in file
+        const updatedLines = fs.readFileSync(TEMP_FILE_PATH, 'utf8').split('\n');
+        expect(updatedLines.some(l => l.trim().includes('Bull') && l.trim().startsWith('[x]'))).toBe(true);
+
+        // Verify status was pushed to Bess only
+        const pushed = (adapter as any).pushedPartyStatuses;
+        expect(pushed).toHaveLength(1);
+        expect(pushed[0]).toEqual(expect.objectContaining({
+            partyName: 'TeamD20_T&E',
+            targetMember: 'Bess',
+            payload: expect.objectContaining({
+                statusName: 'Bull\'s Strength',
+                senderName: 'Thror'
+            })
+        }));
+    });
+
 });
 
 describe('Bess - Song of the Heart and Bardic Inspire Statuses', () => {
@@ -202,6 +306,9 @@ describe('Bess - Song of the Heart and Bardic Inspire Statuses', () => {
     const SOURCE_BESS_FILE_PATH = path.join(__dirname, 'test_character_sheets', 'bess_test.txt');
 
     beforeEach(() => {
+        if ((adapter as any).pushedPartyStatuses) {
+            (adapter as any).pushedPartyStatuses = [];
+        }
         if (fs.existsSync(TEMP_BESS_FILE_PATH)) {
             fs.unlinkSync(TEMP_BESS_FILE_PATH);
         }
@@ -376,6 +483,55 @@ describe('Bess - Song of the Heart and Bardic Inspire Statuses', () => {
         const unarmed = charFinal.weapons.find(w => w.name === 'Unarmed');
         expect(unarmed).toBeDefined();
         expect(unarmed!.attackBonus.bonus).toBe(15);
+    });
+
+    it('should cast Inspire Courage targeting all party members, consume song slot, apply locally to Bess and push to remote party members', () => {
+        (adapter as any).pushedPartyStatuses = [];
+
+        const slotData = {
+            casterClassName: 'Bard',
+            spellLevel: 'songs',
+            spellName: 'Inspire Courage',
+            slotIndex: 0,
+            isUsed: false,
+            isEmpty: false,
+            targets: ['Self', 'Thror', 'Dein']
+        };
+
+        const result = OnCastSpell(TEMP_BESS_FILE_PATH, slotData);
+        expect(result instanceof CharacterError).toBe(false);
+        const charRep = result as CharacterRep;
+
+        // Bess gets Inspire Courage +3 locally
+        expect(charRep.statuses.some(s => s.name === 'Inspire Courage +3')).toBe(true);
+        expect(charRep.weapons.find(w => w.name === 'Unarmed')?.attackBonus.bonus).toBe(15); // 12 + 3
+
+        // Song slot is consumed (from 11/13 to 10/13)
+        const updatedLines = fs.readFileSync(TEMP_BESS_FILE_PATH, 'utf8').split('\n');
+        const songLine = updatedLines.find(l => l.trim().startsWith('songs:'));
+        expect(songLine?.trim()).toBe('songs: 10/13');
+
+        // Verify pushed to remote party members (Thror and Dein)
+        const pushed = (adapter as any).pushedPartyStatuses;
+        expect(pushed).toHaveLength(2);
+        expect(pushed).toContainEqual(expect.objectContaining({
+            partyName: 'TeamD20_T&E',
+            targetMember: 'Thror',
+            payload: expect.objectContaining({
+                statusName: 'Inspire Courage +3',
+                senderName: 'Bess',
+                duration: -1
+            })
+        }));
+        expect(pushed).toContainEqual(expect.objectContaining({
+            partyName: 'TeamD20_T&E',
+            targetMember: 'Dein',
+            payload: expect.objectContaining({
+                statusName: 'Inspire Courage +3',
+                senderName: 'Bess',
+                duration: -1
+            })
+        }));
     });
 
     it('should preserve Inspire Courage status and its bonuses across round elapses when added with infinite duration', () => {

@@ -50,3 +50,32 @@ export function GetParenthesesContent(line: string): string | null {
 export function GetLineThatContainsOneOfTheseTokens(lines: string[], tokens: readonly string[]): string | undefined {
   return lines.find(line => tokens.some(token => line.includes(token)));
 }
+
+/**
+ * Sanitizes and validates a database URL string.
+ * Strips trailing slashes, ensures https:// prefix, and returns null if empty.
+ */
+export function sanitizeDbLink(rawLink?: string | null): string | null {
+  if (!rawLink || typeof rawLink !== 'string') {
+    return null;
+  }
+  let trimmed = rawLink.trim();
+  if (trimmed === '') {
+    return null;
+  }
+  // Strip trailing slashes
+  trimmed = trimmed.replace(/\/+$/, '');
+
+  // Ensure protocol is present
+  if (!/^https?:\/\//i.test(trimmed)) {
+    trimmed = `https://${trimmed}`;
+  }
+  return trimmed;
+}
+
+/**
+ * Normalizes curly quotes and apostrophes to standard straight quotes.
+ */
+export function normalizeQuotes(str: string): string {
+  return str.replace(/[\u2018\u2019]/g, '\'').replace(/[\u201C\u201D]/g, '"');
+}

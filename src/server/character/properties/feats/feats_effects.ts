@@ -6,6 +6,15 @@ export const StatusRelatedValue = (character: ICharacter, statusName: string, va
   return character.HasStatus(statusName) ? value : 0;
 };
 
+export const GetShieldBonus = (character: ICharacter): number => {
+  if (!character.ac) return 0;
+  const shieldEffects = character.ac.activeEffects.filter(e =>
+    e.modifierType === 'Shield' ||
+    e.status.startsWith('Shield Specialization')
+  );
+  return shieldEffects.reduce((sum, e) => sum + e.value, 0);
+};
+
 /**
  * @type {Object.<string, EffectData[]>}
  */
@@ -380,6 +389,47 @@ export const FeatEffects: Record<string, EffectData[]> = {
         );
         return hasTowerShield ? 1 : 0;
       }
+    }
+  ],
+  'Shield Ward': [
+    {
+      status: 'Shield Ward',
+      description: 'You apply your shield bonus to your touch AC, and on checks or rolls to resist bull rush, disarm, grapple, overrun, or trip attempts against you.',
+      callback: (character: ICharacter) => {
+        if (character.ac && 'applyShieldToTouch' in character.ac) {
+          (character.ac as any).applyShieldToTouch = true;
+        }
+      }
+    },
+    {
+      status: 'Shield Ward',
+      property: 'Bull rush',
+      modifierType: 'Shield',
+      valueResolver: (character: ICharacter) => GetShieldBonus(character)
+    },
+    {
+      status: 'Shield Ward',
+      property: 'Disarm',
+      modifierType: 'Shield',
+      valueResolver: (character: ICharacter) => GetShieldBonus(character)
+    },
+    {
+      status: 'Shield Ward',
+      property: 'Grapple',
+      modifierType: 'Shield',
+      valueResolver: (character: ICharacter) => GetShieldBonus(character)
+    },
+    {
+      status: 'Shield Ward',
+      property: 'Overrun',
+      modifierType: 'Shield',
+      valueResolver: (character: ICharacter) => GetShieldBonus(character)
+    },
+    {
+      status: 'Shield Ward',
+      property: 'Trip',
+      modifierType: 'Shield',
+      valueResolver: (character: ICharacter) => GetShieldBonus(character)
     }
   ],
   'Simple Weapon Proficiency': [

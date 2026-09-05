@@ -13,14 +13,31 @@ const ROUNDS_PER_MINUTE = 10;
 
 export type CalculateDurationFunction = (spellCasterClassData: SpellCasterClassData) => number;
 
+export enum SpellTarget {
+  Self = 'Self',
+  OneCreature = 'OneCreature',
+  OneAlly = 'OneAlly',
+  Party = 'Party',
+  MultipleCreatures = 'MultipleCreatures',
+  Area = 'Area',
+  Object = 'Object',
+  Special = 'Special'
+}
+
+export type SpellRange = 'Personal' | 'Touch' | 'Close' | 'Medium' | 'Long' | 'Unlimited' | string;
+
 export interface SpellData {
   calculateDuration: CalculateDurationFunction;
   effects?: EffectData[];
   statusName?: string;
+  range: SpellRange;
+  target: SpellTarget;
 }
 
 const SpellsData: Record<string, SpellData> = {
   'Guidance': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     effects: [
       { status: 'Guidance', property: 'expendable_action', modifierType: 'Competence', value: 1 }
     ],
@@ -29,6 +46,8 @@ const SpellsData: Record<string, SpellData> = {
     }
   },
   'Resistance': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     effects: [
       { status: 'Resistance', property: 'Fort', modifierType: 'Resistance', value: 1 },
       { status: 'Resistance', property: 'Ref', modifierType: 'Resistance', value: 1 },
@@ -39,26 +58,36 @@ const SpellsData: Record<string, SpellData> = {
     }
   },
   'Detect Magic': {
+    range: '60 ft.',
+    target: SpellTarget.Area,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
   },
   'Light': {
+    range: 'Touch',
+    target: SpellTarget.Object,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
   },
   'Mending': {
+    range: '10 ft.',
+    target: SpellTarget.Object,
     calculateDuration: function (_spellCasting) {
       return 1;
     }
   },
   'Resurgence': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (_spellCasting) {
       return 1;
     }
   },
   'Shield of Faith': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     effects: [
       {
         status: 'Shield of Faith',
@@ -76,32 +105,44 @@ const SpellsData: Record<string, SpellData> = {
     }
   },
   'Doom': {
+    range: 'Medium',
+    target: SpellTarget.OneCreature,
     statusName: 'Shaken',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
   },
   'Lesser Restoration': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (_spellCasting) {
       return 1;
     }
   },
   'Invisibility Purge': {
+    range: 'Personal',
+    target: SpellTarget.Self,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
   },
   'Divine Favor': {
+    range: 'Personal',
+    target: SpellTarget.Self,
     calculateDuration: function (_spellCasterClassData) {
       return 1 * ROUNDS_PER_MINUTE;
     }
   },
   'Bless': {
+    range: '50 ft.',
+    target: SpellTarget.Party,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
   },
   'Enlarge Person': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
     effects: [
       { status: 'Enlarge Person', property: 'size', modifierType: 'Size', value: 1 },
       { status: 'Enlarge Person', property: 'Str', modifierType: 'Size', value: 2 },
@@ -122,7 +163,24 @@ const SpellsData: Record<string, SpellData> = {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
   },
+  'Expeditious Retreat': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    effects: [
+      {
+        status: 'Expeditious Retreat',
+        property: 'speed',
+        modifierType: 'Enhancement',
+        value: 30
+      }
+    ],
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
   'Feat of Strength': {
+    range: 'Personal',
+    target: SpellTarget.Self,
     effects: [
       {
         status: 'Feat of Strength',
@@ -140,6 +198,8 @@ const SpellsData: Record<string, SpellData> = {
     }
   },
   'Bull\'s Strength': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     effects: [
       { status: 'Bull\'s Strength', property: 'Str', modifierType: 'Enhancement', value: 4 }
     ],
@@ -148,6 +208,8 @@ const SpellsData: Record<string, SpellData> = {
     }
   },
   'Mage Armor': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     effects: [
       { status: 'Mage Armor', property: 'ac', modifierType: 'Armor', value: 4 }
     ],
@@ -156,6 +218,8 @@ const SpellsData: Record<string, SpellData> = {
     }
   },
   'Prayer': {
+    range: '40 ft.',
+    target: SpellTarget.Party,
     effects: [
       {
         status: 'Prayer',
@@ -195,6 +259,8 @@ const SpellsData: Record<string, SpellData> = {
     }
   },
   'Haste': {
+    range: 'Close',
+    target: SpellTarget.MultipleCreatures,
     effects: [
       {
         status: 'Haste',
@@ -211,81 +277,113 @@ const SpellsData: Record<string, SpellData> = {
     }
   },
   'Inspire Courage': {
+    range: 'Personal',
+    target: SpellTarget.Party,
     calculateDuration: function (_spellCasting) {
       return -1;
     }
   },
   'Fascinate': {
+    range: '90 ft.',
+    target: SpellTarget.MultipleCreatures,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
   },
   'Suggestion': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE * 60; // 1 hr/level
     }
   },
   'Inspire Competence': {
+    range: '30 ft.',
+    target: SpellTarget.OneAlly,
     calculateDuration: function (_spellCasting) {
       return 20; // Up to 2 minutes
     }
   },
   'Inspire Greatness': {
+    range: '30 ft.',
+    target: SpellTarget.MultipleCreatures,
     calculateDuration: function (_spellCasting) {
       return 5; // 5 rounds after stop
     }
   },
   'Inspire Heroics': {
+    range: '30 ft.',
+    target: SpellTarget.MultipleCreatures,
     calculateDuration: function (_spellCasting) {
       return 5; // 5 rounds after stop
     }
   },
   'Dancing Lights': {
+    range: 'Medium',
+    target: SpellTarget.Area,
     calculateDuration: function (_spellCasting) {
       return 1 * ROUNDS_PER_MINUTE;
     }
   },
   'Ghost Sound': {
+    range: 'Close',
+    target: SpellTarget.Area,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
   },
   'Message': {
+    range: 'Medium',
+    target: SpellTarget.MultipleCreatures,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
   },
   'Prestidigitation': {
+    range: '10 ft.',
+    target: SpellTarget.Area,
     calculateDuration: function (_spellCasting) {
       return 1 * ROUNDS_PER_MINUTE * 60;
     }
   },
   'Cure Light Wounds': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (_spellCasting) {
       return 1;
     }
   },
   'Grease': {
+    range: 'Close',
+    target: SpellTarget.Area,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
   },
   'Hideous Laughter': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
   },
   'Silent Image': {
+    range: 'Long',
+    target: SpellTarget.Area,
     calculateDuration: function (_spellCasting) {
       return 1;
     }
   },
   'Instant of Power': {
+    range: 'Close',
+    target: SpellTarget.OneAlly,
     calculateDuration: function (_spellCasting) {
       return 1;
     }
   },
   'Inspirational Boost': {
+    range: 'Personal',
+    target: SpellTarget.Self,
     effects: [
       { status: 'Inspirational Boost', property: 'Inspire Courage', modifierType: 'Generic', value: 1 }
     ],
@@ -294,72 +392,110 @@ const SpellsData: Record<string, SpellData> = {
     }
   },
   'Command': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (_spellCasting) {
       return 1;
     }
   },
   'Glitterdust': {
+    range: 'Medium',
+    target: SpellTarget.Area,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
   },
   'Cure Moderate Wounds': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (_spellCasting) {
       return 1;
     }
   },
   'Tongues': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
   },
   'Zone of Truth': {
+    range: 'Close',
+    target: SpellTarget.Area,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
   },
   'Cure Serious Wounds': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (_spellCasting) {
       return 1;
     }
   },
   'Glibness': {
+    range: 'Personal',
+    target: SpellTarget.Self,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
   },
   'Hesitate': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
   },
   'Drums of War': {
+    range: 'Medium',
+    target: SpellTarget.Party,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
   },
   'Sending': {
+    range: 'Unlimited',
+    target: SpellTarget.OneCreature,
     calculateDuration: function (_spellCasting) {
       return 1;
     }
   },
   'Mirror Image, Greater': {
+    range: 'Personal',
+    target: SpellTarget.Self,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
   },
   'Lingering Chorus': {
+    range: 'Personal',
+    target: SpellTarget.Self,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
   },
   'Mislead': {
+    range: 'Close',
+    target: SpellTarget.Self,
     statusName: 'Invisible',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
   }
 };
+
+export function GetSpellData(spellName: string): SpellData | null {
+  return SpellsData[spellName] || null;
+}
+
+export function GetSpellTarget(spellName: string): SpellTarget | null {
+  return SpellsData[spellName]?.target || null;
+}
+
+export function GetSpellRange(spellName: string): SpellRange | null {
+  return SpellsData[spellName]?.range || null;
+}
 
 // Register effects
 const spellsEffectsForRegistration: Record<string, EffectData[]> = {};
@@ -451,11 +587,32 @@ class SpellCasting {
           level: casterClassData.level.currentScore,
           domains: casterClassData.domains,
           spellSlots: casterClassData.spellSlots,
-          knownSpells: casterClassData.knownSpells,
+          knownSpells: Object.fromEntries(
+            Object.entries(casterClassData.knownSpells).map(([level, spells]) => [
+              level,
+              spells.map((s: any) => {
+                const name = typeof s === 'string' ? s : s.spellName;
+                const isValid = typeof s === 'string' ? true : s.isValid !== false;
+                return {
+                  spellName: name,
+                  isValid: isValid,
+                  range: name ? GetSpellRange(name) : null,
+                  target: name ? GetSpellTarget(name) : null
+                };
+              })
+            ])
+          ),
           preparedSpells: Object.fromEntries(
             Object.entries(casterClassData.preparedSpells).map(([level, spells]) => [
               level,
-              spells.map(({ spellName, isUsed, isEmpty, isValid }) => ({ spell: spellName, used: isUsed, isEmpty, isValid }))
+              spells.map(({ spellName, isUsed, isEmpty, isValid }) => ({
+                spell: spellName,
+                used: isUsed,
+                isEmpty,
+                isValid,
+                range: spellName ? GetSpellRange(spellName) : null,
+                target: spellName ? GetSpellTarget(spellName) : null
+              }))
             ])
           ),
           preparation: ClassesData.get(className)?.spellCastingData?.preparation || 'Prepared'
@@ -541,7 +698,7 @@ function getBonusSpells(modifier: number): number[] {
   return bonusSpells;
 }
 
-function normalizeQuotes(str: string): string {
+export function normalizeQuotes(str: string): string {
   return str.replace(/[\u2018\u2019]/g, '\'').replace(/[\u201C\u201D]/g, '"');
 }
 

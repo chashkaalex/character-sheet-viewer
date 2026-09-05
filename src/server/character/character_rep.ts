@@ -4,6 +4,8 @@ import { CharacterClass } from './properties/race_and_classes';
 import { ActionsData, NumberAction } from './actions/actions_effects';
 import { calculateTwf, TwfData } from './gear/weapons/twf';
 import { calculateNormalFullAttack, calculateTwfFullAttack } from './gear/weapons/full_attack';
+import { sanitizeDbLink } from './parser_utils';
+import { GetScriptProperty } from '../services/gdoc_utilities';
 
 /**
  * Character representation for the client.
@@ -40,9 +42,12 @@ export interface CharacterRep {
   partyName: string | null;
   partyMembers: string[];
   quickStatuses: string[];
+  partyNickname?: string | null;
   partiesDocId?: string | null;
+  dbLink?: string | null;
   actionsMetadata?: Record<string, {
     name: string;
+    statusName?: string;
     acceptsNumber: boolean;
     minNumber?: number;
     maxNumber?: number;
@@ -85,13 +90,13 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
     rolzRoomId: character.rolzRoomId,
     race: character.race,
     classes: character.classes,
-    initBonus: character.InitiativeBonus ? character.InitiativeBonus.state : null,
-    damageBonus: character.damageBonus ? character.damageBonus.state : null,
-    attacksOfOpportunity: character.attacksOfOpportunity ? character.attacksOfOpportunity.state : null,
-    acp: character.acp ? character.acp.state : null,
+    initBonus: character.InitiativeBonus?.state ?? null,
+    damageBonus: character.damageBonus?.state ?? null,
+    attacksOfOpportunity: character.attacksOfOpportunity?.state ?? null,
+    acp: character.acp?.state ?? null,
     hp: { current: character.hp.current, max: character.hp.max },
-    ac: character.ac ? character.ac.state : null,
-    speed: character.speed ? character.speed.state : null,
+    ac: character.ac?.state ?? null,
+    speed: character.speed?.state ?? null,
     saves: {},
     resistances: character.resistances,
     preparedSpells: {},
@@ -106,9 +111,9 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
     partyName: character.partyName,
     partyMembers: character.partyMembers,
     quickStatuses: character.quickStatuses,
-    partiesDocId: typeof PropertiesService !== 'undefined'
-      ? PropertiesService.getScriptProperties().getProperty('PARTIES_DOC_ID')
-      : null
+    partyNickname: character.partyNickname ?? null,
+    partiesDocId: GetScriptProperty('PARTIES_DOC_ID'),
+    dbLink: sanitizeDbLink(GetScriptProperty('DB_LINK'))
   };
 
   // Add saves
@@ -151,6 +156,7 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
         const isNumberAction = action instanceof NumberAction;
         actionsMetadata[actionName] = {
           name: actionName,
+          statusName: action.statusName,
           acceptsNumber: isNumberAction,
           minNumber: isNumberAction ? (action as any).minNumber : undefined,
           maxNumber: isNumberAction ? (action as any).maxNumberResolver(character) : undefined,

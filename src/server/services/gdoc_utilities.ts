@@ -481,9 +481,28 @@ export function DecrementPropertyWithUpdateProperty(docId: string, propertyName:
 export interface PartyData {
     memberNames: string[];
     quickStatuses: string[];
+    partyNickname?: string | null;
 }
 
 const PARTY_SECTION_NAMES = ['Party Members', 'Quick Statuses', 'Events Log'] as const;
+
+/**
+ * Safely extracts a property from Google Apps Script PropertiesService.
+ * Returns null if PropertiesService is not available (e.g. in local tests or node environment)
+ * or if the property is not found.
+ * @param propertyName - Key name in Script Properties
+ * @returns The string value or null
+ */
+export function GetScriptProperty(propertyName: string): string | null {
+    if (typeof PropertiesService === 'undefined') {
+        return null;
+    }
+    try {
+        return PropertiesService.getScriptProperties().getProperty(propertyName) ?? null;
+    } catch {
+        return null;
+    }
+}
 
 /**
  * Gets the party members and quick statuses from the parties configuration Google Doc.
@@ -493,10 +512,10 @@ const PARTY_SECTION_NAMES = ['Party Members', 'Quick Statuses', 'Events Log'] as
  */
 export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string): PartyData {
     try {
-        const partiesDocId = PropertiesService.getScriptProperties().getProperty('PARTIES_DOC_ID');
+        const partiesDocId = GetScriptProperty('PARTIES_DOC_ID');
         if (!partiesDocId) {
             console.error('PARTIES_DOC_ID not set in script properties');
-            return { memberNames: [], quickStatuses: [] };
+            return { memberNames: [], quickStatuses: [], partyNickname: null };
         }
         const doc = DocumentApp.openById(partiesDocId);
         let targetTab: any = null;
@@ -512,7 +531,7 @@ export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string)
 
         if (!targetTab) {
             console.error(`Party "${partyName}" not found in Parties document`);
-            return { memberNames: [], quickStatuses: [] };
+            return { memberNames: [], quickStatuses: [], partyNickname: null };
         }
 
         const body = targetTab.asDocumentTab().getBody();
@@ -538,6 +557,7 @@ export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string)
         const quickStatuses = sectionLines['Quick Statuses'] || [];
 
         let isMember = false;
+        let partyNickname: string | null = null;
         const memberNames: string[] = [];
 
         // Format: "Character_Sheet_Name gdoc_id"
@@ -550,19 +570,20 @@ export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string)
 
             if (docId === currentDocId) {
                 isMember = true;
+                partyNickname = memberName;
             }
             memberNames.push(memberName);
         }
 
         if (!isMember) {
             console.error(`Validation failed: Current doc ID ${currentDocId} not found in party list for ${partyName}`);
-            return { memberNames: [], quickStatuses: [] };
+            return { memberNames: [], quickStatuses: [], partyNickname: null };
         }
 
-        return { memberNames, quickStatuses };
+        return { memberNames, quickStatuses, partyNickname };
     } catch (e) {
         console.error('Error fetching party members:', e);
-        return { memberNames: [], quickStatuses: [] };
+        return { memberNames: [], quickStatuses: [], partyNickname: null };
     }
 }
 

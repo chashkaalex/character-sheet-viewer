@@ -1,0 +1,61 @@
+{
+  "rules": {
+    "parties": {
+      "$partyName": {
+        ".read": true,
+        ".write": true,
+        "members": {
+          "$memberName": {
+            "docId": {
+              ".validate": "newData.isString()"
+            },
+            "statuses": {
+              "$statusId": {
+                ".validate": "newData.hasChildren(['statusId', 'statusName', 'senderName', 'duration', 'timestamp'])",
+                "statusId": {
+                  ".validate": "newData.isString() && newData.val().length > 0"
+                },
+                "statusName": {
+                  ".validate": "newData.isString() && newData.val().length > 0"
+                },
+                "senderName": {
+                  ".validate": "newData.isString() && newData.val().length > 0"
+                },
+                "duration": {
+                  ".validate": "newData.isNumber()"
+                },
+                "durationUnit": {
+                  ".validate": "newData.isString() && (newData.val() === 'rounds' || newData.val() === 'minutes' || newData.val() === 'hours' || newData.val() === 'days' || newData.val() === 'permanent' || newData.val() === 'instantaneous')"
+                },
+                "casterLevel": {
+                  ".validate": "newData.isNumber()"
+                },
+                "spellLevel": {
+                  ".validate": "newData.isNumber()"
+                },
+                "description": {
+                  ".validate": "newData.isString()"
+                },
+                "args": {
+                  ".validate": "newData.hasChildren() || newData.val() == null"
+                },
+                "timestamp": {
+                  ".validate": "newData.isNumber()"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}

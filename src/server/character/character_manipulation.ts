@@ -8,6 +8,8 @@ declare let require: any;
 import { ClassesData } from '../classes_data/_classes_general_data';
 import { SpellsData } from './spells';
 import { ActionsData, NumberAction } from './actions/actions_effects';
+import { GetScriptProperty } from '../services/gdoc_utilities';
+import { sanitizeDbLink } from './parser_utils';
 
 /**
  * Retrieves a character object by document ID.
@@ -27,6 +29,7 @@ export function GetCharacterByDocId(docId: string): Character | CharacterError {
     const partyData = adapter.GetPartyData(character.partyName, docId);
     character.partyMembers = partyData.memberNames;
     character.quickStatuses = partyData.quickStatuses;
+    character.partyNickname = partyData.partyNickname ?? null;
   }
 
   return character;
@@ -221,8 +224,12 @@ export function OnCastSpell(docId: string, slotData: SpellSlotData): CharacterRe
     return new CharacterError('Spell description was not found');
   }
 
+  const targets = (slotData.targets && slotData.targets.length > 0) ? slotData.targets : ['Self'];
+  const selfNames = ['Self', character.name, character.partyNickname].filter(Boolean) as string[];
+  const isTargetingSelf = targets.some(t => selfNames.includes(t));
+
   const targetStatusName = spellObject.statusName || slotData.spellName;
-  if (character.HasStatus(targetStatusName)) {
+  if (isTargetingSelf && character.HasStatus(targetStatusName)) {
     return new CharacterError('Spell already active');
   }
 
@@ -258,7 +265,6 @@ export function OnCastSpell(docId: string, slotData: SpellSlotData): CharacterRe
     return new CharacterError(`Failed to cast spell: ${result.error}`);
   }
 
-
   const context = {
     statusName: spellObject.statusName || slotData.spellName,
     duration: duration
@@ -271,7 +277,34 @@ export function OnCastSpell(docId: string, slotData: SpellSlotData): CharacterRe
   };
   character.manipulationCallbacks.OnCastSpell.forEach(cb => cb(character, slotData, context, helpers));
 
-  _addStatusToCharacter(docId, context.statusName, context.duration);
+  // Apply to self if targeted
+  if (isTargetingSelf) {
+    _addStatusToCharacter(docId, context.statusName, context.duration);
+  }
+
+  // Push status to remote party members
+  const remoteTargets = targets.filter(t => !selfNames.includes(t));
+  if (remoteTargets.length > 0 && character.partyName) {
+    const rawDbLink = GetScriptProperty('DB_LINK') || (typeof PropertiesService === 'undefined' ? 'https://local-test-db.firebaseio.com' : null);
+    const dbLink = sanitizeDbLink(rawDbLink);
+    if (dbLink) {
+      const senderName = character.partyNickname || character.name;
+      remoteTargets.forEach(targetMember => {
+        const payload = {
+          statusId: `status_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+          statusName: context.statusName,
+          senderName: senderName,
+          duration: context.duration,
+          durationUnit: 'rounds' as const,
+          timestamp: Date.now()
+        };
+        adapter.PushPartyMemberStatus(dbLink, character.partyName!, targetMember, payload);
+      });
+    } else {
+      console.warn('[PartySync] Cannot push status to party members: DB_LINK not configured');
+    }
+  }
+
   return GetCharacterRepByDocId(docId);
 }
 

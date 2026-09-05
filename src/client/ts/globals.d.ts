@@ -32,6 +32,9 @@ interface Window {
   showSection: (sectionId: string) => void;
   loadCharacterData: () => void;
   showError: (message: string) => void;
+  startPartyStatusListener: (characterRep: any) => void;
+  stopPartyStatusListener: () => void;
+  showPartyNotification: (message: string, isError?: boolean) => void;
 }
 
 declare module '*.css' {

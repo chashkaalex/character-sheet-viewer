@@ -21,6 +21,10 @@ export class NumberAction implements ActionData {
 }
 
 export const ActionsData: Record<string, ActionData> = {
+  'Cast Expeditious Retreat': {
+    statusName: 'Expeditious Retreat',
+    calculateDuration: (_character) => 10
+  },
   'Absolute Steel Stance': {
     statusName: 'Absolute Steel Stance',
     calculateDuration: (_character) => 10,

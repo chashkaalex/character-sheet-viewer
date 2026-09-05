@@ -8,6 +8,7 @@ import * as SectionNav from './section_navigation_script';
 import * as Character from './character_script';
 import * as Dashboard from './dashboard_script';
 import * as Spells from './spells_script';
+import * as PartySync from './party_sync_listener';
 
 // Global Registry for Google Apps Script compatibility
 // This exposes functions to the global 'window' object so they can be called from HTML event handlers
@@ -56,7 +57,12 @@ const globalRegistry: Record<string, any> = {
     hideMovePopup: Spells.hideMovePopup,
     moveAction: Spells.moveAction,
     hideNumberActionPopup: Spells.hideNumberActionPopup,
-    useNumberAction: Spells.useNumberAction
+    useNumberAction: Spells.useNumberAction,
+
+    // Party Sync
+    startPartyStatusListener: PartySync.startPartyStatusListener,
+    stopPartyStatusListener: PartySync.stopPartyStatusListener,
+    showPartyNotification: PartySync.showPartyNotification
 };
 
 // Map each function to the window object

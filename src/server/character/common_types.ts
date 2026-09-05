@@ -14,6 +14,10 @@ export interface SpellSlotData {
   isUsed: boolean;
   isEmpty: boolean;
   isValid?: boolean;
+  targets?: string[];
+  range?: string | null;
+  target?: string | null;
+  preparation?: string;
 }
 
 export interface ParsedSpellSlot {
@@ -27,6 +31,8 @@ export interface ParsedSpellSlot {
 export interface KnownSpellEntry {
   spellName: string;
   isValid: boolean;
+  range?: string | null;
+  target?: string | null;
 }
 
 export type LevelSpellSlots = Record<string, SpellSlotData[]>;

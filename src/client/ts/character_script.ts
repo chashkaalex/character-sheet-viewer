@@ -1,6 +1,7 @@
 import { characterRep, setCharacterRep } from './state';
 import { populateWeaponDropdown, populateSpecialAttackDropdown, RemoveStatus } from './dashboard_script';
 import { PrepareSpellsUI } from './spells_script';
+import { startPartyStatusListener } from './party_sync_listener';
 
 export function onCharacterRepresentation(response) {
   console.log('char response handler called!!!');
@@ -168,6 +169,12 @@ export function onCharacterRepresentation(response) {
 
   console.log(characterRep.partyName);
   console.log(characterRep.partyMembers);
+  if (characterRep.dbLink) {
+    console.log(`Firebase Realtime Database link: ${characterRep.dbLink}`);
+    startPartyStatusListener(characterRep);
+  } else {
+    console.log('Firebase Realtime Database link (DB_LINK) not configured.');
+  }
 
   // Trigger top bar ready animation
   const header = document.querySelector('.header');
@@ -478,12 +485,14 @@ export function showToast(message: string) {
 }
 
 // Close tooltip when clicking anywhere else
-document.addEventListener('click', function (e) {
-  if (activeTooltipElement && !activeTooltipElement.contains(e.target)) {
-    hideTooltip();
-    activeTooltipElement = null;
-  }
-});
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', function (e) {
+    if (activeTooltipElement && !activeTooltipElement.contains(e.target as Node)) {
+      hideTooltip();
+      activeTooltipElement = null;
+    }
+  });
+}
 
 /**
  * Populates the inventory lists with parsed items from character data
@@ -672,19 +681,21 @@ export function updateFilterButtonAppearance(listType, filterType) {
 }
 
 // Close dropdowns when clicking outside
-document.addEventListener('click', function (event) {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.inventory-header')) {
-    document.querySelectorAll('.filter-dropdown').forEach(dd => {
-      dd.classList.remove('show');
-    });
-  }
-});
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', function (event) {
+    const target = event.target as HTMLElement;
+    if (target && !target.closest('.inventory-header')) {
+      document.querySelectorAll('.filter-dropdown').forEach(dd => {
+        dd.classList.remove('show');
+      });
+    }
+  });
 
-// Initialize inventory when the page loads
-document.addEventListener('DOMContentLoaded', function () {
-  initializeInventory();
-});
+  // Initialize inventory when the page loads
+  document.addEventListener('DOMContentLoaded', function () {
+    initializeInventory();
+  });
+}
 
 /**
  * Populates the equipped slots visual depiction based on Battle Gear items

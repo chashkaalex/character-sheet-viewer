@@ -22,7 +22,6 @@ Action Points: 1.
 
 Statuses:
 
-Use Thror's Holy Symbol: 1 rounds/10 rounds
 Feats:
 Combat Casting, 
 Combat Reflexes, 
@@ -111,7 +110,7 @@ Enlarge Person
 level 2
 Align Weapon
 Align Weapon
-Bull’s Strength
+[x] Bull’s Strength
 Lesser Restoration
 Spiritual Weapon
 level 2 - domain
@@ -197,3 +196,6 @@ Age: 74
 Alignment: Lawful Neutral
 ExP: 67755/78000
 Deity worshiped: Moradin
+
+Parties Membership
+TeamD20_T&E

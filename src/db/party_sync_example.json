@@ -1,0 +1,20 @@
+{
+  "parties": {
+    "TeamD20_T&E": {
+      "members": {
+        "Bess": {
+          "docId": "1Xo6O9bpBqeQfdYtkTIVaDW2pojFKAAHNsfeVWNXHyp8",
+          "statuses": {}
+        },
+        "Thror": {
+          "docId": "1_Is4lS5xB7Wz14-SKDw7NpWKI17FO6hFN6TzZjgbIaU",
+          "statuses": {}
+        },
+        "Dein": {
+          "docId": "1grMkVyRi3R-E3wojfg5j9T3ZA_d5Q2rw_5nhmjsFHSk",
+          "statuses": {}
+        }
+      }
+    }
+  }
+}
