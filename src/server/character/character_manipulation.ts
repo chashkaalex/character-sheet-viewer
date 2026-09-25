@@ -81,6 +81,8 @@ export function UpdateHp(docId: string, amount: number, actionType: 'inflict' | 
  * Adds a status to the character (internal, does not produce a character representation)
  */
 function _addStatusToCharacter(docId: string, statusName: string, duration: number, elapsed: number = 1): void {
+  // Refresh status: remove any existing instance of this status (or its base name) first
+  _removeStatusFromCharacter(docId, statusName, true);
   const newStatusLine = `${statusName}: ${elapsed} rounds/${duration} rounds`;
   AddStatusLine(docId, newStatusLine);
 }
@@ -103,8 +105,8 @@ export function AddStatusLine(docId: string, statusName: string): void {
 /**
  * Removes a status from the character (internal)
  */
-function _removeStatusFromCharacter(docId: string, statusName: string): void {
-  RemoveStatusLine(docId, statusName);
+function _removeStatusFromCharacter(docId: string, statusName: string, quiet: boolean = false): void {
+  RemoveStatusLine(docId, statusName, quiet);
 }
 
 /**
@@ -131,9 +133,9 @@ export function RemoveAllStatusesFromCharacter(docId: string): CharacterRep | Ch
   return GetCharacterRepByDocId(docId);
 }
 
-export function RemoveStatusLine(docId: string, statusName: string): void {
+export function RemoveStatusLine(docId: string, statusName: string, quiet: boolean = false): void {
   const removeResult = adapter.RemoveStatus(docId, statusName);
-  if (!removeResult.success) {
+  if (!removeResult.success && !quiet) {
     console.log('Failed to remove status from document:', removeResult.error);
   }
 }
@@ -227,11 +229,6 @@ export function OnCastSpell(docId: string, slotData: SpellSlotData): CharacterRe
   const targets = (slotData.targets && slotData.targets.length > 0) ? slotData.targets : ['Self'];
   const selfNames = ['Self', character.name, character.partyNickname].filter(Boolean) as string[];
   const isTargetingSelf = targets.some(t => selfNames.includes(t));
-
-  const targetStatusName = spellObject.statusName || slotData.spellName;
-  if (isTargetingSelf && character.HasStatus(targetStatusName)) {
-    return new CharacterError('Spell already active');
-  }
 
   const spellCasterClassData = character.spellCasting.GetSpellCasterClassData(slotData.casterClassName);
   if (!spellCasterClassData) {

@@ -70,10 +70,16 @@ export class LocalAdapter extends DocumentAdapter {
         const statusSectionIdx = lines.findIndex(l => l.startsWith('Statuses'));
         if (statusSectionIdx === -1) return { success: false, error: 'Statuses section not found' };
 
+        const trimmedStatus = statusLine.trim();
+        const baseName = trimmedStatus.replace(/\s+[+-]\d+$/, '').trim();
+        const escapedBase = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const statusPattern = new RegExp(`^\\s*${escapedBase}(\\s+[+-]\\d+)?\\s*:`, 'i');
+
         let removeIdx = -1;
         for (let i = statusSectionIdx + 1; i < lines.length; i++) {
             if (IsSectionLine(lines[i])) break;
-            if (lines[i].includes(statusLine)) {
+            const line = lines[i];
+            if (statusPattern.test(line) || line.trim() === trimmedStatus) {
                 removeIdx = i;
                 break;
             }

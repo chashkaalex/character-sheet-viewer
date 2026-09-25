@@ -15,6 +15,26 @@ export const GetShieldBonus = (character: ICharacter): number => {
   return shieldEffects.reduce((sum, e) => sum + e.value, 0);
 };
 
+export const GetArmorBonus = (character: ICharacter): number => {
+  if (!character.ac) return 0;
+  const armorEffects = character.ac.activeEffects.filter(e =>
+    e.modifierType === 'Armor' ||
+    e.status.startsWith('Heavy Armor Optimization') ||
+    e.status.startsWith('Greater Heavy Armor Optimization')
+  );
+  return armorEffects.reduce((sum, e) => sum + e.value, 0);
+};
+
+export const HasHeavyArmorEquipped = (character: ICharacter): boolean => {
+  if (!character.battleGear) return false;
+  const heavyArmors = character.battleGear.filter(
+    (item): item is Armor => item instanceof Armor && item.armorType === 'Heavy'
+  );
+  if (heavyArmors.length === 0) return false;
+  if (!character.ac || character.ac.activeEffects.length === 0) return true;
+  return heavyArmors.some(armor => character.ac.activeEffects.some(e => e.status === armor.name));
+};
+
 /**
  * @type {Object.<string, EffectData[]>}
  */
@@ -114,6 +134,17 @@ export const FeatEffects: Record<string, EffectData[]> = {
       property: 'attacksOfOpportunity',
       modifierType: 'Generic',
       valueResolver: (character: ICharacter) => character.abilities.Dex!.modifier
+    }
+  ],
+  'Deflective Armor': [
+    {
+      status: 'Deflective Armor',
+      description: 'While you are psionically focused and wearing heavy armor, the AC bonus from your armor (including enhancement bonuses) applies against touch attacks as well as regular attacks.',
+      callback: (character: ICharacter) => {
+        if (HasHeavyArmorEquipped(character) && character.ac && 'applyArmorToTouch' in character.ac) {
+          (character.ac as any).applyArmorToTouch = true;
+        }
+      }
     }
   ],
   'Deceitful': [

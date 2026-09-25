@@ -17,7 +17,7 @@ export class NumberAction implements ActionData {
     public minNumber: number = 1,
     public label: string = 'Value:',
     public effects?: EffectData[]
-  ) {}
+  ) { }
 }
 
 export const ActionsData: Record<string, ActionData> = {
@@ -29,7 +29,7 @@ export const ActionsData: Record<string, ActionData> = {
     statusName: 'Absolute Steel Stance',
     calculateDuration: (_character) => 10,
     effects: [
-      { status: 'Absolute Steel Stance', property: 'speed', modifierType: 'Enhancement', value: 10 },
+      { status: 'Absolute Steel Stance', property: 'speed', modifierType: 'Competence', value: 10 },
       {
         status: 'Absolute Steel Stance',
         property: 'ac',

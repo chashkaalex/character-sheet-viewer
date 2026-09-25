@@ -189,6 +189,7 @@ export class Weapon {
   public fullAttack?: any;
   public encumbrance: 'Light' | 'One-Handed' | 'Two-Handed' | 'ranged' = 'Light';
   public enhancement: number = 0;
+  public baseDamage: string = '1d3';
   public damage: string = '1d3';
   public damageBonusFromWeapon: number = 0;
   public critical: string = 'x2';
@@ -268,6 +269,7 @@ export class Weapon {
       if (customData.damageBonusFromWeapon !== undefined) defaultDamageBonus = customData.damageBonusFromWeapon;
     }
 
+    this.baseDamage = defaultDamage;
     this.damage = defaultDamage;
     this.critical = defaultCritical;
     this.range = defaultRange;
@@ -307,8 +309,10 @@ export class Weapon {
     }
   }
 
-  calculateWeaponStats(_character: ICharacter): void {
-    // meant to be overridden by derived classes if special calculation is needed
+  calculateWeaponStats(character: ICharacter): void {
+    if (!character || !character.size) return;
+    const sizeStep = (character.size.currentSize.bonus - character.size.score.bonus) / 4;
+    this.damage = scaleWeaponDamage(this.baseDamage, sizeStep);
   }
 
   calculateBonuses(character: ICharacter): void {
@@ -436,7 +440,7 @@ export class UnarmedWeapon extends Weapon {
 
       if (hasINA) baseKey += 1;
       const finalKey = Math.min(baseKey, baseProgression.length - 1);
-      this.damage = baseProgression[finalKey];
+      this.baseDamage = baseProgression[finalKey];
     } else if (hasSUS) {
       // For non-monks, SUS provides a specific progression based on HD
       const susProgression = ['1d4', '1d6', '1d8', '1d10', '2d6', '2d8'];
@@ -451,36 +455,22 @@ export class UnarmedWeapon extends Weapon {
 
       if (hasINA) baseKey += 1;
       const finalKey = Math.min(baseKey, susProgression.length - 1);
-      this.damage = susProgression[finalKey];
+      this.baseDamage = susProgression[finalKey];
     } else {
       // Regular progression
-      this.damage = bestDamage;
+      this.baseDamage = bestDamage;
       if (hasINA) {
           // Improve damage by one step if they have INA
           const regularProgression = ['1d2', '1d3', '1d4', '1d6', '1d8', '2d6'];
-          const index = regularProgression.indexOf(this.damage);
+          const index = regularProgression.indexOf(this.baseDamage);
           if (index !== -1 && index < regularProgression.length - 1) {
-              this.damage = regularProgression[index + 1];
+              this.baseDamage = regularProgression[index + 1];
           }
       }
     }
 
-    if (isMonkOrSimilar || hasSUS) {
-      const sizeStep = (character.size.currentSize.bonus - character.size.score.bonus) / 4;
-
-      if (sizeStep > 0) {
-        for (let i = 0; i < sizeStep; i++) {
-          this.damage = getIncreasedDamage(this.damage);
-        }
-      } else if (sizeStep < 0) {
-        for (let i = 0; i < Math.abs(sizeStep); i++) {
-          this.damage = getDecreasedDamage(this.damage);
-        }
-      }
-    }
-
-    this.damageBonusFromWeapon = 0;
-    this.critical = 'x2';
+    const sizeStep = (character.size.currentSize.bonus - character.size.score.bonus) / 4;
+    this.damage = scaleWeaponDamage(this.baseDamage, sizeStep);
   }
 
   private compareDamage(dmg1: string, dmg2: string): number {
@@ -493,7 +483,10 @@ export class UnarmedWeapon extends Weapon {
   }
 }
 
-function getIncreasedDamage(damage: string): string {
+export function getIncreasedDamage(damage: string): string {
+  if (damage.includes('/')) {
+    return damage.split('/').map(part => getIncreasedDamage(part.trim())).join('/');
+  }
   switch (damage) {
     case '1d2': return '1d3';
     case '1d3': return '1d4';
@@ -501,6 +494,8 @@ function getIncreasedDamage(damage: string): string {
     case '1d6': return '1d8';
     case '1d8': return '2d6';
     case '1d10': return '2d8';
+    case '1d12': return '3d6';
+    case '2d4': return '2d6';
     case '2d6': return '3d6';
     case '2d8': return '3d8';
     case '2d10': return '4d8';
@@ -516,14 +511,22 @@ function getIncreasedDamage(damage: string): string {
   }
 }
 
-function getDecreasedDamage(damage: string): string {
+export function getDecreasedDamage(damage: string): string {
+  if (damage.includes('/')) {
+    return damage.split('/').map(part => getDecreasedDamage(part.trim())).join('/');
+  }
   switch (damage) {
+    case '1d2': return '1';
     case '1d3': return '1d2';
     case '1d4': return '1d3';
     case '1d6': return '1d4';
     case '1d8': return '1d6';
+    case '1d10': return '1d8';
+    case '1d12': return '1d10';
+    case '2d4': return '1d6';
     case '2d6': return '1d8';
     case '2d8': return '1d10';
+    case '2d10': return '2d8';
     case '3d6': return '2d6';
     case '3d8': return '2d8';
     case '4d8': return '2d10';
@@ -536,4 +539,18 @@ function getDecreasedDamage(damage: string): string {
     case '12d8': return '8d8';
     default: return damage;
   }
+}
+
+export function scaleWeaponDamage(baseDamage: string, sizeStep: number): string {
+  let current = baseDamage;
+  if (sizeStep > 0) {
+    for (let i = 0; i < sizeStep; i++) {
+      current = getIncreasedDamage(current);
+    }
+  } else if (sizeStep < 0) {
+    for (let i = 0; i < Math.abs(sizeStep); i++) {
+      current = getDecreasedDamage(current);
+    }
+  }
+  return current;
 }

@@ -73,12 +73,14 @@ describe('Armor Class Expansion Tests (Touch and Flat-Footed)', () => {
         // Wait! Let's check Dein's `currentArmorClass` from the test.
         // The test run said: `expect(char.ac.currentArmorClass).toBe(23)` passed!
         // So Dein's current AC is indeed 23.
-        // If current AC is 23, and Dex is +1, then Touch AC is 11 without Shield Ward.
-        // With Shield Ward (Dein has Shield Ward and Shield Specialization +1), Touch AC is 12 (10 base + 1 Dex + 1 Shield Ward).
-        // And Flat-footed AC is 22 (23 - 1 Dex).
+        // If current AC is 23, and Dex is +1, then Touch AC is 11 without Shield Ward and Deflective Armor.
+        // With Shield Ward (Dein has Shield Ward and Shield Specialization +1), Touch AC gains +1 (Shield).
+        // With Deflective Armor (Dein has Deflective Armor and Full Plate +2 (+10) + Heavy Armor Optimization (+1)), Touch AC gains +11 (Armor).
+        // Touch AC is 23 (10 base + 1 Dex + 1 Shield Ward + 11 Deflective Armor).
+        // Flat-footed AC is 22 (23 - 1 Dex).
         // Let's assert these:
         expect(char.ac.currentArmorClass).toBe(23);
-        expect(char.ac.touchArmorClass).toBe(12);
+        expect(char.ac.touchArmorClass).toBe(23);
         expect(char.ac.flatFootedArmorClass).toBe(22);
     });
 

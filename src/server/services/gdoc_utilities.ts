@@ -184,9 +184,15 @@ export function RemoveLineFromSection(docId: string, sectionName: string, lineTo
         }
 
         // Find the specific line to remove within the section
+        const trimmedLine = lineToRemove.trim();
+        const baseName = trimmedLine.replace(/\s+[+-]\d+$/, '').trim();
+        const escapedBase = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const statusPattern = sectionName === 'Statuses' ? new RegExp(`^\\s*${escapedBase}(\\s+[+-]\\d+)?\\s*:`, 'i') : null;
+
         let lineToRemoveIndex = -1;
         for (let i = sectionStartIndex + 1; i < sectionEndIndex; i++) {
-            if (paragraphs[i].getText().includes(lineToRemove)) {
+            const pText = paragraphs[i].getText();
+            if ((statusPattern && statusPattern.test(pText)) || pText.includes(lineToRemove) || pText.trim() === trimmedLine) {
                 lineToRemoveIndex = i;
                 break;
             }
