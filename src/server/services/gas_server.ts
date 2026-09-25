@@ -126,12 +126,16 @@ function PostRollToRolz(room: string, text: string, from: string): string {
     // Convert rollable dice commands (e.g. #d20+5 #Str Check) to the inline format expected by Rolz API (e.g. Str Check [d20+5])
     let apiText = text;
     if (text.startsWith('#')) {
-        const parts = text.split(' ').map(p => p.trim()).filter(Boolean);
-        if (parts.length > 0) {
-            const diceExpr = parts[0].substring(1); // remove leading '#'
-            const labelParts = parts.slice(1).map(p => p.startsWith('#') ? p.substring(1) : p);
-            const label = labelParts.join(' ');
-            apiText = label ? `${label} [${diceExpr}]` : `[${diceExpr}]`;
+        if (text.includes('[') && text.includes(']')) {
+            apiText = text.replace(/^#\s*/, '');
+        } else {
+            const parts = text.split(' ').map(p => p.trim()).filter(Boolean);
+            if (parts.length > 0) {
+                const diceExpr = parts[0].substring(1); // remove leading '#'
+                const labelParts = parts.slice(1).map(p => p.startsWith('#') ? p.substring(1) : p);
+                const label = labelParts.join(' ');
+                apiText = label ? `${label} [${diceExpr}]` : `[${diceExpr}]`;
+            }
         }
     }
 

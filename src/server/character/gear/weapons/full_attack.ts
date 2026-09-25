@@ -1,6 +1,7 @@
 import { ICharacter } from '@server/character/icharacter';
 import { Weapon } from './weapons';
 import { ClassesData } from '../../../classes_data/_classes_general_data';
+import { BuildRolzDamageMessage } from './weapon_extra_damage';
 
 export interface FullAttackEntry {
   atkValue: string;
@@ -60,6 +61,13 @@ function formatDmgValue(dice: string, bonus: number): string {
   return `${dice} ${sign} ${Math.abs(bonus)}`;
 }
 
+function getFullDmgValue(weapon: Weapon, baseDmg: string): string {
+  if (weapon.additionalDamageFormula) {
+    return `${baseDmg} ${weapon.additionalDamageFormula}`;
+  }
+  return baseDmg;
+}
+
 /**
  * Calculates the normal full attack sequence (no TWF).
  */
@@ -94,7 +102,8 @@ export function calculateNormalFullAttack(weapon: Weapon, character: ICharacter)
   const weaponBaseAtk = weapon.attackBonus.bonus;
   const weaponDmgBonus = weapon.damageBonus.bonus;
   const dice = (weapon.damage || '1d3').split(' ')[0];
-  const dmgRoll = `#${formatDmgValue(dice, weaponDmgBonus).replace(/\s+/g, '').replace(/[+-]0$/, '')} #${weapon.name} Damage`;
+  const fullDmgValue = getFullDmgValue(weapon, formatDmgValue(dice, weaponDmgBonus));
+  const dmgRoll = weapon.rolzDmgRollMessage || BuildRolzDamageMessage(weapon.name, dice, weaponDmgBonus, weapon.additionalDamages || []);
 
   // 1. Primary attack and extra attacks (Flurry, Rapid Shot, Haste)
   // All extra attacks are made at the highest attack bonus.
@@ -103,7 +112,7 @@ export function calculateNormalFullAttack(weapon: Weapon, character: ICharacter)
   // We add the primary attack
   attacks.push({
     atkValue: formatAtkBonus(highestBonus),
-    dmgValue: formatDmgValue(dice, weaponDmgBonus),
+    dmgValue: fullDmgValue,
     tooltip: `${highestBonus}: ${weaponBaseAtk} normal` +
       (flurrying && flurryPenalty !== 0 ? ` - ${Math.abs(flurryPenalty)} flurry penalty` : '') +
       (!flurrying && hasRapidShot ? ' - 2 Rapid Shot penalty' : ''),
@@ -115,7 +124,7 @@ export function calculateNormalFullAttack(weapon: Weapon, character: ICharacter)
   for (let i = 0; i < flurryExtraAttacks; i++) {
     attacks.push({
       atkValue: formatAtkBonus(highestBonus),
-      dmgValue: formatDmgValue(dice, weaponDmgBonus),
+      dmgValue: fullDmgValue,
       tooltip: `${highestBonus}: Flurry extra attack`,
       rolzAtkRollMessage: `#d20${highestBonus >= 0 ? '+' : ''}${highestBonus} #${weapon.name} Flurry Attack`,
       rolzDmgRollMessage: dmgRoll
@@ -126,7 +135,7 @@ export function calculateNormalFullAttack(weapon: Weapon, character: ICharacter)
   if (hasRapidShot) {
     attacks.push({
       atkValue: formatAtkBonus(highestBonus),
-      dmgValue: formatDmgValue(dice, weaponDmgBonus),
+      dmgValue: fullDmgValue,
       tooltip: `${highestBonus}: Rapid Shot extra attack`,
       rolzAtkRollMessage: `#d20${highestBonus >= 0 ? '+' : ''}${highestBonus} #${weapon.name} Rapid Shot Attack`,
       rolzDmgRollMessage: dmgRoll
@@ -137,7 +146,7 @@ export function calculateNormalFullAttack(weapon: Weapon, character: ICharacter)
   if (hasHaste) {
     attacks.push({
       atkValue: formatAtkBonus(highestBonus),
-      dmgValue: formatDmgValue(dice, weaponDmgBonus),
+      dmgValue: fullDmgValue,
       tooltip: `${highestBonus}: Haste extra attack`,
       rolzAtkRollMessage: `#d20${highestBonus >= 0 ? '+' : ''}${highestBonus} #${weapon.name} Haste Attack`,
       rolzDmgRollMessage: dmgRoll
@@ -150,7 +159,7 @@ export function calculateNormalFullAttack(weapon: Weapon, character: ICharacter)
     const bonus = highestBonus + penalty;
     attacks.push({
       atkValue: formatAtkBonus(bonus),
-      dmgValue: formatDmgValue(dice, weaponDmgBonus),
+      dmgValue: fullDmgValue,
       tooltip: `${bonus}: Iterative attack (${i + 1}st) with ${penalty} penalty`,
       rolzAtkRollMessage: `#d20${bonus >= 0 ? '+' : ''}${bonus} #${weapon.name} Attack (${i + 1}st)`,
       rolzDmgRollMessage: dmgRoll
@@ -194,12 +203,13 @@ export function calculateTwfFullAttack(
     const mainDmgBonus = mainWeapon.damageBonus.bonus;
     const mainDice = (mainWeapon.damage || '1d3').split(' ')[0];
     const mainHighestBonus = mainBaseAtk + combo.mainPenalty;
-    const mainDmgRoll = `#${formatDmgValue(mainDice, mainDmgBonus).replace(/\s+/g, '').replace(/[+-]0$/, '')} #${mainWeapon.name} Damage`;
+    const mainFullDmgVal = getFullDmgValue(mainWeapon, formatDmgValue(mainDice, mainDmgBonus));
+    const mainDmgRoll = mainWeapon.rolzDmgRollMessage || BuildRolzDamageMessage(mainWeapon.name, mainDice, mainDmgBonus, mainWeapon.additionalDamages || []);
 
     // MH 1st attack
     mainAttacks.push({
       atkValue: formatAtkBonus(mainHighestBonus),
-      dmgValue: formatDmgValue(mainDice, mainDmgBonus),
+      dmgValue: mainFullDmgVal,
       tooltip: `${mainHighestBonus}: ${mainBaseAtk} normal + ${combo.mainPenalty} TWF penalty`,
       rolzAtkRollMessage: `#d20${mainHighestBonus >= 0 ? '+' : ''}${mainHighestBonus} #${mainWeapon.name} Attack (MH)`,
       rolzDmgRollMessage: mainDmgRoll
@@ -209,7 +219,7 @@ export function calculateTwfFullAttack(
     if (hasHaste) {
       mainAttacks.push({
         atkValue: formatAtkBonus(mainHighestBonus),
-        dmgValue: formatDmgValue(mainDice, mainDmgBonus),
+        dmgValue: mainFullDmgVal,
         tooltip: `${mainHighestBonus}: Haste extra attack (main hand)`,
         rolzAtkRollMessage: `#d20${mainHighestBonus >= 0 ? '+' : ''}${mainHighestBonus} #${mainWeapon.name} Haste Attack (MH)`,
         rolzDmgRollMessage: mainDmgRoll
@@ -222,7 +232,7 @@ export function calculateTwfFullAttack(
       const bonus = mainHighestBonus + penalty;
       mainAttacks.push({
         atkValue: formatAtkBonus(bonus),
-        dmgValue: formatDmgValue(mainDice, mainDmgBonus),
+        dmgValue: mainFullDmgVal,
         tooltip: `${bonus}: MH Iterative (${i + 1}st) with ${penalty} penalty`,
         rolzAtkRollMessage: `#d20${bonus >= 0 ? '+' : ''}${bonus} #${mainWeapon.name} Attack (MH ${i + 1}st)`,
         rolzDmgRollMessage: mainDmgRoll
@@ -242,12 +252,13 @@ export function calculateTwfFullAttack(
     const offBaseAtk = offWeapon.attackBonus.bonus;
     const offDice = (offWeapon.damage || '1d3').split(' ')[0];
     const offHighestBonus = offBaseAtk + combo.offPenalty;
-    const offDmgRoll = `#${formatDmgValue(offDice, combo.offDamageBonus).replace(/\s+/g, '').replace(/[+-]0$/, '')} #${offWeapon.name} Damage (OH)`;
+    const offFullDmgVal = getFullDmgValue(offWeapon, formatDmgValue(offDice, combo.offDamageBonus));
+    const offDmgRoll = combo.rolzDmgRollMessage || BuildRolzDamageMessage(`${offWeapon.name} (OH)`, offDice, combo.offDamageBonus, offWeapon.additionalDamages || []);
 
     // OH 1st attack
     offAttacks.push({
       atkValue: formatAtkBonus(offHighestBonus),
-      dmgValue: formatDmgValue(offDice, combo.offDamageBonus),
+      dmgValue: offFullDmgVal,
       tooltip: `${offHighestBonus}: ${offBaseAtk} normal + ${combo.offPenalty} TWF penalty`,
       rolzAtkRollMessage: `#d20${offHighestBonus >= 0 ? '+' : ''}${offHighestBonus} #${offWeapon.name} Attack (OH)`,
       rolzDmgRollMessage: offDmgRoll
@@ -258,7 +269,7 @@ export function calculateTwfFullAttack(
       const bonus = offHighestBonus - 5;
       offAttacks.push({
         atkValue: formatAtkBonus(bonus),
-        dmgValue: formatDmgValue(offDice, combo.offDamageBonus),
+        dmgValue: offFullDmgVal,
         tooltip: `${bonus}: OH second attack (Improved TWF)`,
         rolzAtkRollMessage: `#d20${bonus >= 0 ? '+' : ''}${bonus} #${offWeapon.name} Attack (OH 2nd)`,
         rolzDmgRollMessage: offDmgRoll
@@ -270,7 +281,7 @@ export function calculateTwfFullAttack(
       const bonus = offHighestBonus - 10;
       offAttacks.push({
         atkValue: formatAtkBonus(bonus),
-        dmgValue: formatDmgValue(offDice, combo.offDamageBonus),
+        dmgValue: offFullDmgVal,
         tooltip: `${bonus}: OH third attack (Greater TWF)`,
         rolzAtkRollMessage: `#d20${bonus >= 0 ? '+' : ''}${bonus} #${offWeapon.name} Attack (OH 3rd)`,
         rolzDmgRollMessage: offDmgRoll

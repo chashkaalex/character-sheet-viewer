@@ -204,7 +204,7 @@ describe('Local Character Parsing', () => {
         expect(shortSword!.attackBonus.ability.name).toBe('Dex'); // Strength modifier is +1, Dexterity is +3.
         expect(shortSword!.attackBonus.bonus).toBe(13); // 9 BAB + 3 Dex from Finesse + 1 enhancement = 13
         expect(shortSword!.damage).toBe('1d6');
-        expect(shortSword!.statsString).toBe('Attack: 13 Damage: 1d6 + 4 Crit. 19-20X2'); // Total bonus: 1 (Str) + 2 (Weapon bonus) + 1 (enhancement) = +4.
+        expect(shortSword!.statsString).toBe('Attack: 13 Damage: 1d6 + 4 + 2 poison Crit. 19-20X2'); // Total bonus: 1 (Str) + 2 (Weapon bonus) + 1 (enhancement) = +4.
 
         const crossbow = bess.weapons.find(w => w.name.includes('Light Coil Crossbow'));
         expect(crossbow).toBeDefined();
@@ -342,14 +342,14 @@ describe('Local Character Parsing', () => {
         const waraxe = char.weapons.find(w => w.name.includes('Frost Waraxe'));
         expect(waraxe).toBeDefined();
         expect(waraxe!.damage).toBe('1d10');
-        expect(waraxe!.statsString).toBe('Attack: 14 Damage: 1d10 + 9 Crit. X3');
+        expect(waraxe!.statsString).toBe('Attack: 14 Damage: 1d10 + 9 + 1d6 cold Crit. X3');
 
         // Verify composite longbow
         const bow = char.weapons.find(w => w.baseName === 'Composite Longbow');
         expect(bow).toBeDefined();
         expect(bow!.attackBonus.bonus).toBe(9); // BAB 9 - 2 (Tower Shield) + 1 Dex + 1 enhancement = 9
         expect(bow!.damage).toBe('1d8');
-        expect(bow!.statsString).toBe('Attack: 9 Damage: 1d8 + 6 Crit. X3');
+        expect(bow!.statsString).toBe('Attack: 9 Damage: 1d8 + 6 + 1d6 fire Crit. X3');
 
         // Verify dagger
         const dagger = char.weapons.find(w => w.baseName === 'Dagger');

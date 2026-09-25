@@ -58,13 +58,13 @@ describe('Tower Shield Attack Penalty Tests', () => {
             const waraxe = char.weapons.find(w => w.name.includes('Frost Waraxe'));
             expect(waraxe).toBeDefined();
             expect(waraxe!.attackBonus.bonus).toBe(14);
-            expect(waraxe!.statsString).toBe('Attack: 14 Damage: 1d10 + 9 Crit. X3');
+            expect(waraxe!.statsString).toBe('Attack: 14 Damage: 1d10 + 9 + 1d6 cold Crit. X3');
 
             // Composite Longbow attack bonus: BAB (7) + Dex (1) + Enhancement (1) = 9
             const bow = char.weapons.find(w => w.baseName === 'Composite Longbow');
             expect(bow).toBeDefined();
             expect(bow!.attackBonus.bonus).toBe(9);
-            expect(bow!.statsString).toBe('Attack: 9 Damage: 1d8 + 6 Crit. X3');
+            expect(bow!.statsString).toBe('Attack: 9 Damage: 1d8 + 6 + 1d6 fire Crit. X3');
 
             // Dagger attack bonus: BAB (7) + Str (6) = 13
             const dagger = char.weapons.find(w => w.baseName === 'Dagger');

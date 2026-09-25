@@ -4,6 +4,7 @@ import { CharacterClass } from '@server/character/properties/race_and_classes';
 import { ClassesData } from '../../../classes_data/_classes_general_data';
 import { Item } from '@server/character/gear/items/items';
 import { EffectData } from '@server/character/state/effects';
+import { AdditionalDamageComponent, ParseWeaponExtraDamage, BuildRolzDamageMessage } from './weapon_extra_damage';
 
 export interface WeaponData {
   range: 'Melee' | 'Ranged';
@@ -205,6 +206,10 @@ export class Weapon {
   public statsString: string = '';
   public featAttackBonus: ModifiableProperty = new ModifiableProperty(0);
   public featDamageBonus: ModifiableProperty = new ModifiableProperty(0);
+  public additionalDamages: AdditionalDamageComponent[] = [];
+  public additionalDamageFormula: string = '';
+  public additionalDamageWarning: string | null = null;
+  public rolzDmgRollMessage: string = '';
 
   constructor(name: string, description: string, weight: number, character: ICharacter) {
     // Reconstruct the full weapon name if notes are in description parentheses
@@ -286,6 +291,17 @@ export class Weapon {
       this.enhancement = parseInt(enhancementMatch[1]);
     }
 
+    const extraResult = ParseWeaponExtraDamage(fullName, description);
+    this.additionalDamages = extraResult.additionalDamages;
+    this.additionalDamageFormula = extraResult.formulaString;
+    this.additionalDamageWarning = extraResult.warning;
+
+    if (this.additionalDamageWarning && character && character.parseWarnings) {
+      if (!character.parseWarnings.includes(this.additionalDamageWarning)) {
+        character.parseWarnings.push(this.additionalDamageWarning);
+      }
+    }
+
     this.parseDescription(description);
     this.calculateWeaponStats(character);
     this.calculateBonuses(character);
@@ -364,7 +380,10 @@ export class Weapon {
     const dice = (this.damage || '1d3').split(' ')[0];
     const dmgBonusSign = this.damageBonus.bonus >= 0 ? '+' : '-';
     const absoluteDmgBonus = Math.abs(this.damageBonus.bonus);
-    const damageDisplay = `${dice} ${dmgBonusSign} ${absoluteDmgBonus}`;
+    let damageDisplay = `${dice} ${dmgBonusSign} ${absoluteDmgBonus}`;
+    if (this.additionalDamageFormula) {
+      damageDisplay = `${damageDisplay} ${this.additionalDamageFormula}`;
+    }
 
     const crit = this.critical || 'x2';
     const rangeMatch = crit.match(/(\d+-\d+)/);
@@ -375,6 +394,8 @@ export class Weapon {
     this.atkValue = `${this.attackBonus.bonus}`;
     this.dmgValue = damageDisplay;
     this.critValue = range ? `${range}X${multiplier}` : `X${multiplier}`;
+
+    this.rolzDmgRollMessage = BuildRolzDamageMessage(this.name, dice, this.damageBonus.bonus, this.additionalDamages);
 
     this.atkPartString = `Attack: ${this.atkValue}`;
     this.dmgPartString = `Damage: ${this.dmgValue}`;

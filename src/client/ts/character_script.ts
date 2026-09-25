@@ -380,14 +380,49 @@ export function showTooltip(element) {
 
             try {
               const res = JSON.parse(responseStr);
-              const item = res.message?.content?.items?.[0];
-              if (item) {
-                const resultVal = item.result;
-                const detailsVal = item.details || '';
-                const preVal = item.pre || '';
-                const commentVal = item.comment || '';
-                const label = preVal || (commentVal ? `${commentVal}: ` : '');
-                alert(`Roll Result: ${label}${resultVal} ${detailsVal}`);
+              const items = res.message?.content?.items;
+              if (items && items.length > 0) {
+                if (items.length === 1) {
+                  const item = items[0];
+                  const resultVal = item.result;
+                  const detailsVal = item.details || '';
+                  const preVal = item.pre || '';
+                  const commentVal = item.comment || '';
+                  const label = preVal || (commentVal ? `${commentVal}: ` : '');
+                  alert(`Roll Result: ${label}${resultVal} ${detailsVal}`);
+                } else {
+                  let total = 0;
+                  const lines = items.map((it: any, idx: number) => {
+                    const val = parseInt(it.result);
+                    if (!isNaN(val)) total += val;
+
+                    let tag = '';
+                    const nextPre = items[idx + 1]?.pre || '';
+                    const currPost = it.post || '';
+                    const matchNext = nextPre.match(/\(([^)]+)\)/);
+                    const matchPost = currPost.match(/\(([^)]+)\)/);
+
+                    if (matchNext) {
+                      tag = matchNext[1];
+                    } else if (matchPost) {
+                      tag = matchPost[1];
+                    } else if (idx === 0) {
+                      tag = 'Physical';
+                    } else {
+                      tag = `Extra ${idx}`;
+                    }
+
+                    let detailsStr = '';
+                    if (it.details) {
+                      const trimmed = it.details.trim();
+                      detailsStr = trimmed.startsWith('(') && trimmed.endsWith(')') ? ` ${trimmed}` : ` (${trimmed})`;
+                    }
+                    return `• ${tag}: ${it.result}${detailsStr}`;
+                  });
+
+                  const title = (items[0]?.pre || '').split(':')[0]?.trim() || 'Damage Roll';
+                  alert(`🎲 ${title}\n────────────────────────\n${lines.join('\n')}\n────────────────────────\nTotal: ${total}`);
+                }
               } else {
                 alert(`API response did not contain a roll: ${responseStr}`);
               }

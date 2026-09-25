@@ -1,5 +1,6 @@
 import { ICharacter } from '@server/character/icharacter';
 import { Weapon } from './weapons';
+import { BuildRolzDamageMessage } from './weapon_extra_damage';
 
 /**
  * TWF penalty data for a specific (main-hand, off-hand) weapon combination.
@@ -20,6 +21,7 @@ export interface TwfCombination {
   mainAttackString: string;
   offAttackString: string;
   offDamageString: string;
+  rolzDmgRollMessage?: string;
 }
 
 /**
@@ -127,7 +129,11 @@ export function calculateTwf(character: ICharacter, weapons: Weapon[]): TwfData 
       const offDice = (off.weapon.damage || '1d3').split(' ')[0];
       const offDmgSign = offDamageBonus >= 0 ? '+' : '-';
       const offDmgAbs = Math.abs(offDamageBonus);
-      const offDmgValue = `${offDice} ${offDmgSign} ${offDmgAbs}`;
+      let offDmgValue = `${offDice} ${offDmgSign} ${offDmgAbs}`;
+      if (off.weapon.additionalDamageFormula) {
+        offDmgValue = `${offDmgValue} ${off.weapon.additionalDamageFormula}`;
+      }
+      const rolzDmgRollMessage = BuildRolzDamageMessage(`${off.weapon.name} (OH)`, offDice, offDamageBonus, off.weapon.additionalDamages || []);
 
       // Format tooltip strings
       const mainAttackString =
@@ -162,7 +168,8 @@ export function calculateTwf(character: ICharacter, weapons: Weapon[]): TwfData 
         offDmgValue,
         mainAttackString,
         offAttackString,
-        offDamageString
+        offDamageString,
+        rolzDmgRollMessage
       });
     }
   }

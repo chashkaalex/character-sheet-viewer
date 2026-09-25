@@ -331,7 +331,8 @@ function renderWeaponStats(
   atkTooltip: string, dmgTooltip: string,
   idPrefix: string,
   atkRolzRollMessage?: string,
-  dmgRolzRollMessage?: string
+  dmgRolzRollMessage?: string,
+  warningText?: string | null
 ) {
   statsElement.innerHTML = `
     <div class="weapon-stat-item">
@@ -341,6 +342,7 @@ function renderWeaponStats(
     <div class="weapon-stat-item">
       <label>Damage:</label>
       <span id="${idPrefix}DmgValue">${dmgValue}</span>
+      ${warningText ? `<span id="${idPrefix}WarningBadge" class="weapon-warning-badge" style="cursor:help; margin-left:4px;" title="${warningText}">⚠️</span>` : ''}
     </div>
     <div class="weapon-stat-item">
       <label>Crit:</label>
@@ -356,6 +358,9 @@ function renderWeaponStats(
 
   addTooltip(document.getElementById(`${idPrefix}AtkValue`), atkTooltip, atkRolzRollMessage);
   addTooltip(document.getElementById(`${idPrefix}DmgValue`), dmgTooltip, dmgRolzRollMessage);
+  if (warningText) {
+    addTooltip(document.getElementById(`${idPrefix}WarningBadge`), warningText);
+  }
 }
 
 /**
@@ -421,6 +426,7 @@ function updateWeaponStatsDisplay() {
             <div class="weapon-stat-item">
               <label>Damage:</label>
               <span id="mhDmgValue">${mainWeapon.dmgValue}</span>
+              ${mainWeapon.additionalDamageWarning ? `<span id="mhWarningBadge" class="weapon-warning-badge" style="cursor:help; margin-left:4px;" title="${mainWeapon.additionalDamageWarning}">⚠️</span>` : ''}
             </div>
             <div class="weapon-stat-item">
               <label>Crit:</label>
@@ -436,6 +442,7 @@ function updateWeaponStatsDisplay() {
             <div class="weapon-stat-item">
               <label>Damage:</label>
               <span id="ohDmgValue">${combo ? combo.offDmgValue : offWeapon.dmgValue}</span>
+              ${offWeapon.additionalDamageWarning ? `<span id="ohWarningBadge" class="weapon-warning-badge" style="cursor:help; margin-left:4px;" title="${offWeapon.additionalDamageWarning}">⚠️</span>` : ''}
             </div>
             <div class="weapon-stat-item">
               <label>Crit:</label>
@@ -454,12 +461,18 @@ function updateWeaponStatsDisplay() {
         addTooltip(document.getElementById(`mhAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
       });
       addTooltip(document.getElementById('mhDmgValue'), mainWeapon.damageBonus.string, mhSequence.attacks[0]?.rolzDmgRollMessage);
+      if (mainWeapon.additionalDamageWarning) {
+        addTooltip(document.getElementById('mhWarningBadge'), mainWeapon.additionalDamageWarning);
+      }
 
       // Apply tooltips for OH
       ohSequence.attacks.forEach((a: any, idx: number) => {
         addTooltip(document.getElementById(`ohAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
       });
       addTooltip(document.getElementById('ohDmgValue'), combo ? combo.offDamageString : offWeapon.damageBonus.string, ohSequence.attacks[0]?.rolzDmgRollMessage);
+      if (offWeapon.additionalDamageWarning) {
+        addTooltip(document.getElementById('ohWarningBadge'), offWeapon.additionalDamageWarning);
+      }
 
     } else {
       // Normal/Single Weapon Full Attack Display
@@ -474,6 +487,7 @@ function updateWeaponStatsDisplay() {
         <div class="weapon-stat-item">
           <label>Damage:</label>
           <span id="weaponDmgValue">${mainWeapon.dmgValue}</span>
+          ${mainWeapon.additionalDamageWarning ? `<span id="weaponWarningBadge" class="weapon-warning-badge" style="cursor:help; margin-left:4px;" title="${mainWeapon.additionalDamageWarning}">⚠️</span>` : ''}
         </div>
         <div class="weapon-stat-item">
           <label>Crit:</label>
@@ -489,6 +503,9 @@ function updateWeaponStatsDisplay() {
         addTooltip(document.getElementById(`normalAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
       });
       addTooltip(document.getElementById('weaponDmgValue'), mainWeapon.damageBonus.string, sequence.attacks[0]?.rolzDmgRollMessage);
+      if (mainWeapon.additionalDamageWarning) {
+        addTooltip(document.getElementById('weaponWarningBadge'), mainWeapon.additionalDamageWarning);
+      }
     }
   } else {
     // Single Attack Display (Normal / TWF separate)
@@ -506,7 +523,8 @@ function updateWeaponStatsDisplay() {
           combo.mainAttackString, mainWeapon.damageBonus.string,
           'weapon',
           `#d20${combo.mainAttackBonus >= 0 ? '+' : ''}${combo.mainAttackBonus} #${mainWeapon.name} Attack (MH)`,
-          mainWeapon.rolzDmgRollMessage
+          mainWeapon.rolzDmgRollMessage,
+          mainWeapon.additionalDamageWarning
         );
         if (offHandStats && offWeapon) {
           renderWeaponStats(
@@ -515,7 +533,8 @@ function updateWeaponStatsDisplay() {
             combo.offAttackString, combo.offDamageString,
             'offHand',
             `#d20${combo.offAttackBonus >= 0 ? '+' : ''}${combo.offAttackBonus} #${offWeapon.name} Attack (OH)`,
-            `#${combo.offDmgValue.replace(/\s+/g, '').replace(/[+-]0$/, '')} #${offWeapon.name} Damage (OH)`
+            combo.rolzDmgRollMessage || offWeapon.rolzDmgRollMessage,
+            offWeapon.additionalDamageWarning
           );
         }
       }
@@ -527,7 +546,8 @@ function updateWeaponStatsDisplay() {
         mainWeapon.attackBonus.string, mainWeapon.damageBonus.string,
         'weapon',
         mainWeapon.rolzAtkRollMessage,
-        mainWeapon.rolzDmgRollMessage
+        mainWeapon.rolzDmgRollMessage,
+        mainWeapon.additionalDamageWarning
       );
       if (offHandStats) offHandStats.innerHTML = '-';
     }

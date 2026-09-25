@@ -188,7 +188,10 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
         dmgValue: weapon.dmgValue,
         critValue: weapon.critValue,
         rolzAtkRollMessage: `#d20${weapon.attackBonus ? (weapon.attackBonus.bonus >= 0 ? '+' : '') + weapon.attackBonus.bonus : ''} #${weapon.name} Attack`,
-        rolzDmgRollMessage: `#${weapon.dmgValue.replace(/\s+/g, '').replace(/[+-]0$/, '')} #${weapon.name} Damage`,
+        rolzDmgRollMessage: weapon.rolzDmgRollMessage || `#${weapon.dmgValue.replace(/\s+/g, '').replace(/[+-]0$/, '')} #${weapon.name} Damage`,
+        additionalDamages: weapon.additionalDamages || [],
+        additionalDamageFormula: weapon.additionalDamageFormula || '',
+        additionalDamageWarning: weapon.additionalDamageWarning || null,
         fullAttack: {
           normal: normalFull,
           twfMain: {} as Record<number, any>,
