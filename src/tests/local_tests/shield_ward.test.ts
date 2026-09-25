@@ -218,7 +218,7 @@ describe('Shield Ward Feat', () => {
         // Check special attacks receive the +6 shield bonus
         expect(char.specialAttacks['Bull rush'].currentScore).toBe(6);
         expect(char.specialAttacks['Disarm'].currentScore).toBe(6);
-        expect((char.specialAttacks['Grapple'] as SpecialAttackBonus).bonus).toBe(1 + 3 + 0 + 6); // BAB(1) + Str(3) + Size(0) + Shield(6) = 10
+        expect((char.specialAttacks['Grapple'] as SpecialAttackBonus).bonus).toBe(1 - 2 + 3 + 0 + 6); // BAB(1 - 2 Tower Shield) + Str(3) + Size(0) + Shield(6) = 8
         expect(char.specialAttacks['Overrun'].currentScore).toBe(6);
         expect((char.specialAttacks['Trip'] as SpecialAttackBonus).bonus).toBe(3 + 0 + 6); // Str(3) + Size(0) + Shield(6) = 9
     });

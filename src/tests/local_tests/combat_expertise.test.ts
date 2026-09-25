@@ -41,12 +41,12 @@ describe('Combat Expertise Local Integration Tests', () => {
         expect(expertiseMeta.maxNumber).toBe(5); // Math.min(5, Dein's BAB=9) = 5
         expect(expertiseMeta.label).toBe('Penalty value:');
 
-        // Check initial stats
-        expect(char.bab.currentScore).toBe(9);
+        // Check initial stats (Dein has Tower Shield equipped: -2 to BAB and attacks)
+        expect(char.bab.currentScore).toBe(7); // 9 base - 2 Tower Shield = 7
         expect(char.ac.currentArmorClass).toBe(23);
         const waraxe = char.weapons.find(w => w.name.includes('Waraxe'));
         expect(waraxe).toBeDefined();
-        expect(waraxe!.attackBonus.bonus).toBe(16);
+        expect(waraxe!.attackBonus.bonus).toBe(14); // 16 - 2 Tower Shield = 14
 
         // 2. Trigger OnUseNumberAction with Combat Expertise value of 3
         const result = OnUseNumberAction(TEMP_DEIN_PATH, 'Combat Expertise', 3);
@@ -66,15 +66,15 @@ describe('Combat Expertise Local Integration Tests', () => {
         expect(updatedChar instanceof CharacterError).toBe(false);
         if (updatedChar instanceof CharacterError) return;
 
-        // BAB should be reduced by 3 (9 - 3 = 6)
-        expect(updatedChar.bab.currentScore).toBe(6);
+        // BAB should be reduced by 3 (7 - 3 = 4)
+        expect(updatedChar.bab.currentScore).toBe(4);
 
         // AC should increase by +3 (23 + 3 = 26)
         expect(updatedChar.ac.currentArmorClass).toBe(26);
 
-        // Attack bonus of weapon should decrease by 3 (16 - 3 = 13)
+        // Attack bonus of weapon should decrease by 3 (14 - 3 = 11)
         const updatedWaraxe = updatedChar.weapons.find(w => w.name.includes('Waraxe'));
-        expect(updatedWaraxe!.attackBonus.bonus).toBe(13);
+        expect(updatedWaraxe!.attackBonus.bonus).toBe(11);
 
         // 4. Triggering with value exceeding BAB or limit of 5 should fail
         const failOverLimit = OnUseNumberAction(TEMP_DEIN_PATH, 'Combat Expertise', 6);

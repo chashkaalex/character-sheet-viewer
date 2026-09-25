@@ -3,11 +3,11 @@ import * as path from 'path';
 
 // Mock browser globals for testing client-side scripts under Node
 (global as any).window = {
-  addEventListener: () => {},
-  document: {
-    addEventListener: () => {},
-    getElementById: () => null
-  }
+    addEventListener: () => { },
+    document: {
+        addEventListener: () => { },
+        getElementById: () => null
+    }
 };
 (global as any).document = (global as any).window.document;
 

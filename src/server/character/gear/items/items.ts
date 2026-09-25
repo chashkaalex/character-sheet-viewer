@@ -348,6 +348,7 @@ export interface ArmorData {
   type: 'Light' | 'Medium' | 'Heavy' | 'Shield';
   acBonus: number;
   acp: number;
+  attackPenalty?: number;
 }
 
 export const ArmorsData = new Map<string, ArmorData>();
@@ -366,7 +367,7 @@ ArmorsData.set('Full Plate', { type: 'Heavy', acBonus: 8, acp: -6 });
 ArmorsData.set('Buckler', { type: 'Shield', acBonus: 1, acp: -1 });
 ArmorsData.set('Light Shield', { type: 'Shield', acBonus: 1, acp: -1 });
 ArmorsData.set('Heavy Shield', { type: 'Shield', acBonus: 2, acp: -2 });
-ArmorsData.set('Tower Shield', { type: 'Shield', acBonus: 4, acp: -10 });
+ArmorsData.set('Tower Shield', { type: 'Shield', acBonus: 4, acp: -10, attackPenalty: -2 });
 
 export function FindArmorBaseName(fullName: string): string | null {
   if (ArmorsData.has(fullName)) return fullName;
@@ -387,6 +388,7 @@ export function IsAnArmor(name: string): boolean {
 export class Armor extends Item {
   public armorType: 'Light' | 'Medium' | 'Heavy' | 'Shield';
   public acpValue: number;
+  public attackPenalty: number = 0;
 
   constructor(name: string, amount = 1, description = '') {
     super(name, amount, description);
@@ -396,6 +398,9 @@ export class Armor extends Item {
       const data = ArmorsData.get(baseName)!;
       this.armorType = data.type;
       this.acpValue = data.acp;
+      if (data.attackPenalty) {
+        this.attackPenalty = data.attackPenalty;
+      }
     } else {
       this.armorType = 'Medium';
       this.acpValue = 0;
@@ -406,6 +411,10 @@ export class Armor extends Item {
       if (acpMatch) {
         this.acpValue = parseInt(acpMatch[1]);
       }
+      const atkMatch = this.description.match(/(-?\d+)\s*atk/i);
+      if (atkMatch) {
+        this.attackPenalty = parseInt(atkMatch[1]);
+      }
     }
 
     if (this.acpValue !== 0) {
@@ -414,6 +423,15 @@ export class Armor extends Item {
         property: 'acp',
         modifierType: 'Generic',
         value: this.acpValue
+      });
+    }
+
+    if (this.attackPenalty !== 0) {
+      this.effects.push({
+        status: this.name,
+        property: 'bab',
+        modifierType: 'Generic',
+        value: this.attackPenalty
       });
     }
   }

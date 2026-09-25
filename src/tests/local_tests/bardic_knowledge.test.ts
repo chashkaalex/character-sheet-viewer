@@ -3,9 +3,9 @@ import * as path from 'path';
 
 // Mock browser globals for testing client-side scripts under Node
 (global as any).window = {
-  addEventListener: () => {},
+  addEventListener: () => { },
   document: {
-    addEventListener: () => {},
+    addEventListener: () => { },
     getElementById: () => null
   }
 };

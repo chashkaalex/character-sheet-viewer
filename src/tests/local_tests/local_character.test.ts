@@ -330,45 +330,45 @@ describe('Local Character Parsing', () => {
         expect(char.skills.find(s => s.name === 'Climb')!.bonus).toBe(-3);         // Str 6 + 1 rank - 10 ACP = -3
         expect(char.skills.find(s => s.name === 'Ride')!.bonus).toBe(2);           // Dex 1 + 11 rank - 10 ACP = 2
 
-        // Weapons — Dein is a Fighter/Monk dwarf with Str focus
+        // Weapons — Dein is a Fighter/Monk dwarf with Str focus and a Tower Shield equipped (-2 attack penalty)
         const unarmed = char.weapons.find(w => w.baseName === 'Unarmed');
         expect(unarmed).toBeDefined();
         // Monk 2 = 1d6 unarmed damage
         expect(unarmed!.damage).toBe('1d6');
-        expect(unarmed!.attackBonus.bonus).toBe(15);
-        expect(unarmed!.statsString).toBe('Attack: 15 Damage: 1d6 + 6 Crit. X2');
+        expect(unarmed!.attackBonus.bonus).toBe(13); // BAB 9 - 2 (Tower Shield) + 6 Str = 13
+        expect(unarmed!.statsString).toBe('Attack: 13 Damage: 1d6 + 6 Crit. X2');
 
         // Verify Frost Waraxe +1 (Dwarvencraft)
         const waraxe = char.weapons.find(w => w.name.includes('Frost Waraxe'));
         expect(waraxe).toBeDefined();
         expect(waraxe!.damage).toBe('1d10');
-        expect(waraxe!.statsString).toBe('Attack: 16 Damage: 1d10 + 9 Crit. X3');
+        expect(waraxe!.statsString).toBe('Attack: 14 Damage: 1d10 + 9 Crit. X3');
 
         // Verify composite longbow
         const bow = char.weapons.find(w => w.baseName === 'Composite Longbow');
         expect(bow).toBeDefined();
-        expect(bow!.attackBonus.bonus).toBe(11);
+        expect(bow!.attackBonus.bonus).toBe(9); // BAB 9 - 2 (Tower Shield) + 1 Dex + 1 enhancement = 9
         expect(bow!.damage).toBe('1d8');
-        expect(bow!.statsString).toBe('Attack: 11 Damage: 1d8 + 6 Crit. X3');
+        expect(bow!.statsString).toBe('Attack: 9 Damage: 1d8 + 6 Crit. X3');
 
         // Verify dagger
         const dagger = char.weapons.find(w => w.baseName === 'Dagger');
         expect(dagger).toBeDefined();
-        expect(dagger!.attackBonus.bonus).toBe(15);
+        expect(dagger!.attackBonus.bonus).toBe(13); // BAB 9 - 2 (Tower Shield) + 6 Str = 13
         expect(dagger!.damage).toBe('1d4');
-        expect(dagger!.statsString).toBe('Attack: 15 Damage: 1d4 + 6 Crit. 19-20X2');
+        expect(dagger!.statsString).toBe('Attack: 13 Damage: 1d4 + 6 Crit. 19-20X2');
 
         // Verify Heavy mace +2
         const heavyMace = char.weapons.find(w => w.name.includes('Heavy mace'));
         expect(heavyMace).toBeDefined();
         expect(heavyMace!.damage).toBe('1d8');
-        expect(heavyMace!.statsString).toBe('Attack: 17 Damage: 1d8 + 8 Crit. X2');
+        expect(heavyMace!.statsString).toBe('Attack: 15 Damage: 1d8 + 8 Crit. X2');
 
         // Verify Light Purple Mournlode Mace (Magic+1)
         const lightMace = char.weapons.find(w => w.name.includes('Light Purple Mournlode Mace'));
         expect(lightMace).toBeDefined();
         expect(lightMace!.damage).toBe('1d6');
-        expect(lightMace!.statsString).toBe('Attack: 16 Damage: 1d6 + 7 Crit. X2');
+        expect(lightMace!.statsString).toBe('Attack: 14 Damage: 1d6 + 7 Crit. X2');
 
         // No spellcasting for a pure Fighter/Monk
         expect(char.spellCasting.classSpellCastingData.size).toBe(0);
