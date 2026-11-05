@@ -179,6 +179,21 @@ export const ActionsData: Record<string, ActionData> = {
         }
       }
     ]
+  },
+  'Greater Invisibility (Whisperleaf Striders)': {
+    statusName: 'Invisible',
+    calculateDuration: (_character) => 7
+  },
+  'Chameleon Power (Hide +10)': {
+    statusName: 'Chameleon Power',
+    calculateDuration: (_character) => -1,
+    effects: [
+      { status: 'Chameleon Power', property: 'Hide', modifierType: 'Competence', value: 10 }
+    ]
+  },
+  'Chameleon Power (Disguise Self)': {
+    statusName: 'Disguise Self',
+    calculateDuration: (_character) => 600
   }
 };
 

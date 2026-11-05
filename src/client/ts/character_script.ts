@@ -359,10 +359,12 @@ export function showTooltip(element) {
     divider.className = 'tooltip-divider';
     tooltip.appendChild(divider);
 
-    const rollBtn = document.createElement('button');
-    rollBtn.className = 'tooltip-roll-btn';
-
     if (characterRep && characterRep.rolzRoomId) {
+      const btnGroup = document.createElement('div');
+      btnGroup.className = 'tooltip-btn-group';
+
+      const rollBtn = document.createElement('button');
+      rollBtn.className = 'tooltip-roll-btn';
       rollBtn.innerHTML = `🎲 <span class="roll-expr">Roll to Rolz (${characterRep.rolzRoomId})</span>`;
       rollBtn.title = `Click to roll ${rollMessage} directly in room ${characterRep.rolzRoomId}`;
 
@@ -438,7 +440,27 @@ export function showTooltip(element) {
           })
           .PostRollToRolz(characterRep.rolzRoomId, rollMessage, characterRep.name);
       });
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'tooltip-roll-btn tooltip-copy-btn';
+      copyBtn.innerHTML = '📋 <span class="roll-expr">Copy</span>';
+      copyBtn.title = `Click to copy Rolz command (${rollMessage})`;
+
+      copyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(rollMessage).then(() => {
+          showToast(`Copied roll code: ${rollMessage}`);
+        }).catch(err => {
+          console.error('Could not copy text: ', err);
+        });
+      });
+
+      btnGroup.appendChild(rollBtn);
+      btnGroup.appendChild(copyBtn);
+      tooltip.appendChild(btnGroup);
     } else {
+      const rollBtn = document.createElement('button');
+      rollBtn.className = 'tooltip-roll-btn';
       rollBtn.innerHTML = `🎲 <span class="roll-expr">${rollMessage}</span>`;
       rollBtn.title = 'Click to copy Rolz command';
 
@@ -450,8 +472,8 @@ export function showTooltip(element) {
           console.error('Could not copy text: ', err);
         });
       });
+      tooltip.appendChild(rollBtn);
     }
-    tooltip.appendChild(rollBtn);
   }
 
   tooltip.classList.add('show');

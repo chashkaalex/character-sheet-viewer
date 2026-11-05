@@ -1,152 +1,297 @@
 Mortfinn aep Dessantein (Morty)
 “Block with your face!”
 
-(Elf Rogue 7/Shadowdancer 2/Beguiler 1/ Unseen Seer 3)                                                        
+(Elf Rogue 5/Shadowdancer 2/Beguiler 1/Unseen Seer 5)
 
-Init: +4; Senses: Listen +15, Spot +15; Darkvision 60’; 
-BAb: +9/+4; Grapple: +10; Hp: 32/52; Speed: 50 ft.
-Attack: +12 Unarmed (2d10 + 3/X2).
-Enlarged: +12 Unarmed (4d8 + 3/X2)
-Full Attack: +11/+11/+6 Unarmed (2d10 + 3/X2).
-AC: 28 (), Touch 25, Flat-footed 24
+Init: +8; Senses: Listen +22, Spot +22, Low-light vision, Darkvision 60';
+BAb: +7/+2; Grapple: +8; Hp: 62/62; Speed: 40 ft.
+Attack: +16 Deadly Precision Wingblade Elvencraft Thinblade +1 (1d8 + 2 + 1d6 sneak attack/18-20x3) or +16 Adamantine Masterwork Dagger (1d4 + 1/19-20x2) or +14 Masterwork Composite Longbow of Frost (+1 Str) (1d8 + 1 + 1d6 cold/x3).
+Full Attack: +16/+11 Deadly Precision Wingblade Elvencraft Thinblade +1 (1d8 + 2 + 1d6 sneak attack/18-20x3) or +14/+9 Masterwork Composite Longbow of Frost (+1 Str) (1d8 + 1 + 1d6 cold/x3).
+AC: 22 (10 +8 Dex +2 Armor +2 Deflection), Touch 20, Flat-footed 14.
 Resistance: 5 acid
-Saves: Fort +17; Ref +14; Will +15 (+2 resistance).
-Str:	12 (+1) 
-Dex:    	23 (+6) +4 Gloves of Dex  
-Con:   	11 (+1)
-Int:     	20 (+5) +2 Headband of Intellect +2	
-Wis:    	16 (+3)
-Char:  12 (+1)
-Action Points: 1. 
+Saves: Fort +6; Ref +18; Will +12 (+2 resistance).
+Str: 12 (+1)
+Dex: 23 (+6) +4 Gloves of Dexterity (+8)
+Con: 15 (+2) {12 +2 enhancement +1}
+Int: 20 (+5) +2 Headband of Intellect (+6)
+Wis: 16 (+3)
+Cha: 12 (+1)
+Action Points: 1.
 
 Statuses:
 
 Feats:
-Expeditious Dodge (+2)
-Combat Reflexes
-Poison Use
-Practiced Spellcaster
-Weapon Finesse
-Darkvision
-Dragon Hunter
-Illusion Spell Power
-Evasion
-Darkstalker
-Dragonfoe
-Shadow Blade Technique
-Mobility [+4]	
-Spell Reflection
-Advanced learning
-Improved Uncanny dodge
-Armored mage	
-Silent Spell
+Weapon Finesse,
+Combat Reflexes,
+Expeditious Dodge,
+Mobility,
+Practiced Spellcaster: Beguiler,
+Silent Spell,
+Darkstalker,
+Shadow Blade Technique,
+Dragon Hunter,
+Dragonfoe,
+Track
+
 Special Abilities:
-Sneak attack		+6d6	
-Weapon Proficiency (Rogue)			
-Trapfinding				
-Trap-sence 
-Penetrating Strike		+3d6	
-Hide in plain sight (SU)		
-The Action
+Sneak Attack (+6d6),
+Penetrating Strike (+3d6),
+Trapfinding,
+Poison Use,
+Evasion,
+Spell Reflection,
+Uncanny Dodge,
+Improved Uncanny Dodge,
+Hide in Plain Sight (Su),
+Darkvision (60 ft.),
+Armored Mage (Light),
+Trapmaking,
+Advanced Learning (+1, +2),
+Illusion Spell Power (+1 CL to Illusion, -1 CL to other schools),
+Guarded Mind (Nondetection),
+Sense Natural Magic,
+Weapon Proficiency (Rogue, Beguiler, Elf).
 
 Racial Traits:
-RT 1
-RT 2
+Immunity to magic sleep effects,
++2 racial saving throw bonus against enchantment spells or effects,
+Low-Light Vision,
++2 racial bonus on Listen, Search, and Spot checks,
+Automatic Search check within 5 feet of secret or concealed doors,
+Weapon Proficiency (longsword, rapier, longbow, composite longbow, shortbow, composite shortbow).
+
 Bonus Abilities:
-BA 1
-BA 2
+Decipher Script +1 (From Ioun Temple),
+Knowledge (dungeoneering) +1 (Book),
+Knowledge (architecture and engineering) +1 (From home),
+Knowledge (arcana - Dragons 101) +1 (From home).
+
 Flaws, Traits, Quirks:
-Quick (+10 ft. land speed, -1 hp per level)
-Shaky (-2 on ranged attacks)
+Quick (+10 ft. land speed, -1 hp per level),
+Shaky (-2 penalty on ranged attack rolls).
+
 Languages:
-Elven
-Common
-Sylvan
-Terran
-Gnome	
-Draconic
-Dwarven
-DrowSign
-ThievesCant	
+Elven,
+Common,
+Sylvan,
+Terran,
+Gnome,
+Draconic,
+Dwarven,
+Drow Sign Language,
+Thieves' Cant.
 
-Spells (Caster Level 10):
-Spell Slots per day (All+Dom.):
-0 level – 5, 
-1st level – 5+1, 
-2nd level – 5+1, 
-3rd level – 3+1.
-Spell List.
+Spells (Caster Level 10 (1 Beguiler + 5 Unseen Seer + 4 Practiced Spellcaster; CL 11 Illusion / CL 9 other)):
+Spell Slots per day:
+Level 0: 5/6.
+Level 1: 3/8.
+Level 2: 7/7.
+Level 3: 3/4.
 
-Prepared Spells :
+Prepared Spells:
 Beguiler
-level 0: 6/6
-level 1: 8/8
-level 2: 5/5
+level 0: 5/6
+level 1: 3/8
+level 2: 7/7
+level 3: 3/4
+
+Spells Known:
+Beguiler
+level 0:
+Dancing Lights – Creates torches or other lights.
+Daze – Humanoid creature of 4 HD or less loses next action.
+Detect Magic – Detects spells and magic items within 60 ft.
+Ghost Sound – Figment sounds.
+Message – Whispered conversation at distance.
+Open/Close – Opens or closes small or light things.
+Read Magic – Read scrolls and spellbooks.
+level 1:
+Charm Person – Makes one person your friend.
+Color Spray – Knocks unconscious, blinds, and/or stuns 1d6 weak creatures.
+Comprehend Languages – You understand all spoken and written languages.
+Detect Secret Doors – Reveals hidden doors within 60 ft.
+Disguise Self – Changes your appearance.
+Expeditious Retreat – Your speed increases by 30 ft.
+Hypnotism – Fascinates 2d4 HD of creatures.
+Mage Armor – Gives subject +4 armor bonus.
+Obscuring Mist – Fog surrounds you.
+Rouse – Awakens creatures in area.
+Silent Image – Creates minor illusion of your design.
+Sleep – Puts 4 HD of creatures into magical slumber.
+Undetectable Alignment – Conceals alignment for 24 hours.
+Whelm – Deal 1d6 nonlethal damage +1d6/2 levels above 1st (max 5d6).
+Invisibility, Swift – Same as Invisibility, for 1 round (Swift).
+Instant Diversion – Swift! Create 3 illusory doubles, with AC=18 for 1 round.
+level 2:
+Blinding Color Surge – Blind subject for 1 round, gain invisibility.
+Blur – Attacks miss subject 20% of the time.
+Daze Monster – Living creature of 6 HD or less loses next action.
+Detect Thoughts – Allows "listening" to surface thoughts.
+Fog Cloud – Fog obscures vision in 20-ft. radius.
+Glitterdust – Blinds creatures, outlines invisible creatures.
+Hypnotic Pattern – Fascinates (2d4 + level) HD of creatures.
+Invisibility – Subject is invisible for 1 min./level or until it attacks.
+Knock – Opens locked or magically sealed door.
+Minor Image – As silent image, plus some sound.
+Mirror Image – Creates decoy duplicates of you (1d4 + 1 per three levels, max 8).
+Misdirection – Misleads Divinations for one creature or object.
+See Invisibility – Reveals invisible creatures or objects.
+Silence – Negates sound in 20-ft. radius.
+Spider Climb – Grants ability to walk on walls and ceilings.
+Stay the Hand – Change subject creature's attitude to helpful for 1 round.
+Touch of Idiocy – Subject takes 1d6 points of Int, Wis, and Cha damage.
+Vertigo – Subject creature must succeed on a DC 10 Balance check to move each round.
+Whelming Blast – 30-foot cone deals 1d6 nonlethal damage/2 levels (max 5d6).
+level 3:
+Arcane Sight – Magical auras become visible to you within 120 feet.
+Clairaudience/Clairvoyance – Hear or see at a distance for 1 min./level.
+Crown of Veils – Gain +2 to Disguise and Hide, discharge to gain +8.
+Deep Slumber – Puts 10 HD of creatures to sleep.
+Dispel Magic – Cancels magical spells and effects.
+Displacement – Attacks miss subject 50%.
+Glibness – You gain +30 bonus on Bluff checks, and your lies can escape magical discernment.
+Halt – Subject's feet become stuck to ground (Immediate).
+Haste – One creature/level moves faster, +1 on attack rolls, AC, and Reflex saves.
+Hesitate – Force subject to lose actions (Immediate).
+Hold Person – Paralyzes one humanoid for 1 round/level.
+Inevitable Defeat – Subject takes 3d6 nonlethal damage/round.
+Invisibility Sphere – Makes everyone within 10 ft. invisible.
+Legion of Sentinels – Ghostly swordsmen threaten a 10-foot radius.
+Major Image – As silent image, plus sound, smell and thermal effects.
+Nondetection – Hides subject from Divination, scrying.
+Slow – One subject/level takes only one action/round, -2 to AC, -2 on attack rolls.
+Suggestion – Compels subject to follow stated course of action.
+Vertigo Field – Creatures have 20% miss chance and possibly become nauseated.
+Zone of Silence – Keeps eavesdroppers from overhearing conversations.
+
 Skills:
-Balance (Dex): 6
-Climb (Str): 6
-Concentration (Con): 6
+Balance (Dex): 5
+Climb (Str): 5
+Concentration (Con): 12
 Decipher Script (Int): 5
-Disable Device (Int): 10
-Escape Artist (Dex): 7
+Disable Device (Int): 9
+Escape Artist (Dex): 5
 Hide (Dex): 16
-Jump (Str): 8
-Knowledge (Arcana) (Int): 6
+Jump (Str): 5
+Knowledge (arcana) (Int): 5
 Listen (Wis): 16
 Move Silently (Dex): 16
-Open Lock (Dex): 10
+Open Lock (Dex): 9
 Perform (Dance) (Cha): 5
 Search (Int): 16
 Sense Motive (Wis): 4
-Spellcraft (Int): 7
+Spellcraft (Int): 8
 Spot (Wis): 16
-Swim (Str): 2
-Tumble (Dex): 14
-Use Magic Device (Cha): 11
-Use Rope  (Dex): 6
+Swim (Str): 1
+Tumble (Dex): 16
+Use Magic Device (Cha): 9
+Use Rope (Dex): 5
 
 Skills Synergy:
-SKS 1
-SKS 2
+Balance: +2 Tumble
+Climb: +2 Use Rope
+Escape Artist: +2 Use Rope
+Jump: +2 Tumble
+Spellcraft: +2 Knowledge (arcana)
+Tumble: +2 Jump
+Use Magic Device: +2 Decipher Script, +2 Spellcraft
+
 Skill Tricks:
-Shrouded Dance
-Back on Your Feet
-SPOT THE WEAK POINT
-Conceal Spellcasting	
-Battle Gear: 
-Deadly Precision Wingblade Elvencraft Thinblade +1 (+1Atk 1d8+1/18-20x3)
-Elven Cloak (Hide +5)
-Gloves of Dexterity +4
-Whisperleaf Striders (Green Dragon scale Boots)Permanent: Pass without trace, Move Silently +5 Once per Day: Greater Invisibility for 7 rounds.
-Explorer's Outfit Masterwork
-Headband of Intellect +2
-Amulet of Pelor with Maple Leaf (holy symbol) (Saves +2)
-Brooch of Shielding
-Bone Ring +2 (Abjuration, +2AC deflection)
-Ring of Chameleon Power
-Dragoncraft bracers of armor +2 ( +2AC Black +5 resist Acid)
-Possessions: 
+Shrouded Dance,
+Back on Your Feet,
+Spot the Weak Point,
+Conceal Spellcasting.
+
+Battle Gear:
+Deadly Precision Wingblade Elvencraft Thinblade +1 (+1, 1d8 + 1 + 1d6 sneak attack/18-20x3, 3 lb.),
+Adamantine Dagger (Masterwork) (+1, 1d4/19-20x2, 1 lb.),
+Repaired Shadow Dagger (Cold Iron) (+1, 1d4 + 1/19-20x2, Ghost touch, 1 lb.),
+Lightning Dagger (Masterwork) (+1, 1d4 + 1d6 electricity/19-20x2, 1 lb.),
+Ice Dagger (Masterwork) (+1, 1d4 + 1d6 cold/19-20x2, 1 lb.),
+Sap (Masterwork) (+1, 1d6/x2, 2 lb.),
+Masterwork Composite Longbow of Frost (+1 Str) (+1, 1d8 + 1 + 1d6 cold/x3, range 110', 3 lb.),
+Light Purple Mournlode Mace (Magic+1) (+1, 1d6 + 1/x2, Bypass DR Good, Silver, Cold Iron, 4 lb.),
+Mysterious Longspear (+1, 1d8 + 2d6/x3, 9 lb.),
+Elven Cloak (Hide +5, 0.5 lb.),
+Gloves of Dexterity +4 (+4 Dex, 0.5 lb.),
+Whisperleaf Striders (Green Dragon scale Boots) (Permanent: Pass without trace, Move Silently +5, Once per Day: Greater Invisibility for 7 rounds, 0.5 lb.),
+Explorer's Outfit Masterwork (6.5 lb.),
+Headband of Intellect +2 (+2 Int, 0.5 lb.),
+Amulet of Pelor with Maple Leaf (holy symbol) (Saves +2, 0.01 lb.),
+Brooch of Shielding (101 hp, 0.01 lb.),
+Bone Ring +2 (Abjuration, +2 AC deflection, 0.01 lb.),
+Ring of Chameleon Power (0.01 lb.),
+Dragoncraft bracers of armor +2 (+2 AC, Black +5 resist Acid, 0.5 lb.),
+Potion of Cure Light Wounds (1d8 + 5),
+Worms of Cure Light Wounds (1d8 + 3),
+Potion of Cure Moderate Wounds (2d8 + 3) x 2,
+Potion of Bull's Strength,
+Potion of Lesser Restoration (1d4),
+Potion of Sanctuary,
+Potion of Blur,
+Potion of Spider Climb,
+Potion of Neutralize Poison.
+
+Possessions:
+Handy Haversack (5 lb.),
+Quiver of Ehlonna (2 lb.),
+Arrows x 60,
+Holy Water Flask x 4,
+Buckler (Dwarvencraft) (+1 AC, -1 penalty, 5% spell failure, 5 lb.),
+Mithral Chain Shirt +1 (+5 AC, +6 max Dex, 0 penalty, 10% spell failure, 12.5 lb.),
+WhiteWood Thinblade (+1, 1d8 + 1/18-20x2, Bane Vermin +2d6+2, 2 lb.),
+Liche's Kukri (1 lb.),
+Keen Blue Dragonfang Heavy Pick (1d6 + 2 + 1 electricity/19-20x4, 6 lb.),
+Feathered Spell Component Pouch (0.1 lb.),
+Dust of Illusion (0.1 lb.),
+Wyvern Poison x 3,
+Aspect of Tiamat Poison (DC 24, 2d6 Con) x 2,
+Oil of Darkness x 2,
+Teleport Beacon,
+Pair of Bone Dice,
+Ear Rosary,
+Flask of Lamp Oil,
 Elven Rope,
-Magic Elven rope 50ft with 
-Silk rope 50ft
-Animated Rope
-Mithral Grappling Hook
-Grappling hook
-Rope Ladder (10')
-Masterwork manacles
-Tanglefoot Bags
-Potion of Cure Light Wounds (+5)
+Magic Elven rope 50ft x 2,
+Silk rope 50ft,
+Animated Rope x 2,
+Mithral Grappling Hook,
+Grappling hook,
+Rope Ladder (10'),
+Masterwork manacles,
+Tanglefoot Bags,
+Bedroll,
+Winter Blanket,
+Good Cold Weather Outfit,
+Elven Outfit (slate gray),
+Wool Cloak,
+Arcane Archaeologists' Tools (+2, +5 per 1st level spell),
+Masterwork Thieves' Tools (+2, w/ 5ft extension),
+Speleological tools,
+Advanced Climbing Kit (+4 Climb, +2 Hide),
+Bag of caltrops x 2,
+Crowbar,
+Chisel,
+Fishing Hook,
+Whetstone,
+Sewing Needle,
+Flint and Steel,
+Preprint: Dwarven Settlements: Vanished Empire by Karilon Schahnazar,
+Book: Glamor and Shadow I & II,
+Piece of Diary in unknown language (Brindol),
+Map (Brindol).
 
+Money: 4444 gp, 3417 sp, 8 cp, 302 Ruendils
 
-Money: 5894 gp, 7417 sp, 0 cp, 267 Ruendils
-
-Food: Lembas, Beef Jerky, Water (waterskin). 
+Food: Lembas (16), Beef Jerky (3), Water (waterskin).
 
 Personal Information
-Height/Weight: 6’/130lb
-Eyes/Hair color: Amber/Pale gold	
-Age:118
-Alignment: 
-ExP: 78455
-Deity worshiped: Tel'Seldarine (Corellon Larethian/Erevan Ilesere)
+Height/Weight: 6'/130 lb
+Eyes/Hair color: Amber/Silver
+Age: 118
+Alignment: Chaotic Neutral
+ExP: 81680
+Deity worshiped: Obad-Hai / Tel'Seldarine (Corellon Larethian/Erevan Ilesere)
 
+Parties Membership
+TeamD20_T&E

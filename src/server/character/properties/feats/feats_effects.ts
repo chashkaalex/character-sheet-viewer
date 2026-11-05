@@ -362,14 +362,17 @@ export const FeatEffects: Record<string, EffectData[]> = {
       // casterClassName is injected into args at parse time by feats_parser.ts
       callback: (character: ICharacter, args: Record<string, unknown>) => {
         const params = args['params'] as string[] | undefined;
-        const casterClassName = params?.[0];
+        let casterClassName = params?.[0];
+        if (!casterClassName && character.spellCasting.classSpellCastingData.size === 1) {
+          casterClassName = Array.from(character.spellCasting.classSpellCastingData.keys())[0];
+        }
         if (!casterClassName) {
           character.parseWarnings.push('Practiced Spellcaster: casterClassName not resolved');
           return;
         }
         const casterLevel = character.spellCasting.GetCasterLevel(casterClassName);
-        const classLevel = character.GetClassLevel(casterClassName);
-        const bonus = (classLevel + 4 >= character.HD) ? (character.HD - classLevel) : 4;
+        const baseCasterLevel = casterLevel.score;
+        const bonus = (baseCasterLevel + 4 >= character.HD) ? Math.max(0, character.HD - baseCasterLevel) : 4;
         const effect = new StaticPropertyEffect({
           status: 'Practiced Spellcaster',
           property: `casterLevel ${casterClassName}` as any,
@@ -665,6 +668,42 @@ export const FeatEffects: Record<string, EffectData[]> = {
           character.actions.push('Sacred Flames');
         }
       }
+    }
+  ],
+  'Expeditious Dodge': [
+    {
+      status: 'Expeditious Dodge',
+      description: 'If you move at least 40 feet in a round, you gain a +2 dodge bonus to Armor Class until the start of your next turn.'
+    },
+    {
+      status: 'Expeditious Dodge',
+      property: 'ac',
+      modifierType: 'Dodge',
+      valueResolver: (character: Readonly<ICharacter>) => {
+        const hasMovedEnough = character.statuses.some(s => {
+          if (s.name.startsWith('Moved ')) {
+            const match = s.name.match(/Moved (\d+) feet/);
+            if (match) {
+              const feet = parseInt(match[1], 10);
+              return feet >= 40;
+            }
+          }
+          return false;
+        });
+        return hasMovedEnough ? 2 : 0;
+      }
+    }
+  ],
+  'Darkstalker': [
+    {
+      status: 'Darkstalker',
+      description: 'When you hide, creatures with blindsense, blindsight, scent, or tremorsense must make a Listen check or a Spot check (whichever DC is higher) to notice you, just as sighted creatures would make Spot checks to detect you.'
+    }
+  ],
+  'Shadow Blade Technique': [
+    {
+      status: 'Shadow Blade Technique',
+      description: 'When you make a melee attack with one of the Shadow Hand discipline\'s preferred weapons, you can roll two d20s for the attack roll. If both rolls would hit, you can choose to take the lower roll to deal +1d6 cold damage.'
     }
   ]
 };

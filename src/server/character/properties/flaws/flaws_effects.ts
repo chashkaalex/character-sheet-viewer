@@ -1,4 +1,4 @@
-import { EffectData } from '../../state/effects';
+import { EffectData, StaticPropertyEffect } from '../../state/effects';
 
 /**
  * @type {Object.<string, EffectData[]>}
@@ -44,5 +44,28 @@ export const FlawsEffects: Record<string, EffectData[]> = {
     'Focused': [
         { status: 'Focused', property: 'Concentration', modifierType: 'Generic', value: 1 },
         { status: 'Focused', property: 'Spot', modifierType: 'Generic', value: -1 }
+    ],
+    'Quick': [
+        { status: 'Quick', property: 'speed', modifierType: 'Generic', value: 10 },
+        { status: 'Quick', property: 'Special', description: '+10 ft. to base land speed; -1 hp per level (subtracted from max HP).' }
+    ],
+    'Shaky': [
+        { status: 'Shaky', property: 'Special', description: 'You take a -2 penalty on ranged attack rolls.' },
+        {
+            status: 'Shaky',
+            property: 'Weapons',
+            callback: (character) => {
+                character.weapons.forEach(weapon => {
+                    if (weapon.rangeType === 'Ranged') {
+                        weapon.featAttackBonus.applyEffect(new StaticPropertyEffect({
+                            status: 'Shaky',
+                            property: 'featAttackBonus',
+                            modifierType: 'Generic',
+                            value: -2
+                        }));
+                    }
+                });
+            }
+        }
     ]
 };

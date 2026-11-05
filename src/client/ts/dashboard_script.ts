@@ -143,22 +143,91 @@ export function PromprForPositiveInteger(message) {
 }
 
 /**
- * Inflicts damage on the character
- * Prompts user for damage amount and calls server function
+ * Shows the Inflict Damage modal
  */
-export function inflict() {
-  // Prompt user for damage amount
-  const promptResult = PromprForPositiveInteger(`How much damage to inflict on ${characterRep.name}?`);
+export function showInflictModal() {
+  const modal = document.getElementById('inflictModal');
+  if (!modal) return;
 
-  if (promptResult.error) {
-    alert(promptResult.message);
+  const titleEl = document.getElementById('inflictModalTitle');
+  if (titleEl && characterRep && characterRep.name) {
+    titleEl.textContent = `Inflict Damage on ${characterRep.name}`;
+  }
+
+  // Reset input fields
+  const physicalInput = document.getElementById('damagePhysical') as HTMLInputElement;
+  if (physicalInput) physicalInput.value = '';
+
+  const energyIds = ['damageAcid', 'damageCold', 'damageElectricity', 'damageFire', 'damageSonic'];
+  energyIds.forEach(id => {
+    const el = document.getElementById(id) as HTMLInputElement;
+    if (el) el.value = '';
+  });
+
+  // Keep additional types collapsed by default
+  const container = document.getElementById('additionalDamageTypesContainer');
+  const icon = document.getElementById('toggleAdditionalDamageIcon');
+  if (container) container.style.display = 'none';
+  if (icon) icon.textContent = '▶';
+
+  modal.style.display = 'block';
+
+  if (physicalInput) {
+    setTimeout(() => physicalInput.focus(), 50);
+  }
+}
+
+/**
+ * Closes the Inflict Damage modal
+ */
+export function closeInflictModal() {
+  const modal = document.getElementById('inflictModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+/**
+ * Toggles the extendable additional damage types section
+ */
+export function toggleAdditionalDamageTypes() {
+  const container = document.getElementById('additionalDamageTypesContainer');
+  const icon = document.getElementById('toggleAdditionalDamageIcon');
+  if (!container) return;
+
+  const isHidden = container.style.display === 'none';
+  container.style.display = isHidden ? 'block' : 'none';
+  if (icon) {
+    icon.textContent = isHidden ? '▼' : '▶';
+  }
+}
+
+/**
+ * Submits the inflicted damage.
+ * NOTE: Currently only physical damage is processed; additional energy damage fields are ignored for now.
+ */
+export function submitInflictDamage() {
+  const physicalInput = document.getElementById('damagePhysical') as HTMLInputElement;
+  const rawValue = physicalInput ? physicalInput.value.trim() : '';
+
+  if (!rawValue) {
+    alert('Please enter a valid positive integer for physical damage.');
+    if (physicalInput) physicalInput.focus();
     return;
   }
-  const damageAmount = promptResult.result;
 
-  console.log(`Inflicting ${damageAmount} damage to ${characterRep.name}`);
+  const damageAmount = parseInt(rawValue, 10);
+  if (isNaN(damageAmount) || damageAmount <= 0) {
+    alert('Please enter a valid positive integer for physical damage.');
+    if (physicalInput) physicalInput.focus();
+    return;
+  }
 
-  // Call server-side function to inflict damage
+  closeInflictModal();
+
+  console.log(`Inflicting ${damageAmount} physical damage to ${characterRep?.name}`);
+
+  // Call server-side function to inflict damage (physical only for now)
   google.script.run
     .withSuccessHandler(onCharacterRepresentation)
     .withFailureHandler(function (error) {
@@ -166,6 +235,13 @@ export function inflict() {
       alert('Error inflicting damage: ' + error.message);
     })
     .UpdateHp(characterRep.docId, damageAmount, 'inflict');
+}
+
+/**
+ * Inflicts damage on the character (entry point for Inflict button)
+ */
+export function inflict() {
+  showInflictModal();
 }
 
 export function cure() {
@@ -683,12 +759,32 @@ export function closePartyModal() {
   document.getElementById('partyModal').style.display = 'none';
 }
 
-// Close the modal when clicking outside of it
+// Close the modals when clicking outside or pressing keys
 if (typeof window !== 'undefined') {
   window.addEventListener('click', function (event) {
-    const modal = document.getElementById('partyModal');
-    if (modal && event.target == modal) {
-      modal.style.display = 'none';
+    const partyModal = document.getElementById('partyModal');
+    if (partyModal && event.target === partyModal) {
+      partyModal.style.display = 'none';
+    }
+    const inflictModal = document.getElementById('inflictModal');
+    if (inflictModal && event.target === inflictModal) {
+      inflictModal.style.display = 'none';
+    }
+  });
+
+  window.addEventListener('keydown', function (event) {
+    const inflictModal = document.getElementById('inflictModal');
+    if (inflictModal && inflictModal.style.display === 'block') {
+      if (event.key === 'Escape') {
+        inflictModal.style.display = 'none';
+      } else if (event.key === 'Enter') {
+        const activeEl = document.activeElement;
+        if (activeEl && inflictModal.contains(activeEl)) {
+          event.preventDefault();
+          submitInflictDamage();
+        }
+      }
     }
   });
 }
+

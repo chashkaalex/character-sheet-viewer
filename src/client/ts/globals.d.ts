@@ -17,7 +17,11 @@ interface Window {
   AddStatus: () => void;
   RemoveStatus: (element: any, statusName: string) => void;
   ClearAllStatuses: () => void;
-  inflict: (effectName: string, duration?: any) => void;
+  inflict: (effectName?: string, duration?: any) => void;
+  showInflictModal: () => void;
+  closeInflictModal: () => void;
+  toggleAdditionalDamageTypes: () => void;
+  submitInflictDamage: () => void;
   cure: (effectName: string) => void;
   refreshCharacterData: () => void;
   onTimePassed: () => void;

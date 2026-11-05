@@ -55,8 +55,10 @@ export const SpellcasterClasses = [
   'Druid',
   'Ranger',
   'Bard',
+  'Beguiler',
   'Archmage',
-  'Sacred Fist'
+  'Sacred Fist',
+  'Unseen Seer'
 ] as const;
 
 

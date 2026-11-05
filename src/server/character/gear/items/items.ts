@@ -211,12 +211,18 @@ export const ItemEffects: Record<string, EffectData[]> = {
   'Whisperleaf Striders': [
     { status: 'Whisperleaf Striders', property: 'Special', description: 'Pass without trace' },
     { status: 'Whisperleaf Striders', property: 'Move Silently', modifierType: 'Generic', value: 5 },
-    { status: 'Whisperleaf Striders', property: 'Special', description: 'Once per Day: Greater Invisibility for 7 rounds' }
+    { status: 'Whisperleaf Striders', property: 'Special', description: 'Once per Day: Greater Invisibility for 7 rounds' },
+    {
+      status: 'Whisperleaf Striders',
+      callback: (character: ICharacter) => {
+        if (!character.actions.includes('Greater Invisibility (Whisperleaf Striders)')) {
+          character.actions.push('Greater Invisibility (Whisperleaf Striders)');
+        }
+      }
+    }
   ],
 
-  'Explorer\'s Outfit Masterwork': [
-    { status: 'Explorer\'s Outfit Masterwork', property: 'Special', description: 'Once per Day: Greater Invisibility for 7 rounds' }
-  ],
+  'Explorer\'s Outfit Masterwork': [],
 
   'Elven Cloak': [
     { status: 'Elven Cloak', property: 'Hide', modifierType: 'Generic', value: 5 }
@@ -232,7 +238,18 @@ export const ItemEffects: Record<string, EffectData[]> = {
 
   'Ring of Chameleon Power': [
     { status: 'Ring of Chameleon Power', property: 'Special', description: 'As a free action, the wearer of this ring can gain the ability to magically blend in with the surroundings. This provides a +10 competence bonus on her Hide checks. ' },
-    { status: 'Ring of Chameleon Power', property: 'Special', description: 'As a standard action, she can also command the ring to utilize the spell disguise self as often as she wants.' }
+    { status: 'Ring of Chameleon Power', property: 'Special', description: 'As a standard action, she can also command the ring to utilize the spell disguise self as often as she wants.' },
+    {
+      status: 'Ring of Chameleon Power',
+      callback: (character: ICharacter) => {
+        if (!character.actions.includes('Chameleon Power (Hide +10)')) {
+          character.actions.push('Chameleon Power (Hide +10)');
+        }
+        if (!character.actions.includes('Chameleon Power (Disguise Self)')) {
+          character.actions.push('Chameleon Power (Disguise Self)');
+        }
+      }
+    }
   ],
 
   'Dragoncraft bracers of armor +2': [

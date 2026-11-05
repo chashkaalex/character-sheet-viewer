@@ -1,0 +1,50 @@
+"aardvarkak@gmail.com","chashkaalex@gmail.com","shleyfman.alexander@gmail.com","azhurbalmobile@gmail.com","ilya.komarovsky@gmail.com","juliaust@gmail.com","shoora.meh@gmail.com","chashka.home@gmail.com"
+
+Bess
+	Bess's Diplomacy: 15 rank + 7 char 2 bluff syn + 2 sense motive syn + 2 HALF ELF + 2 Negotiator + 2 Nimph's Kiss
+					1	2	3	4	5	6	7
+	24-25	+7	—	2	2	2	1	1	1	1	—	—
+
+	13th	    3	3	3	3	2	0	—
+
+Morty
+	Elven Cloak (Hide +5)
+	Gloves of Dex +4	
+	Whisperleaf Striders (Green Dragon scale Boots)Permanent: Pass without trace, Move Silently +5 Once per Day: Greater Invisibility for 7 rounds.
+	Clothes	Explorer's Outfit Masterwork
+	Headband of Intellect +2
+	Phylor Symbol with Maple Leaf Saves +2
+
+	Morty's bab and saves:
+	Rogue: 			/*level: 7*/ { bab: 5, Fort: 2, Ref: 5, Will: 2 },
+	Shadowdancer: 	/*level: 2*/ { bab: 1, Fort: 0, Ref: 3, Will: 0 },
+	Beguiler:		/*level: 1*/ { bab: 0, Fort: 0, Ref: 0, Will: 2 },
+	Unseen Seer:	/*level: 3*/ { bab: 2, Fort: 1, Ref: 1, Will: 3 },
+	TOTAL:			/*level: 13*/{ bab: 8, Fort: 3, Ref: 9, Will: 7 },
+
+	[1d6, 1d8, 1d10, 2d6, 2d8, 2d10]
+
+	[1d4, 1d6, 1d8, 1d10, 2d6]
+
+Dein:
+
+	1. Shield Specialization: +1 AC (tower shield)
+	2. Frost Waraxe +1: 1d10 + str + 2(specialization) + 1 magic + 1d6 cold
+	3. Shield Ward: adds shield AC bonus to trip/bullrush/overrun str. check
+	4. Adamantine Dwarwen Waraxe +1: 1d10 + str + 2(specialization) + 1 magic
+	5. Flaming Composite Longbow +1: 1d8 + 5 (bow's str) + 1 magic + 1d6 fire
+
+	Grapple bonus includes bab
+
+	Deflective Armor
+	Tower shield should give -2 on attack bonus
+	Cold damage for Frost Waraxe
+	remove shield from grapple
+	combat expertise shouldn't change grapple
+
+	Actions:
+	Expeditios Retreat (+30 Speed)
+	Stance (+10 speed, +2 AC (distance dep.))
+	Combat Expertise
+	Iron Grip (+4 grapple checks)
+

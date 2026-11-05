@@ -316,6 +316,55 @@
     </div>
   </div>
 
+  <!-- Inflict Damage Modal -->
+  <div id="inflictModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4);">
+    <div class="modal-content inflict-modal-content">
+      <span class="close" onclick="closeInflictModal()">&times;</span>
+      <h2 id="inflictModalTitle">Inflict Damage</h2>
+
+      <!-- Visible by default: Physical Damage -->
+      <div class="damage-input-row primary-damage-row">
+        <label for="damagePhysical">Physical Damage:</label>
+        <input type="number" id="damagePhysical" class="damage-number-input" min="0" step="1" placeholder="0">
+      </div>
+
+      <!-- Extendable section: Closed list of additional types -->
+      <div class="expandable-damage-section">
+        <button type="button" id="toggleAdditionalDamageBtn" class="toggle-damage-types-btn" onclick="toggleAdditionalDamageTypes()">
+          <span id="toggleAdditionalDamageIcon">▶</span> Additional Damage Types
+        </button>
+        <div id="additionalDamageTypesContainer" class="additional-damage-types" style="display:none;">
+          <div class="damage-input-row">
+            <label for="damageAcid">Acid:</label>
+            <input type="number" id="damageAcid" class="damage-number-input" min="0" step="1" placeholder="0">
+          </div>
+          <div class="damage-input-row">
+            <label for="damageCold">Cold:</label>
+            <input type="number" id="damageCold" class="damage-number-input" min="0" step="1" placeholder="0">
+          </div>
+          <div class="damage-input-row">
+            <label for="damageElectricity">Electricity:</label>
+            <input type="number" id="damageElectricity" class="damage-number-input" min="0" step="1" placeholder="0">
+          </div>
+          <div class="damage-input-row">
+            <label for="damageFire">Fire:</label>
+            <input type="number" id="damageFire" class="damage-number-input" min="0" step="1" placeholder="0">
+          </div>
+          <div class="damage-input-row">
+            <label for="damageSonic">Sonic:</label>
+            <input type="number" id="damageSonic" class="damage-number-input" min="0" step="1" placeholder="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Action Buttons -->
+      <div class="modal-actions">
+        <button type="button" class="hpbutton" onclick="submitInflictDamage()">Inflict</button>
+        <button type="button" class="modal-cancel-btn" onclick="closeInflictModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

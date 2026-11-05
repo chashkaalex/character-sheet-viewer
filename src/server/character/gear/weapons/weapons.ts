@@ -26,7 +26,9 @@ WeaponsData.set('Club', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d
 WeaponsData.set('Heavy Mace', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2' });
 WeaponsData.set('Morningstar', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2' });
 WeaponsData.set('Short Spear', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x2', rangeIncrement: 20 });
+WeaponsData.set('Shortspear', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x2', rangeIncrement: 20 });
 WeaponsData.set('Long Spear', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3' });
+WeaponsData.set('Longspear', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3' });
 WeaponsData.set('Quarterstaff', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d6', critical: 'x2' });
 WeaponsData.set('Spear', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3', rangeIncrement: 20 });
 
@@ -53,6 +55,7 @@ WeaponsData.set('Battleaxe', { range: 'Melee', encumbrance: 'One-Handed', damage
 WeaponsData.set('Flail', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2' });
 WeaponsData.set('Longsword', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '19-20/x2' });
 WeaponsData.set('Pick', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x4' });
+WeaponsData.set('Heavy Pick', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x4' });
 WeaponsData.set('Rapier', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: '18-20/x2' });
 WeaponsData.set('Scimitar', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: '18-20/x2' });
 WeaponsData.set('Heavy Shield', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d4', critical: 'x2' });
@@ -89,6 +92,8 @@ WeaponsData.set('Sai', { range: 'Melee', encumbrance: 'Light', damage: '1d4', cr
 WeaponsData.set('Siangham', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });
 WeaponsData.set('Bastard Sword', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d10', critical: '19-20/x2' });
 WeaponsData.set('Dwarven Waraxe', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d10', critical: 'x3' });
+WeaponsData.set('Thinblade', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '18-20/x2' });
+WeaponsData.set('Elven Thinblade', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '18-20/x2' });
 WeaponsData.set('Whip', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d3', critical: 'x2' });
 WeaponsData.set('Orc Axe', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d12', critical: 'x3' });
 WeaponsData.set('Spiked Chain', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: 'x2' });
@@ -190,6 +195,7 @@ export class Weapon {
   public fullAttack?: any;
   public encumbrance: 'Light' | 'One-Handed' | 'Two-Handed' | 'ranged' = 'Light';
   public enhancement: number = 0;
+  public isMasterwork: boolean = false;
   public baseDamage: string = '1d3';
   public damage: string = '1d3';
   public damageBonusFromWeapon: number = 0;
@@ -220,7 +226,7 @@ export class Weapon {
       const splitDesc = description.split(/\)\s*\(/);
       if (splitDesc.length > 1) {
         const notes = splitDesc[0].trim();
-        if (!notes.match(/^[+\d]/)) {
+        if (!notes.match(/^[+\d]/) || notes.match(/^\+\d+\s*Str\b/i)) {
           fullName = `${name} (${notes})`;
         }
       } else {
@@ -286,9 +292,12 @@ export class Weapon {
     const enhancementRegex = /\+(\d+)(?!\s*(?:str|dex|con|int|wis|cha|strength|dexterity|constitution|intelligence|wisdom|charisma|ability|to|ac|hp|saves|save|resistance|deflection|dodge|shield|natural|armor|bab|initiative|speed|ft|feet|reach|inch|inches|meter|meters|bonus|modifier|on|against))/i;
     const nameEnhancementMatch = fullName.match(enhancementRegex);
     const descEnhancementMatch = description ? description.match(enhancementRegex) : null;
-    const enhancementMatch = nameEnhancementMatch || descEnhancementMatch;
-    if (enhancementMatch) {
-      this.enhancement = parseInt(enhancementMatch[1]);
+    this.isMasterwork = /\bmasterwork\b/i.test(fullName) || (description ? /\bmasterwork\b/i.test(description) : false);
+
+    if (nameEnhancementMatch) {
+      this.enhancement = parseInt(nameEnhancementMatch[1]);
+    } else if (!this.isMasterwork && descEnhancementMatch) {
+      this.enhancement = parseInt(descEnhancementMatch[1]);
     }
 
     const extraResult = ParseWeaponExtraDamage(fullName, description);
@@ -322,6 +331,18 @@ export class Weapon {
       // Range increment override/fallback: matches 'range 80' or '80’'
       const rangeMatch = description.match(/range\s*(\d+)/i) || description.match(/(\d+)\s*’/);
       if (rangeMatch) this.range = parseInt(rangeMatch[1]);
+
+      // Critical range/multiplier override: matches '18-20x3', '18-20/x2', '/19-20', or '/x3'
+      const critRangeMultMatch = description.match(/(\d+-\d+)\s*\/?\s*[xX](\d+)/);
+      const critRangeOnlyMatch = description.match(/\/\s*(\d+-\d+)(?!\s*\/?\s*[xX]\d+)/);
+      const critMultOnlyMatch = description.match(/\/\s*[xX](\d+)/);
+      if (critRangeMultMatch) {
+        this.critical = `${critRangeMultMatch[1]}/x${critRangeMultMatch[2]}`;
+      } else if (critRangeOnlyMatch) {
+        this.critical = `${critRangeOnlyMatch[1]}/x2`;
+      } else if (critMultOnlyMatch) {
+        this.critical = `x${critMultOnlyMatch[1]}`;
+      }
     }
   }
 
@@ -336,7 +357,7 @@ export class Weapon {
 
     // Weapon Finesse check
     if (this.rangeType === 'Melee' && character.HasFeat('Weapon Finesse')) {
-      const finesseBaseNames = ['Rapier', 'Whip', 'Spiked Chain', 'Unarmed'];
+      const finesseBaseNames = ['Rapier', 'Whip', 'Spiked Chain', 'Unarmed', 'Thinblade', 'Elven Thinblade'];
       if (this.encumbrance === 'Light' || (this.baseName && finesseBaseNames.includes(this.baseName))) {
         if (character.abilities.Dex.modifier > character.abilities.Str.modifier) {
           weaponAttackAbilityName = 'Dex';
@@ -373,7 +394,8 @@ export class Weapon {
       }
     }
 
-    this.attackBonus = new WeaponAttackBonus(character.bab, weaponAttackAbility, character.size, this.enhancement, this.featAttackBonus);
+    const attackEnhancement = this.enhancement > 0 ? this.enhancement : (this.isMasterwork ? 1 : 0);
+    this.attackBonus = new WeaponAttackBonus(character.bab, weaponAttackAbility, character.size, attackEnhancement, this.featAttackBonus);
     this.damageBonus = new WeaponDamageBonus(weaponDamageAbility, character.damageBonus, this.damageBonusFromWeapon + this.enhancement, this.featDamageBonus);
 
     // Calculate unified stats strings
@@ -412,7 +434,8 @@ export class Weapon {
 
 export class ItemWeapon extends Weapon {
   constructor(item: Item, character: ICharacter) {
-    super(item.name, item.description, item.weight, character);
+    const displayName = item.material && !item.name.includes(item.material) ? `${item.material} ${item.name}` : item.name;
+    super(displayName, item.description, item.weight, character);
   }
 }
 

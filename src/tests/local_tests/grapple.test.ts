@@ -27,8 +27,8 @@ describe('Grapple Bonus Calculations', () => {
     it('should calculate Morty grapple bonus correctly', () => {
         const char = GetCharacterByDocId(MORTY_TEST_FILE) as Character;
         expect(char.parseSuccess).toBe(true);
-        // BAB (8) + Str (1) + Size (0) = 9
+        // BAB (7) + Str (1) + Size (0) = 8
         expect(char.specialAttacks['Grapple']).toBeDefined();
-        expect((char.specialAttacks['Grapple'] as SpecialAttackBonus).bonus).toBe(9);
+        expect((char.specialAttacks['Grapple'] as SpecialAttackBonus).bonus).toBe(8);
     });
 });

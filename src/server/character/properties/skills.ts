@@ -165,11 +165,14 @@ export function ParseSkills(skillsLines: string[], abilities: AbilitiesMap, acp?
     });
 
     skills.forEach(skill => {
-        const synergySkillsNames = SkillsSynergyReversed[skill.name];
+        const synergyKey = Object.keys(SkillsSynergyReversed).find(
+            k => k.toLowerCase() === skill.name.toLowerCase()
+        );
+        const synergySkillsNames = synergyKey ? SkillsSynergyReversed[synergyKey] : undefined;
         if (synergySkillsNames) {
             synergySkillsNames.forEach(synergySkillName => {
-                const synergySkill = skills.find(s => s.name === synergySkillName);
-                if (synergySkill && !skill.synergySkills.some(s => s.name === synergySkill.name)) {
+                const synergySkill = skills.find(s => s.name.toLowerCase() === synergySkillName.toLowerCase());
+                if (synergySkill && !skill.synergySkills.some(s => s.name.toLowerCase() === synergySkill.name.toLowerCase())) {
                     skill.synergySkills.push(synergySkill);
                 }
             });

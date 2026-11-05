@@ -4,6 +4,7 @@ import { getCharacterRep } from '../../server/character/character_rep';
 import { sanitizeDbLink } from '../../server/character/parser_utils';
 import { Character } from '../../server/character/character';
 import { IsAWeapon } from '../../server/character/gear/weapons/weapons';
+import { ParseRaceAndClassesString } from '../../server/character/properties/race_and_classes';
 
 const THRORS_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'thror_test.txt');
 const BESS_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'bess_test.txt');
@@ -234,13 +235,13 @@ describe('Local Character Parsing', () => {
         // Basic data
         expect(char.race).toBe('Elf');
         expect(char.hp.max).toBeGreaterThan(0);
-        expect(char.speed.currentScore).toBe(30);
+        expect(char.speed.currentScore).toBe(40); // 30 base Elf + 10 Quick trait
         console.log('Morty AC:', char.ac.currentArmorClass);
 
-        // Abilities (Dex includes +4 Gloves, Int includes +2 Headband)
+        // Abilities (Dex includes +4 Gloves, Con includes +2 enhancement + 1 inherent, Int includes +2 Headband)
         expect(char.abilities.Str!.currentScore).toBe(12);
         expect(char.abilities.Dex!.currentScore).toBe(27);
-        expect(char.abilities.Con!.currentScore).toBe(11);
+        expect(char.abilities.Con!.currentScore).toBe(15);
         expect(char.abilities.Int!.currentScore).toBe(22);
         expect(char.abilities.Wis!.currentScore).toBe(16);
         expect(char.abilities.Cha!.currentScore).toBe(12);
@@ -249,32 +250,32 @@ describe('Local Character Parsing', () => {
         expect(char.skills.find(s => s.name === 'Listen')!.bonus).toBe(21);
         expect(char.skills.find(s => s.name === 'Search')!.bonus).toBe(24);
         expect(char.skills.find(s => s.name === 'Spot')!.bonus).toBe(21);
-        expect(char.skills.find(s => s.name === 'Balance')!.bonus).toBe(16);
-        expect(char.skills.find(s => s.name === 'Climb')!.bonus).toBe(9);
-        expect(char.skills.find(s => s.name === 'Concentration')!.bonus).toBe(6);
+        expect(char.skills.find(s => s.name === 'Balance')!.bonus).toBe(15);
+        expect(char.skills.find(s => s.name === 'Climb')!.bonus).toBe(8);
+        expect(char.skills.find(s => s.name === 'Concentration')!.bonus).toBe(14);
         expect(char.skills.find(s => s.name === 'Decipher Script')!.bonus).toBe(11);
-        expect(char.skills.find(s => s.name === 'Disable Device')!.bonus).toBe(16);
-        expect(char.skills.find(s => s.name === 'Escape Artist')!.bonus).toBe(17);
+        expect(char.skills.find(s => s.name === 'Disable Device')!.bonus).toBe(15);
+        expect(char.skills.find(s => s.name === 'Escape Artist')!.bonus).toBe(15);
         expect(char.skills.find(s => s.name === 'Hide')!.bonus).toBe(29);
-        expect(char.skills.find(s => s.name === 'Jump')!.bonus).toBe(11);
-        expect(char.skills.find(s => s.name === 'Knowledge (Arcana)')!.bonus).toBe(12);
+        expect(char.skills.find(s => s.name === 'Jump')!.bonus).toBe(8);
+        expect(char.skills.find(s => s.name === 'Knowledge (arcana)')!.bonus).toBe(11);
         expect(char.skills.find(s => s.name === 'Move Silently')!.bonus).toBe(29);
-        expect(char.skills.find(s => s.name === 'Open Lock')!.bonus).toBe(18);
+        expect(char.skills.find(s => s.name === 'Open Lock')!.bonus).toBe(17);
         expect(char.skills.find(s => s.name === 'Perform (Dance)')!.bonus).toBe(6);
         expect(char.skills.find(s => s.name === 'Sense Motive')!.bonus).toBe(7);
-        expect(char.skills.find(s => s.name === 'Spellcraft')!.bonus).toBe(15);
-        expect(char.skills.find(s => s.name === 'Swim')!.bonus).toBe(3);
-        expect(char.skills.find(s => s.name === 'Tumble')!.bonus).toBe(24);
-        expect(char.skills.find(s => s.name === 'Use Magic Device')!.bonus).toBe(16);
-        expect(char.skills.find(s => s.name === 'Use Rope')!.bonus).toBe(16);
+        expect(char.skills.find(s => s.name === 'Spellcraft')!.bonus).toBe(18);
+        expect(char.skills.find(s => s.name === 'Swim')!.bonus).toBe(2);
+        expect(char.skills.find(s => s.name === 'Tumble')!.bonus).toBe(26);
+        expect(char.skills.find(s => s.name === 'Use Magic Device')!.bonus).toBe(14);
+        expect(char.skills.find(s => s.name === 'Use Rope')!.bonus).toBe(15);
 
         // Weapons — Morty has Weapon Finesse so unarmed uses Dex
         const unarmed = char.weapons.find(w => w.baseName === 'Unarmed');
         expect(unarmed).toBeDefined();
         expect(unarmed!.damage).toBe('1d3');
         expect(unarmed!.attackBonus.ability.name).toBe('Dex');
-        expect(unarmed!.attackBonus.bonus).toBe(16);
-        expect(unarmed!.statsString).toBe('Attack: 16 Damage: 1d3 + 1 Crit. X2');
+        expect(unarmed!.attackBonus.bonus).toBe(15);
+        expect(unarmed!.statsString).toBe('Attack: 15 Damage: 1d3 + 1 Crit. X2');
 
         // Amulet of Pelor applies +2 saves
         expect(char.saves.Fort!.effects.some(e => e.status === 'Amulet of Pelor with Maple Leaf')).toBe(true);
@@ -282,8 +283,75 @@ describe('Local Character Parsing', () => {
         // Brooch of Shielding goes to Special
         expect(char.Special.list.some(p => p.status === 'Brooch of Shielding')).toBe(true);
 
-        // No spellcasting classes parsed (Beguiler spontaneous slots exist but class may not map)
-        // Just verify it doesn't crash
+        // Beguiler + Unseen Seer spellcasting with Practiced Spellcaster
+        const beguilerData = char.spellCasting.GetSpellCasterClassData('Beguiler');
+        expect(beguilerData).not.toBeNull();
+        expect(beguilerData!.level.score).toBe(6); // 1 Beguiler + 5 Unseen Seer
+        expect(beguilerData!.level.currentScore).toBe(10); // +4 from Practiced Spellcaster: Beguiler
+        expect(beguilerData!.spellSlots.slice(0, 4)).toEqual([6, 8, 7, 4]);
+        expect(beguilerData!.preparedSpells['0']).toHaveLength(6);
+        expect(beguilerData!.preparedSpells['1']).toHaveLength(8);
+        expect(beguilerData!.preparedSpells['2']).toHaveLength(7);
+        expect(beguilerData!.preparedSpells['3']).toHaveLength(4);
+
+        // Verify all known spells across levels 0-3 validate against SpellsData
+        for (const lvl of ['0', '1', '2', '3']) {
+            const spells = beguilerData!.knownSpells[lvl];
+            expect(spells).toBeDefined();
+            expect(spells.length).toBeGreaterThan(0);
+            for (const entry of spells) {
+                expect(entry.isValid).toBe(true);
+            }
+        }
+
+        // Verify Thinblade +1 with Weapon Finesse and custom 18-20x3 crit override
+        const thinblade = char.weapons.find(w => w.baseName === 'Thinblade');
+        expect(thinblade).toBeDefined();
+        expect(thinblade!.attackBonus.ability.name).toBe('Dex');
+        expect(thinblade!.attackBonus.bonus).toBe(16); // BAB 7 + Dex 8 + 1 enhancement
+        expect(thinblade!.damageBonus.bonus).toBe(2); // Str 1 + 1 enhancement
+        expect(thinblade!.critValue).toBe('18-20X3');
+        expect(thinblade!.statsString).toBe('Attack: 16 Damage: 1d8 + 2 + 1d6 sneak attack Crit. 18-20X3');
+
+        // Verify Adamantine Dagger (Masterwork) preserves material name and applies +1 attack-only bonus
+        const adamantineDagger = char.weapons.find(w => w.name.includes('Adamantine Dagger'));
+        expect(adamantineDagger).toBeDefined();
+        expect(adamantineDagger!.isMasterwork).toBe(true);
+        expect(adamantineDagger!.enhancement).toBe(0);
+        expect(adamantineDagger!.attackBonus.bonus).toBe(16); // BAB 7 + Dex 8 + 1 Masterwork
+        expect(adamantineDagger!.damageBonus.bonus).toBe(1); // Str 1 + 0 enhancement
+        expect(adamantineDagger!.statsString).toBe('Attack: 16 Damage: 1d4 + 1 Crit. 19-20X2');
+
+        // Verify Masterwork Composite Longbow of Frost (+1 Str) with Shaky (-2 ranged attack penalty)
+        const longbow = char.weapons.find(w => w.baseName === 'Composite Longbow');
+        expect(longbow).toBeDefined();
+        expect(longbow!.name).toContain('(+1 Str)');
+        expect(longbow!.isMasterwork).toBe(true);
+        expect(longbow!.enhancement).toBe(0);
+        expect(longbow!.attackBonus.bonus).toBe(14); // BAB 7 + Dex 8 + 1 Masterwork - 2 Shaky
+        expect(longbow!.damageBonus.bonus).toBe(1); // +1 Str rating + 0 masterwork enhancement
+        expect(longbow!.dmgValue).toBe('1d8 + 1 + 1d6 cold');
+
+        // Verify Phase 3 flaws/traits, feats, and item actions
+        expect(char.HasFlaw('Quick')).toBe(true);
+        expect(char.HasFlaw('Shaky')).toBe(true);
+        expect(char.HasFeat('Expeditious Dodge')).toBe(true);
+        expect(char.HasFeat('Darkstalker')).toBe(true);
+        expect(char.HasFeat('Shadow Blade Technique')).toBe(true);
+        expect(char.actions).toContain('Greater Invisibility (Whisperleaf Striders)');
+        expect(char.actions).toContain('Chameleon Power (Hide +10)');
+        expect(char.actions).toContain('Chameleon Power (Disguise Self)');
+        expect(char.Special.list.some(p => p.status === 'Explorer\'s Outfit Masterwork')).toBe(false);
+
+        // Verify subrace title parsing (e.g. "High Elf") resolves to known race "Elf"
+        const parsedSubrace = ParseRaceAndClassesString('(High Elf Rogue 5/Shadowdancer 2/Beguiler 1/Unseen Seer 5)');
+        expect(parsedSubrace.race).toBe('Elf');
+        expect(parsedSubrace.classes).toEqual([
+            { name: 'Rogue', level: 5 },
+            { name: 'Shadowdancer', level: 2 },
+            { name: 'Beguiler', level: 1 },
+            { name: 'Unseen Seer', level: 5 }
+        ]);
 
         // Optional: log warnings
         if (char.parseWarnings.length > 0) {

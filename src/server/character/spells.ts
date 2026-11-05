@@ -482,6 +482,386 @@ const SpellsData: Record<string, SpellData> = {
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
+  },
+  'Daze': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Open/Close': {
+    range: 'Close',
+    target: SpellTarget.Object,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Read Magic': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Charm Person': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 60 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Color Spray': {
+    range: '15 ft.',
+    target: SpellTarget.Area,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Comprehend Languages': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Detect Secret Doors': {
+    range: '60 ft.',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Disguise Self': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    effects: [
+      { status: 'Disguise Self', property: 'Disguise', modifierType: 'Generic', value: 10 }
+    ],
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Hypnotism': {
+    range: 'Close',
+    target: SpellTarget.MultipleCreatures,
+    calculateDuration: function (_spellCasting) {
+      return 2 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Obscuring Mist': {
+    range: '20 ft.',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Rouse': {
+    range: 'Close',
+    target: SpellTarget.Area,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Sleep': {
+    range: 'Medium',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Undetectable Alignment': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (_spellCasting) {
+      return 24 * 60 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Whelm': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Invisibility, Swift': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    statusName: 'Invisible',
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Instant Diversion': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Blinding Color Surge': {
+    range: 'Medium',
+    target: SpellTarget.OneCreature,
+    statusName: 'Invisible',
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Blur': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Daze Monster': {
+    range: 'Medium',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Detect Thoughts': {
+    range: '60 ft.',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Fog Cloud': {
+    range: 'Medium',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Hypnotic Pattern': {
+    range: 'Medium',
+    target: SpellTarget.Area,
+    calculateDuration: function (_spellCasting) {
+      return 2;
+    }
+  },
+  'Invisibility': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    statusName: 'Invisible',
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Knock': {
+    range: 'Medium',
+    target: SpellTarget.Object,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Minor Image': {
+    range: 'Long',
+    target: SpellTarget.Area,
+    calculateDuration: function (_spellCasting) {
+      return 2;
+    }
+  },
+  'Mirror Image': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Misdirection': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 60 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'See Invisibility': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Silence': {
+    range: 'Long',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Spider Climb': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    effects: [
+      { status: 'Spider Climb', property: 'Climb', modifierType: 'Racial', value: 8 }
+    ],
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Stay the Hand': {
+    range: 'Medium',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Touch of Idiocy': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Vertigo': {
+    range: 'Medium',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS;
+    }
+  },
+  'Whelming Blast': {
+    range: '30 ft.',
+    target: SpellTarget.Area,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Arcane Sight': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Clairaudience/Clairvoyance': {
+    range: 'Long',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Crown of Veils': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    effects: [
+      { status: 'Crown of Veils', property: 'Disguise', modifierType: 'Competence', value: 2 },
+      { status: 'Crown of Veils', property: 'Hide', modifierType: 'Competence', value: 2 }
+    ],
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Deep Slumber': {
+    range: 'Close',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Dispel Magic': {
+    range: 'Medium',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Displacement': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS;
+    }
+  },
+  'Halt': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (_spellCasting) {
+      return 1;
+    }
+  },
+  'Hold Person': {
+    range: 'Medium',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS;
+    }
+  },
+  'Inevitable Defeat': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS;
+    }
+  },
+  'Invisibility Sphere': {
+    range: 'Touch',
+    target: SpellTarget.Area,
+    statusName: 'Invisible',
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Legion of Sentinels': {
+    range: 'Close',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS;
+    }
+  },
+  'Major Image': {
+    range: 'Long',
+    target: SpellTarget.Area,
+    calculateDuration: function (_spellCasting) {
+      return 3;
+    }
+  },
+  'Nondetection': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 60 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Slow': {
+    range: 'Close',
+    target: SpellTarget.MultipleCreatures,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS;
+    }
+  },
+  'Vertigo Field': {
+    range: 'Medium',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS;
+    }
+  },
+  'Zone of Silence': {
+    range: 'Personal',
+    target: SpellTarget.Self,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 60 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Greater Invisibility': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    statusName: 'Invisible',
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS;
+    }
+  },
+  'Invisibility, Greater': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    statusName: 'Invisible',
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS;
+    }
   }
 };
 

@@ -1598,6 +1598,24 @@
         font-size: 0.95em;
     }
 
+    .tooltip-btn-group {
+        display: flex;
+        gap: 6px;
+        width: 100%;
+        margin-top: 2px;
+    }
+
+    .tooltip-btn-group .tooltip-roll-btn {
+        margin-top: 0;
+        flex: 1;
+        white-space: nowrap;
+    }
+
+    .tooltip-btn-group .tooltip-copy-btn {
+        flex: 0 0 auto;
+        padding: 6px 10px;
+    }
+
     /* Toast Container & Notification Styles */
     .toast-container {
         position: fixed;
@@ -1718,4 +1736,126 @@
     .party-toast-text {
         flex: 1;
     }
+
+    /* Inflict Damage Modal Styles */
+    .inflict-modal-content {
+        background-color: var(--background-secondary);
+        margin: 12% auto;
+        padding: 24px;
+        border: 2px solid var(--border-color);
+        width: 90%;
+        max-width: 420px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        box-sizing: border-box;
+        font-family: inherit;
+        color: var(--text-color);
+    }
+
+    .inflict-modal-content h2 {
+        margin-top: 0;
+        margin-bottom: 16px;
+        font-size: 1.4em;
+        color: var(--header-bg);
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 8px;
+    }
+
+    .damage-input-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .damage-input-row label {
+        font-weight: bold;
+        color: var(--text-color);
+        font-size: 0.95em;
+    }
+
+    .primary-damage-row {
+        background-color: rgba(193, 127, 36, 0.08);
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(139, 107, 62, 0.3);
+        margin-bottom: 16px;
+    }
+
+    .damage-number-input {
+        width: 100px;
+        padding: 6px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 1em;
+        text-align: right;
+        box-sizing: border-box;
+        background-color: #fff;
+        color: var(--text-color);
+    }
+
+    .damage-number-input:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 4px rgba(193, 127, 36, 0.5);
+    }
+
+    .expandable-damage-section {
+        margin-bottom: 20px;
+    }
+
+    .toggle-damage-types-btn {
+        background: none;
+        border: none;
+        color: var(--accent-color);
+        font-family: inherit;
+        font-weight: bold;
+        font-size: 0.95em;
+        cursor: pointer;
+        padding: 6px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 0.2s ease;
+    }
+
+    .toggle-damage-types-btn:hover {
+        color: var(--header-bg);
+        text-decoration: underline;
+    }
+
+    .additional-damage-types {
+        margin-top: 10px;
+        padding: 12px 14px 4px 14px;
+        background-color: rgba(44, 62, 80, 0.04);
+        border: 1px dashed var(--border-color);
+        border-radius: 6px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 18px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(139, 107, 62, 0.2);
+    }
+
+    .modal-cancel-btn {
+        background-color: transparent;
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 1em;
+        transition: all 0.2s ease;
+    }
+
+    .modal-cancel-btn:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
 

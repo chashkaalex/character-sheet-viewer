@@ -24,9 +24,14 @@ export interface ParsedRaceAndClasses {
  */
 export function ParseRaceAndClassesString(text: string): ParsedRaceAndClasses {
     const cleanText = text.replace(/[()]/g, '').trim();
-    const words = cleanText.split(' ');
-    const race = words[0];
-    const rest = words.slice(1).join(' ');
+    const words = cleanText.split(/\s+/);
+    const raceIndex = words.findIndex(w =>
+        Races.some(r => r.toLowerCase() === w.toLowerCase())
+    );
+    const race = raceIndex !== -1
+        ? Races.find(r => r.toLowerCase() === words[raceIndex].toLowerCase())!
+        : words[0];
+    const rest = words.slice(raceIndex !== -1 ? raceIndex + 1 : 1).join(' ');
     const classesStrings = rest.split('/');
     const classes: CharacterClass[] = [];
 
