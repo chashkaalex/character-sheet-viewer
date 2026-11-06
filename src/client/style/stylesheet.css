@@ -1555,7 +1555,9 @@
         font-size: 0.9em;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         border: 1px solid var(--border-color);
-        max-width: 250px;
+        max-width: 360px;
+        width: max-content;
+        box-sizing: border-box;
         pointer-events: auto;
         white-space: pre-wrap;
         text-align: center;
@@ -1607,12 +1609,14 @@
 
     .tooltip-btn-group .tooltip-roll-btn {
         margin-top: 0;
+        width: auto;
         flex: 1;
         white-space: nowrap;
     }
 
     .tooltip-btn-group .tooltip-copy-btn {
         flex: 0 0 auto;
+        width: auto;
         padding: 6px 10px;
     }
 
