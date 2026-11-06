@@ -309,23 +309,38 @@ export function addTooltip(element, tooltipText, rolzRollMessage?: string) {
     }
     element.style.cursor = 'help';
 
+    // Only bind event listeners once per DOM element to prevent duplicate click toggles
+    if (element.dataset.tooltipBound === 'true') {
+      if (activeTooltipElement === element) {
+        showTooltip(element);
+      }
+      return;
+    }
+    element.dataset.tooltipBound = 'true';
+
     // Desktop: Hover events
-    element.addEventListener('mouseenter', function (e) {
-      // If we hover a new element, unlock the previous one if it's different
-      if (activeTooltipElement && activeTooltipElement !== this) {
+    element.addEventListener('mouseenter', function () {
+      if (activeTooltipElement && !document.body.contains(activeTooltipElement)) {
         activeTooltipElement = null;
+      }
+      // If a tooltip is locked by click, keep it open until explicitly dismissed or another is clicked
+      if (activeTooltipElement) {
+        return;
       }
       showTooltip(this);
     });
 
-    element.addEventListener('mouseleave', function (e) {
-      // Only hide if this element is NOT the currently locked (clicked) one
-      if (activeTooltipElement !== this) {
+    element.addEventListener('mouseleave', function () {
+      if (activeTooltipElement && !document.body.contains(activeTooltipElement)) {
+        activeTooltipElement = null;
+      }
+      // Only hide on mouseleave when no tooltip is locked by click
+      if (!activeTooltipElement) {
         hideTooltip();
       }
     });
 
-    // Mobile/Touch: Click to toggle
+    // Click to lock/unlock tooltip
     element.addEventListener('click', function (e) {
       e.stopPropagation(); // Prevent document click from immediately hiding it
 
@@ -335,8 +350,8 @@ export function addTooltip(element, tooltipText, rolzRollMessage?: string) {
         activeTooltipElement = null;
       } else {
         // Lock this element
-        showTooltip(this);
         activeTooltipElement = this;
+        showTooltip(this);
       }
     });
   }
@@ -541,10 +556,15 @@ export function showToast(message: string) {
   }, 2500);
 }
 
-// Close tooltip when clicking anywhere else
+// Close tooltip when clicking anywhere else (outside the locked element and outside the tooltip box)
 if (typeof document !== 'undefined') {
   document.addEventListener('click', function (e) {
-    if (activeTooltipElement && !activeTooltipElement.contains(e.target as Node)) {
+    const tooltip = document.getElementById('custom-tooltip');
+    if (
+      activeTooltipElement &&
+      !activeTooltipElement.contains(e.target as Node) &&
+      (!tooltip || !tooltip.contains(e.target as Node))
+    ) {
       hideTooltip();
       activeTooltipElement = null;
     }
