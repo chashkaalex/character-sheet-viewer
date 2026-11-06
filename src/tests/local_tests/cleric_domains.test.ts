@@ -93,10 +93,10 @@ describe('Cleric Domains Actions Tests', () => {
 
             expect(char.HasStatus('Protective Ward')).toBe(true);
             // Protective Ward resistance bonus: +4 (3 Cleric + 3 Sacred Fist / 2)
-            // Stacks with existing cloak of resistance which is set as Generic +2
-            expect(char.saves.Fort.bonus).toBe(21); // 17 + 4
-            expect(char.saves.Ref.bonus).toBe(19);  // 15 + 4
-            expect(char.saves.Will.bonus).toBe(21); // 17 + 4
+            // Replaces existing Cloak of Resistance +2 (+2 Resistance -> +4 Resistance, net +2)
+            expect(char.saves.Fort.bonus).toBe(19); // 17 - 2 + 4
+            expect(char.saves.Ref.bonus).toBe(17);  // 15 - 2 + 4
+            expect(char.saves.Will.bonus).toBe(19); // 17 - 2 + 4
         });
     });
 });

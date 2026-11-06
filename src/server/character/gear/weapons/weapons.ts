@@ -204,18 +204,55 @@ export class Weapon {
   public weight: number = 0;
   public attackBonus!: WeaponAttackBonus;
   public damageBonus!: WeaponDamageBonus;
-  public atkValue: string = '';
-  public dmgValue: string = '';
-  public critValue: string = '';
-  public atkPartString: string = '';
-  public dmgPartString: string = '';
-  public statsString: string = '';
   public featAttackBonus: ModifiableProperty = new ModifiableProperty(0);
   public featDamageBonus: ModifiableProperty = new ModifiableProperty(0);
   public additionalDamages: AdditionalDamageComponent[] = [];
   public additionalDamageFormula: string = '';
   public additionalDamageWarning: string | null = null;
-  public rolzDmgRollMessage: string = '';
+
+  public get atkValue(): string {
+    return this.attackBonus ? `${this.attackBonus.bonus}` : '';
+  }
+
+  public get dmgValue(): string {
+    if (!this.damageBonus) return '';
+    const dice = (this.damage || '1d3').split(' ')[0];
+    const dmgBonusSign = this.damageBonus.bonus >= 0 ? '+' : '-';
+    const absoluteDmgBonus = Math.abs(this.damageBonus.bonus);
+    let damageDisplay = `${dice} ${dmgBonusSign} ${absoluteDmgBonus}`;
+    if (this.additionalDamageFormula) {
+      damageDisplay = `${damageDisplay} ${this.additionalDamageFormula}`;
+    }
+    return damageDisplay;
+  }
+
+  public get critValue(): string {
+    const crit = this.critical || 'x2';
+    const rangeMatch = crit.match(/(\d+-\d+)/);
+    const range = rangeMatch ? rangeMatch[1] : '';
+    const multiplierMatch = crit.match(/[xX](\d+)/);
+    const multiplier = multiplierMatch ? multiplierMatch[1] : '2';
+    return range ? `${range}X${multiplier}` : `X${multiplier}`;
+  }
+
+  public get rolzDmgRollMessage(): string {
+    if (!this.damageBonus) return '';
+    const dice = (this.damage || '1d3').split(' ')[0];
+    return BuildRolzDamageMessage(this.name, dice, this.damageBonus.bonus, this.additionalDamages);
+  }
+
+  public get atkPartString(): string {
+    return this.attackBonus ? `Attack: ${this.atkValue}` : '';
+  }
+
+  public get dmgPartString(): string {
+    return this.damageBonus ? `Damage: ${this.dmgValue}` : '';
+  }
+
+  public get statsString(): string {
+    if (!this.attackBonus || !this.damageBonus) return '';
+    return `${this.atkPartString} ${this.dmgPartString} Crit. ${this.critValue}`;
+  }
 
   constructor(name: string, description: string, weight: number, character: ICharacter) {
     // Reconstruct the full weapon name if notes are in description parentheses
@@ -377,18 +414,15 @@ export class Weapon {
         const compositeStrMatch = this.name.match(/\+(\d+)\s*Str/i);
         const strRating = compositeStrMatch ? parseInt(compositeStrMatch[1]) : 0;
 
-        let cappedModifier = strAbility.modifier;
-        if (strRating > 0) {
-          cappedModifier = Math.min(strAbility.modifier, strRating);
-        }
+        const getCappedModifier = () => strRating > 0 ? Math.min(strAbility.modifier, strRating) : strAbility.modifier;
 
         // Construct a mock Ability object with the capped modifier
         const compositeAbility = Object.create(strAbility);
         Object.defineProperty(compositeAbility, 'modifier', {
-          get: () => cappedModifier
+          get: () => getCappedModifier()
         });
         Object.defineProperty(compositeAbility, 'ModifierString', {
-          get: () => `${cappedModifier} Str modifier (composite capped)`
+          get: () => `${getCappedModifier()} Str modifier (composite capped)`
         });
         weaponDamageAbility = compositeAbility;
       }
@@ -397,31 +431,6 @@ export class Weapon {
     const attackEnhancement = this.enhancement > 0 ? this.enhancement : (this.isMasterwork ? 1 : 0);
     this.attackBonus = new WeaponAttackBonus(character.bab, weaponAttackAbility, character.size, attackEnhancement, this.featAttackBonus);
     this.damageBonus = new WeaponDamageBonus(weaponDamageAbility, character.damageBonus, this.damageBonusFromWeapon + this.enhancement, this.featDamageBonus);
-
-    // Calculate unified stats strings
-    const dice = (this.damage || '1d3').split(' ')[0];
-    const dmgBonusSign = this.damageBonus.bonus >= 0 ? '+' : '-';
-    const absoluteDmgBonus = Math.abs(this.damageBonus.bonus);
-    let damageDisplay = `${dice} ${dmgBonusSign} ${absoluteDmgBonus}`;
-    if (this.additionalDamageFormula) {
-      damageDisplay = `${damageDisplay} ${this.additionalDamageFormula}`;
-    }
-
-    const crit = this.critical || 'x2';
-    const rangeMatch = crit.match(/(\d+-\d+)/);
-    const range = rangeMatch ? rangeMatch[1] : '';
-    const multiplierMatch = crit.match(/[xX](\d+)/);
-    const multiplier = multiplierMatch ? multiplierMatch[1] : '2';
-
-    this.atkValue = `${this.attackBonus.bonus}`;
-    this.dmgValue = damageDisplay;
-    this.critValue = range ? `${range}X${multiplier}` : `X${multiplier}`;
-
-    this.rolzDmgRollMessage = BuildRolzDamageMessage(this.name, dice, this.damageBonus.bonus, this.additionalDamages);
-
-    this.atkPartString = `Attack: ${this.atkValue}`;
-    this.dmgPartString = `Damage: ${this.dmgValue}`;
-    this.statsString = `${this.atkPartString} ${this.dmgPartString} Crit. ${this.critValue}`;
   }
 
   public isMonkWeapon(): boolean {

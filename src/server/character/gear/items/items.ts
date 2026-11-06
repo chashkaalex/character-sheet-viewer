@@ -133,7 +133,7 @@ export const ItemEffects: Record<string, EffectData[]> = {
   ],
 
   'Buckler': [
-    { status: 'Buckler', property: 'ac', modifierType: 'Armor', value: 1 }
+    { status: 'Buckler', property: 'ac', modifierType: 'Shield', value: 1 }
   ],
 
   'Ivory Ring of Deflection +1': [
@@ -149,15 +149,15 @@ export const ItemEffects: Record<string, EffectData[]> = {
   ],
 
   'Cloak of Resistance +2': [
-    { status: 'Cloak of Resistance +2', property: 'Fort', modifierType: 'Generic', value: 2 },
-    { status: 'Cloak of Resistance +2', property: 'Ref', modifierType: 'Generic', value: 2 },
-    { status: 'Cloak of Resistance +2', property: 'Will', modifierType: 'Generic', value: 2 }
+    { status: 'Cloak of Resistance +2', property: 'Fort', modifierType: 'Resistance', value: 2 },
+    { status: 'Cloak of Resistance +2', property: 'Ref', modifierType: 'Resistance', value: 2 },
+    { status: 'Cloak of Resistance +2', property: 'Will', modifierType: 'Resistance', value: 2 }
   ],
 
   'Cloak of Resistance +3': [
-    { status: 'Cloak of Resistance +3', property: 'Fort', modifierType: 'Generic', value: 3 },
-    { status: 'Cloak of Resistance +3', property: 'Ref', modifierType: 'Generic', value: 3 },
-    { status: 'Cloak of Resistance +3', property: 'Will', modifierType: 'Generic', value: 3 }
+    { status: 'Cloak of Resistance +3', property: 'Fort', modifierType: 'Resistance', value: 3 },
+    { status: 'Cloak of Resistance +3', property: 'Ref', modifierType: 'Resistance', value: 3 },
+    { status: 'Cloak of Resistance +3', property: 'Will', modifierType: 'Resistance', value: 3 }
   ],
 
   'Cloak of Charisma +4': [

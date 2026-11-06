@@ -14,9 +14,9 @@ export function convertToRounds(duration, unit) {
     case 'rounds':
       return duration;
     case 'minutes':
-      return duration * 6; // 1 minute = 6 rounds
+      return duration * 10; // 1 minute = 10 rounds (6 seconds per round)
     case 'hours':
-      return duration * 360; // 1 hour = 60 minutes = 360 rounds
+      return duration * 600; // 1 hour = 60 minutes = 600 rounds
     default:
       return duration; // Default to rounds if unknown unit
   }

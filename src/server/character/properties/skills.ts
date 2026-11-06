@@ -105,7 +105,7 @@ export class Skill extends ModifiableProperty {
   }
 
   public get bonus(): number {
-    let val = this.ability.modifier + this.currentScore + this.synergySkills.reduce((acc, skill) => acc + (skill.currentScore >= 5 ? 2 : 0), 0);
+    let val = this.ability.modifier + this.currentScore + this.synergySkills.reduce((acc, skill) => acc + (skill.score >= 5 ? 2 : 0), 0);
     if (this.acp && (this.ability.name === 'Str' || this.ability.name === 'Dex')) {
       const penalty = this.acp.currentScore;
       if (penalty < 0) {
@@ -116,7 +116,8 @@ export class Skill extends ModifiableProperty {
   }
 
   public override get string(): string {
-    const synergySkillsString = this.synergySkills.length > 0 ? `${this.synergySkills.map(s => `+2 ${s.name} synergy`).join(', ')}` : '';
+    const activeSynergySkills = this.synergySkills.filter(s => s.score >= 5);
+    const synergySkillsString = activeSynergySkills.length > 0 ? `${activeSynergySkills.map(s => `+2 ${s.name} synergy`).join(', ')}` : '';
     return `${this.bonus}: ${this.score} rank + ${this.ability.ModifierString} ${synergySkillsString} ${this.EffectsString}`;
   }
 

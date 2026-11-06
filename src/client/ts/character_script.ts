@@ -235,21 +235,21 @@ export function formatRoundsToReadable(rounds) {
   if (rounds < 0) {
     return 'endless';
   }
-  if (rounds >= 360) {
-    const hours = Math.floor(rounds / 360);
-    const remainingRounds = rounds % 360;
+  if (rounds >= 600) {
+    const hours = Math.floor(rounds / 600);
+    const remainingRounds = rounds % 600;
     if (remainingRounds === 0) {
       return `${hours} hour${hours !== 1 ? 's' : ''}`;
     }
-    const minutes = Math.floor(remainingRounds / 6);
-    const finalRounds = remainingRounds % 6;
+    const minutes = Math.floor(remainingRounds / 10);
+    const finalRounds = remainingRounds % 10;
     const parts = [`${hours} hour${hours !== 1 ? 's' : ''}`];
     if (minutes > 0) parts.push(`${minutes} min${minutes !== 1 ? 's' : ''}`);
     if (finalRounds > 0) parts.push(`${finalRounds} round${finalRounds !== 1 ? 's' : ''}`);
     return parts.join(', ');
-  } else if (rounds >= 6) {
-    const minutes = Math.floor(rounds / 6);
-    const remainingRounds = rounds % 6;
+  } else if (rounds >= 10) {
+    const minutes = Math.floor(rounds / 10);
+    const remainingRounds = rounds % 10;
     if (remainingRounds === 0) {
       return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
     }
