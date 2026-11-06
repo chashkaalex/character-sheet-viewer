@@ -343,6 +343,14 @@ describe('Local Character Parsing', () => {
         expect(char.actions).toContain('Chameleon Power (Disguise Self)');
         expect(char.Special.list.some(p => p.status === 'Explorer\'s Outfit Masterwork')).toBe(false);
 
+        // Verify Whisperleaf Striders (Green Dragon scale Boots) occupies the Feet slot and parses 0.5 lb weight
+        const whisperleaf = char.battleGear.find(i => i.name === 'Whisperleaf Striders');
+        expect(whisperleaf).toBeDefined();
+        expect(whisperleaf!.bodySlot).toBe('Feet');
+        expect(whisperleaf!.weight).toBe(0.5);
+        expect(char.bodySlots.get('Feet')).toBe(0);
+        expect(char.Special.list.some(p => p.status === 'Whisperleaf Striders' && p.description === 'Pass without trace')).toBe(true);
+
         // Verify subrace title parsing (e.g. "High Elf") resolves to known race "Elf"
         const parsedSubrace = ParseRaceAndClassesString('(High Elf Rogue 5/Shadowdancer 2/Beguiler 1/Unseen Seer 5)');
         expect(parsedSubrace.race).toBe('Elf');

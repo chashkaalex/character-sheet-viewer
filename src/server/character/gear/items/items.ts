@@ -41,7 +41,7 @@ export const BodySlots: BodySlotInfo[] = [
   { slotName: 'Arms', names: ['bracers', 'bracelets'], possibleAmount: 1 },
   { slotName: 'Hands', names: ['gloves', 'gauntlets', 'wraps'], possibleAmount: 1 },
   { slotName: 'Fingers', names: ['ring'], possibleAmount: 2 },
-  { slotName: 'Feet', names: ['boots', 'shoes'], possibleAmount: 1 },
+  { slotName: 'Feet', names: ['boots', 'shoes', 'striders'], possibleAmount: 1 },
   { slotName: 'Holy Symbol', names: ['holy symbol'], possibleAmount: 1 }
 ];
 
@@ -283,20 +283,34 @@ export const ItemEffects: Record<string, EffectData[]> = {
   ]
 };
 
-export function GetBodySlot(itemName: string): string | null {
+export function GetBodySlot(itemName: string, description: string = ''): string | null {
   const lowerName = itemName.toLowerCase();
 
   if (lowerName.includes('holy symbol')) {
     return 'Holy Symbol';
   }
 
-  const itemNameWords = lowerName.split(' ');
-  for (let i = 0; i < itemNameWords.length; i++) {
-    const bodySlot = BodySlots.find(slot => slot.names.includes(itemNameWords[i]));
-    if (bodySlot) {
-      return bodySlot.slotName;
+  const findSlotInWords = (text: string): string | null => {
+    const words = text.toLowerCase().replace(/[(),]/g, ' ').split(/\s+/).filter(Boolean);
+    for (let i = 0; i < words.length; i++) {
+      const bodySlot = BodySlots.find(slot => slot.names.includes(words[i]));
+      if (bodySlot) {
+        return bodySlot.slotName;
+      }
     }
+    return null;
+  };
+
+  const nameSlot = findSlotInWords(lowerName);
+  if (nameSlot) {
+    return nameSlot;
   }
+
+  if (description && description.includes(') (')) {
+    const firstGroup = description.split(') (')[0];
+    return findSlotInWords(firstGroup);
+  }
+
   return null;
 }
 
@@ -323,7 +337,7 @@ export class Item {
     this.material = nameAndMaterial.material;
 
     // Set other properties
-    this.bodySlot = GetBodySlot(this.name);
+    this.bodySlot = GetBodySlot(this.name, this.description);
     if (this.bodySlot === 'Holy Symbol') {
       this.name = this.name.replace(/\s*\(holy symbol\)/i, '');
     }
@@ -332,11 +346,11 @@ export class Item {
     this.isPotion = this.name.includes('Potion');
     this.isScroll = this.name.includes('Scroll');
 
-    // Parse Weight: 3 lb.
+    // Parse Weight: 3 lb. or 0.5 lb.
     this.weight = 0;
     if (this.description) {
-      const weightMatch = this.description.match(/(\d+)\s*lb/);
-      if (weightMatch) this.weight = parseInt(weightMatch[1]);
+      const weightMatch = this.description.match(/(\d+(?:\.\d+)?)\s*lb/);
+      if (weightMatch) this.weight = parseFloat(weightMatch[1]);
     }
 
     if (currentRegistry) {
