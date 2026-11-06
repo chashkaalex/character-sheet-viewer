@@ -2,6 +2,7 @@ import { characterRep } from './state';
 import { onCharacterRepresentation, addTooltip, UpdateValueAndTooltip } from './character_script';
 
 let showFullAttack = false;
+let showSneakAttack = false;
 
 /**
  * Converts duration from various time units to rounds
@@ -399,6 +400,31 @@ export function onFullAttackToggle(checkbox: HTMLInputElement) {
 }
 
 /**
+ * Toggles adding Sneak Attack dice to weapon damage rolls.
+ */
+export function onSneakAttackToggle(checkbox: HTMLInputElement) {
+  showSneakAttack = checkbox.checked;
+  updateWeaponStatsDisplay();
+}
+
+function renderWeaponTogglesHtml(): string {
+  const hasSneak = Boolean(characterRep && characterRep.sneakAttack && characterRep.sneakAttack.dice > 0);
+  const sneakTitle = hasSneak ? ` title="Sneak Attack: ${characterRep.sneakAttack.string}"` : '';
+  return `
+    <label class="full-attack-toggle">
+      <input type="checkbox" id="fullAttackToggle" onchange="onFullAttackToggle(this)" ${showFullAttack ? 'checked' : ''}>
+      show full
+    </label>
+    ${hasSneak ? `
+      <label class="full-attack-toggle"${sneakTitle}>
+        <input type="checkbox" id="sneakAttackToggle" onchange="onSneakAttackToggle(this)" ${showSneakAttack ? 'checked' : ''}>
+        sneak attack
+      </label>
+    ` : ''}
+  `;
+}
+
+/**
  * Renders weapon stats into a stats element (shared between main-hand and off-hand).
  */
 function renderWeaponStats(
@@ -424,12 +450,7 @@ function renderWeaponStats(
       <label>Crit:</label>
       <span id="${idPrefix}CritValue">${critValue}</span>
     </div>
-    ${idPrefix === 'weapon' ? `
-      <label class="full-attack-toggle">
-        <input type="checkbox" id="fullAttackToggle" onchange="onFullAttackToggle(this)" ${showFullAttack ? 'checked' : ''}>
-        show full
-      </label>
-    ` : ''}
+    ${idPrefix === 'weapon' ? renderWeaponTogglesHtml() : ''}
   `;
 
   addTooltip(document.getElementById(`${idPrefix}AtkValue`), atkTooltip, atkRolzRollMessage);
@@ -463,6 +484,10 @@ function updateWeaponStatsDisplay() {
   const offHandIdx = offHandSelect ? parseInt(offHandSelect.value) : NaN;
   const isTwfActive = !isNaN(offHandIdx) && characterRep.weapons && characterRep.weapons[offHandIdx];
 
+  const mainDmgValue = (showSneakAttack && mainWeapon.sneakDmgValue) ? mainWeapon.sneakDmgValue : mainWeapon.dmgValue;
+  const mainDmgTooltip = (showSneakAttack && mainWeapon.sneakDamageString) ? mainWeapon.sneakDamageString : mainWeapon.damageBonus.string;
+  const mainDmgRolz = (showSneakAttack && mainWeapon.sneakRolzDmgRollMessage) ? mainWeapon.sneakRolzDmgRollMessage : mainWeapon.rolzDmgRollMessage;
+
   // 1. Show/hide off-hand row based on TWF and full attack settings
   if (offHandRow) {
     if (characterRep.twf && characterRep.twf.hasTWF) {
@@ -485,6 +510,16 @@ function updateWeaponStatsDisplay() {
         (c: any) => c.mainWeaponIndex === mainIdx && c.offWeaponIndex === offHandIdx
       );
 
+      const offDmgValue = combo
+        ? ((showSneakAttack && combo.sneakOffDmgValue) ? combo.sneakOffDmgValue : combo.offDmgValue)
+        : ((showSneakAttack && offWeapon.sneakDmgValue) ? offWeapon.sneakDmgValue : offWeapon.dmgValue);
+      const offDmgTooltip = combo
+        ? ((showSneakAttack && combo.sneakOffDamageString) ? combo.sneakOffDamageString : combo.offDamageString)
+        : ((showSneakAttack && offWeapon.sneakDamageString) ? offWeapon.sneakDamageString : offWeapon.damageBonus.string);
+      const offDmgRolz = combo
+        ? ((showSneakAttack && combo.sneakRolzDmgRollMessage) ? combo.sneakRolzDmgRollMessage : combo.rolzDmgRollMessage)
+        : ((showSneakAttack && offWeapon.sneakRolzDmgRollMessage) ? offWeapon.sneakRolzDmgRollMessage : offWeapon.rolzDmgRollMessage);
+
       const mhSequence = mainWeapon.fullAttack?.twfMain?.[offHandIdx] || { attacks: [], summaryString: '-' };
       const ohSequence = offWeapon.fullAttack?.twfOff?.[mainIdx] || { attacks: [], summaryString: '-' };
 
@@ -501,7 +536,7 @@ function updateWeaponStatsDisplay() {
             </div>
             <div class="weapon-stat-item">
               <label>Damage:</label>
-              <span id="mhDmgValue">${mainWeapon.dmgValue}</span>
+              <span id="mhDmgValue">${mainDmgValue}</span>
               ${mainWeapon.additionalDamageWarning ? `<span id="mhWarningBadge" class="weapon-warning-badge" style="cursor:help; margin-left:4px;" title="${mainWeapon.additionalDamageWarning}">⚠️</span>` : ''}
             </div>
             <div class="weapon-stat-item">
@@ -517,7 +552,7 @@ function updateWeaponStatsDisplay() {
             </div>
             <div class="weapon-stat-item">
               <label>Damage:</label>
-              <span id="ohDmgValue">${combo ? combo.offDmgValue : offWeapon.dmgValue}</span>
+              <span id="ohDmgValue">${offDmgValue}</span>
               ${offWeapon.additionalDamageWarning ? `<span id="ohWarningBadge" class="weapon-warning-badge" style="cursor:help; margin-left:4px;" title="${offWeapon.additionalDamageWarning}">⚠️</span>` : ''}
             </div>
             <div class="weapon-stat-item">
@@ -525,10 +560,7 @@ function updateWeaponStatsDisplay() {
               <span id="ohCritValue">${offWeapon.critValue}</span>
             </div>
           </div>
-          <label class="full-attack-toggle">
-            <input type="checkbox" id="fullAttackToggle" onchange="onFullAttackToggle(this)" checked>
-            show full
-          </label>
+          ${renderWeaponTogglesHtml()}
         </div>
       `;
 
@@ -536,7 +568,7 @@ function updateWeaponStatsDisplay() {
       mhSequence.attacks.forEach((a: any, idx: number) => {
         addTooltip(document.getElementById(`mhAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
       });
-      addTooltip(document.getElementById('mhDmgValue'), mainWeapon.damageBonus.string, mhSequence.attacks[0]?.rolzDmgRollMessage);
+      addTooltip(document.getElementById('mhDmgValue'), mainDmgTooltip, mainDmgRolz);
       if (mainWeapon.additionalDamageWarning) {
         addTooltip(document.getElementById('mhWarningBadge'), mainWeapon.additionalDamageWarning);
       }
@@ -545,7 +577,7 @@ function updateWeaponStatsDisplay() {
       ohSequence.attacks.forEach((a: any, idx: number) => {
         addTooltip(document.getElementById(`ohAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
       });
-      addTooltip(document.getElementById('ohDmgValue'), combo ? combo.offDamageString : offWeapon.damageBonus.string, ohSequence.attacks[0]?.rolzDmgRollMessage);
+      addTooltip(document.getElementById('ohDmgValue'), offDmgTooltip, offDmgRolz);
       if (offWeapon.additionalDamageWarning) {
         addTooltip(document.getElementById('ohWarningBadge'), offWeapon.additionalDamageWarning);
       }
@@ -562,23 +594,20 @@ function updateWeaponStatsDisplay() {
         </div>
         <div class="weapon-stat-item">
           <label>Damage:</label>
-          <span id="weaponDmgValue">${mainWeapon.dmgValue}</span>
+          <span id="weaponDmgValue">${mainDmgValue}</span>
           ${mainWeapon.additionalDamageWarning ? `<span id="weaponWarningBadge" class="weapon-warning-badge" style="cursor:help; margin-left:4px;" title="${mainWeapon.additionalDamageWarning}">⚠️</span>` : ''}
         </div>
         <div class="weapon-stat-item">
           <label>Crit:</label>
           <span id="weaponCritValue">${mainWeapon.critValue}</span>
         </div>
-        <label class="full-attack-toggle">
-          <input type="checkbox" id="fullAttackToggle" onchange="onFullAttackToggle(this)" checked>
-          show full
-        </label>
+        ${renderWeaponTogglesHtml()}
       `;
 
       sequence.attacks.forEach((a: any, idx: number) => {
         addTooltip(document.getElementById(`normalAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
       });
-      addTooltip(document.getElementById('weaponDmgValue'), mainWeapon.damageBonus.string, sequence.attacks[0]?.rolzDmgRollMessage);
+      addTooltip(document.getElementById('weaponDmgValue'), mainDmgTooltip, mainDmgRolz);
       if (mainWeapon.additionalDamageWarning) {
         addTooltip(document.getElementById('weaponWarningBadge'), mainWeapon.additionalDamageWarning);
       }
@@ -595,21 +624,26 @@ function updateWeaponStatsDisplay() {
       if (combo) {
         renderWeaponStats(
           mainStats,
-          combo.mainAtkValue, mainWeapon.dmgValue, mainWeapon.critValue,
-          combo.mainAttackString, mainWeapon.damageBonus.string,
+          combo.mainAtkValue, mainDmgValue, mainWeapon.critValue,
+          combo.mainAttackString, mainDmgTooltip,
           'weapon',
           `#d20${combo.mainAttackBonus >= 0 ? '+' : ''}${combo.mainAttackBonus} #${mainWeapon.name} Attack (MH)`,
-          mainWeapon.rolzDmgRollMessage,
+          mainDmgRolz,
           mainWeapon.additionalDamageWarning
         );
         if (offHandStats && offWeapon) {
+          const offDmgValue = (showSneakAttack && combo.sneakOffDmgValue) ? combo.sneakOffDmgValue : combo.offDmgValue;
+          const offDmgTooltip = (showSneakAttack && combo.sneakOffDamageString) ? combo.sneakOffDamageString : combo.offDamageString;
+          const offDmgRolz = (showSneakAttack && combo.sneakRolzDmgRollMessage)
+            ? combo.sneakRolzDmgRollMessage
+            : (combo.rolzDmgRollMessage || offWeapon.rolzDmgRollMessage);
           renderWeaponStats(
             offHandStats,
-            combo.offAtkValue, combo.offDmgValue, offWeapon.critValue,
-            combo.offAttackString, combo.offDamageString,
+            combo.offAtkValue, offDmgValue, offWeapon.critValue,
+            combo.offAttackString, offDmgTooltip,
             'offHand',
             `#d20${combo.offAttackBonus >= 0 ? '+' : ''}${combo.offAttackBonus} #${offWeapon.name} Attack (OH)`,
-            combo.rolzDmgRollMessage || offWeapon.rolzDmgRollMessage,
+            offDmgRolz,
             offWeapon.additionalDamageWarning
           );
         }
@@ -618,11 +652,11 @@ function updateWeaponStatsDisplay() {
       // Normal single weapon stats
       renderWeaponStats(
         mainStats,
-        mainWeapon.atkValue, mainWeapon.dmgValue, mainWeapon.critValue,
-        mainWeapon.attackBonus.string, mainWeapon.damageBonus.string,
+        mainWeapon.atkValue, mainDmgValue, mainWeapon.critValue,
+        mainWeapon.attackBonus.string, mainDmgTooltip,
         'weapon',
         mainWeapon.rolzAtkRollMessage,
-        mainWeapon.rolzDmgRollMessage,
+        mainDmgRolz,
         mainWeapon.additionalDamageWarning
       );
       if (offHandStats) offHandStats.innerHTML = '-';

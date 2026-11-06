@@ -1,6 +1,6 @@
 import { ICharacter } from '@server/character/icharacter';
 import { Weapon } from './weapons';
-import { BuildRolzDamageMessage } from './weapon_extra_damage';
+import { BuildWeaponDamageVariants } from './weapon_extra_damage';
 
 /**
  * TWF penalty data for a specific (main-hand, off-hand) weapon combination.
@@ -17,11 +17,14 @@ export interface TwfCombination {
   mainAtkValue: string;
   offAtkValue: string;
   offDmgValue: string;
+  sneakOffDmgValue?: string;
   // Tooltip strings
   mainAttackString: string;
   offAttackString: string;
   offDamageString: string;
+  sneakOffDamageString?: string;
   rolzDmgRollMessage?: string;
+  sneakRolzDmgRollMessage?: string;
 }
 
 /**
@@ -108,6 +111,9 @@ export function calculateTwf(character: ICharacter, weapons: Weapon[]): TwfData 
   }
 
   const strModifier = character.abilities.Str ? character.abilities.Str.modifier : 0;
+  const sneakProp = character.GetModifiableProperty('sneakAttackDice');
+  const charSneakDice = sneakProp ? sneakProp.currentScore : 0;
+  const charSneakEffectsString = sneakProp ? sneakProp.EffectsString : '';
   const combinations: TwfCombination[] = [];
 
   // Generate all ordered (main, off) pairs
@@ -127,13 +133,6 @@ export function calculateTwf(character: ICharacter, weapons: Weapon[]): TwfData 
       const offAtkValue = `${offAttackBonus}`;
 
       const offDice = (off.weapon.damage || '1d3').split(' ')[0];
-      const offDmgSign = offDamageBonus >= 0 ? '+' : '-';
-      const offDmgAbs = Math.abs(offDamageBonus);
-      let offDmgValue = `${offDice} ${offDmgSign} ${offDmgAbs}`;
-      if (off.weapon.additionalDamageFormula) {
-        offDmgValue = `${offDmgValue} ${off.weapon.additionalDamageFormula}`;
-      }
-      const rolzDmgRollMessage = BuildRolzDamageMessage(`${off.weapon.name} (OH)`, offDice, offDamageBonus, off.weapon.additionalDamages || []);
 
       // Format tooltip strings
       const mainAttackString =
@@ -143,7 +142,7 @@ export function calculateTwf(character: ICharacter, weapons: Weapon[]): TwfData 
         `${offAttackBonus}: ${off.weapon.attackBonus.bonus} base ${offPenalty} TWF penalty` +
         (offHandIsLight ? ' (light off-hand)' : ' (one-handed off-hand)');
       const halfStr = Math.floor(strModifier / 2);
-      const offDamageString =
+      const baseOffDamageString =
         `${offDamageBonus}: ${halfStr} Str (half of ${strModifier})` +
         (off.weapon.damageBonus.weaponSpecificBonus !== 0
           ? `, +${off.weapon.damageBonus.weaponSpecificBonus} weapon`
@@ -155,6 +154,16 @@ export function calculateTwf(character: ICharacter, weapons: Weapon[]): TwfData 
           ? `, +${off.weapon.damageBonus.globalDmgBonus.currentScore} global`
           : '');
 
+      const dmgVariants = BuildWeaponDamageVariants(
+        `${off.weapon.name} (OH)`,
+        offDice,
+        offDamageBonus,
+        baseOffDamageString,
+        off.weapon.additionalDamages || [],
+        charSneakDice,
+        charSneakEffectsString
+      );
+
       combinations.push({
         mainWeaponIndex: main.index,
         offWeaponIndex: off.index,
@@ -165,11 +174,14 @@ export function calculateTwf(character: ICharacter, weapons: Weapon[]): TwfData 
         offDamageBonus,
         mainAtkValue,
         offAtkValue,
-        offDmgValue,
+        offDmgValue: dmgVariants.dmgValue,
+        sneakOffDmgValue: dmgVariants.sneakDmgValue,
         mainAttackString,
         offAttackString,
-        offDamageString,
-        rolzDmgRollMessage
+        offDamageString: dmgVariants.damageString,
+        sneakOffDamageString: dmgVariants.sneakDamageString,
+        rolzDmgRollMessage: dmgVariants.rolzDmgRollMessage,
+        sneakRolzDmgRollMessage: dmgVariants.sneakRolzDmgRollMessage
       });
     }
   }

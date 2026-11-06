@@ -1,5 +1,7 @@
 import { ClassesData } from './_classes_general_data';
 import { ClassData, createClassData } from './class_types';
+import { ICharacter } from '../character/icharacter';
+import { StaticPropertyEffect } from '../character/state/effects';
 
 export const UnseenSeer: ClassData = createClassData({
   name: 'Unseen Seer',
@@ -54,6 +56,23 @@ export const UnseenSeer: ClassData = createClassData({
     casterClass: 'Beguiler', // Prestige Class that advances an existing class
     type: 'Arcane',
     bonusSpellAbility: 'Int'
+  },
+
+  AddSpecialProps(character: ICharacter) {
+    const level = character.GetClassLevel('Unseen Seer');
+    if (level > 0 && (character.HasClass('Rogue') || character.GetModifiableProperty('sneakAttackDice').currentScore > 0)) {
+      const bonusDice = Math.floor((level + 2) / 3); // +1d6 at 1st, 4th, 7th, 10th level
+      if (bonusDice > 0) {
+        character.GetModifiableProperty('sneakAttackDice').applyEffect(
+          new StaticPropertyEffect({
+            status: 'Unseen Seer',
+            property: 'sneakAttackDice',
+            modifierType: 'Generic',
+            value: bonusDice
+          })
+        );
+      }
+    }
   }
 });
 

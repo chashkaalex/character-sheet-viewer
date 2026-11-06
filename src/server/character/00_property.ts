@@ -183,12 +183,16 @@ export class WeaponAttackBonus {
     return this.bab.currentScore + this.ability.modifier + this.size.modifier + this.enhancement + this.featBonus.currentScore;
   }
 
-  public get state(): any {
+  public get string(): string {
     const enhancementString = this.enhancement !== 0 ? `, +${this.enhancement} enhancement` : '';
     const featString = this.featBonus.EffectsString ? `, ${this.featBonus.EffectsString}` : '';
+    return `${this.bonus}: ${this.bab.string}, + ${this.ability.ModifierString}, ${this.size.string}${enhancementString}${featString}`;
+  }
+
+  public get state(): any {
     return {
       bonus: this.bonus,
-      string: `${this.bonus}: ${this.bab.string}, + ${this.ability.ModifierString}, ${this.size.string}${enhancementString}${featString}`
+      string: this.string
     };
   }
 }
@@ -247,14 +251,18 @@ export class WeaponDamageBonus {
     return abilityModifier + this.globalDmgBonus.currentScore + this.weaponSpecificBonus + this.featBonus.currentScore;
   }
 
-  public get state(): any {
+  public get string(): string {
     const abilityString = this.ability ? this.ability.ModifierString : '';
     const globalDmgBonusString = this.globalDmgBonus.EffectsString;
     const weaponSpecificBonusString = this.weaponSpecificBonus !== 0 ? `, +${this.weaponSpecificBonus} weapon bonus` : '';
     const featBonusString = this.featBonus.EffectsString ? `, ${this.featBonus.EffectsString}` : '';
+    return `${this.bonus}: ${abilityString} ${globalDmgBonusString}${weaponSpecificBonusString}${featBonusString}`;
+  }
+
+  public get state(): any {
     return {
       bonus: this.bonus,
-      string: `${this.bonus}: ${abilityString} ${globalDmgBonusString}${weaponSpecificBonusString}${featBonusString}`
+      string: this.string
     };
   }
 }

@@ -47,6 +47,7 @@ const globalRegistry: Record<string, any> = {
     onWeaponChange: Dashboard.onWeaponChange,
     onOffHandChange: Dashboard.onOffHandChange,
     onFullAttackToggle: Dashboard.onFullAttackToggle,
+    onSneakAttackToggle: Dashboard.onSneakAttackToggle,
     onSpecialAttackChange: Dashboard.onSpecialAttackChange,
     showPartyModal: Dashboard.showPartyModal,
     closePartyModal: Dashboard.closePartyModal,

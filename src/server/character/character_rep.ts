@@ -4,6 +4,7 @@ import { CharacterClass } from './properties/race_and_classes';
 import { ActionsData, NumberAction } from './actions/actions_effects';
 import { calculateTwf, TwfData } from './gear/weapons/twf';
 import { calculateNormalFullAttack, calculateTwfFullAttack } from './gear/weapons/full_attack';
+import { BuildWeaponDamageVariants } from './gear/weapons/weapon_extra_damage';
 import { sanitizeDbLink } from './parser_utils';
 import { GetScriptProperty } from '../services/gdoc_utilities';
 
@@ -68,10 +69,18 @@ export interface CharacterRep {
       mainAtkValue: string;
       offAtkValue: string;
       offDmgValue: string;
+      sneakOffDmgValue?: string;
       mainAttackString: string;
       offAttackString: string;
       offDamageString: string;
+      sneakOffDamageString?: string;
+      rolzDmgRollMessage?: string;
+      sneakRolzDmgRollMessage?: string;
     }>;
+  };
+  sneakAttack?: {
+    dice: number;
+    string: string;
   };
 }
 
@@ -172,11 +181,35 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
     characterObject.spellCasting = character.spellCasting.state;
   }
 
+  // Add sneak attack info if character has sneak attack dice
+  const sneakProp = character.GetModifiableProperty('sneakAttackDice');
+  const charSneakDice = sneakProp ? sneakProp.currentScore : 0;
+  const charSneakEffectsString = sneakProp ? sneakProp.EffectsString : '';
+  if (charSneakDice > 0) {
+    characterObject.sneakAttack = {
+      dice: charSneakDice,
+      string: `+${charSneakDice}d6${charSneakEffectsString ? ` (${charSneakEffectsString})` : ''}`
+    };
+  }
+
   // Add weapons
   if (character.weapons && character.weapons.length > 0) {
     // Map weapons with their original index for TWF index remapping
     const weaponsWithOrigIndex = character.weapons.map((weapon: any, origIdx: number) => {
       const normalFull = calculateNormalFullAttack(weapon, character);
+      const baseDice = (weapon.damage || '1d3').split(' ')[0];
+      const baseDmgBonus = weapon.damageBonus ? weapon.damageBonus.bonus : 0;
+      const baseDmgTooltip = weapon.damageBonus ? weapon.damageBonus.state.string : '';
+      const dmgVariants = BuildWeaponDamageVariants(
+        weapon.name,
+        baseDice,
+        baseDmgBonus,
+        baseDmgTooltip,
+        weapon.additionalDamages || [],
+        charSneakDice,
+        charSneakEffectsString
+      );
+
       return {
         name: weapon.name,
         attackBonus: weapon.attackBonus ? weapon.attackBonus.state : null,
@@ -185,10 +218,13 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
         atkPartString: weapon.atkPartString,
         dmgPartString: weapon.dmgPartString,
         atkValue: weapon.atkValue,
-        dmgValue: weapon.dmgValue,
+        dmgValue: dmgVariants.dmgValue,
+        sneakDmgValue: dmgVariants.sneakDmgValue,
+        sneakDamageString: dmgVariants.sneakDamageString,
         critValue: weapon.critValue,
         rolzAtkRollMessage: `#d20${weapon.attackBonus ? (weapon.attackBonus.bonus >= 0 ? '+' : '') + weapon.attackBonus.bonus : ''} #${weapon.name} Attack`,
-        rolzDmgRollMessage: weapon.rolzDmgRollMessage || `#${weapon.dmgValue.replace(/\s+/g, '').replace(/[+-]0$/, '')} #${weapon.name} Damage`,
+        rolzDmgRollMessage: dmgVariants.rolzDmgRollMessage,
+        sneakRolzDmgRollMessage: dmgVariants.sneakRolzDmgRollMessage,
         additionalDamages: weapon.additionalDamages || [],
         additionalDamageFormula: weapon.additionalDamageFormula || '',
         additionalDamageWarning: weapon.additionalDamageWarning || null,

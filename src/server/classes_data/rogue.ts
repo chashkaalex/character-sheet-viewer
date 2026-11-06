@@ -1,5 +1,7 @@
 import { ClassesData } from './_classes_general_data';
 import { ClassData, createClassData } from './class_types';
+import { ICharacter } from '../character/icharacter';
+import { StaticPropertyEffect } from '../character/state/effects';
 
 export const Rogue: ClassData = createClassData({
   name: 'Rogue',
@@ -60,7 +62,22 @@ export const Rogue: ClassData = createClassData({
     /*level: 18*/{ bab: 13, Fort: 6, Ref: 11, Will: 6 },
     /*level: 19*/{ bab: 14, Fort: 6, Ref: 11, Will: 6 },
     /*level: 20*/{ bab: 15, Fort: 6, Ref: 12, Will: 6 }
-  ]
+  ],
+
+  AddSpecialProps(character: ICharacter) {
+    const level = character.GetClassLevel('Rogue');
+    if (level > 0) {
+      const sneakDice = Math.ceil(level / 2);
+      character.GetModifiableProperty('sneakAttackDice').applyEffect(
+        new StaticPropertyEffect({
+          status: 'Rogue',
+          property: 'sneakAttackDice',
+          modifierType: 'Generic',
+          value: sneakDice
+        })
+      );
+    }
+  }
 });
 
 ClassesData.set('Rogue', Rogue);

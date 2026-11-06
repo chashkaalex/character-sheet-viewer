@@ -30,7 +30,8 @@ export const StandardMagicWeaponQualities: Record<string, { dice: string; type: 
   'holy': { dice: '2d6', type: 'holy' },
   'unholy': { dice: '2d6', type: 'unholy' },
   'anarchic': { dice: '2d6', type: 'chaotic' },
-  'axiomatic': { dice: '2d6', type: 'lawful' }
+  'axiomatic': { dice: '2d6', type: 'lawful' },
+  'deadly precision': { dice: '1d6', type: 'sneak attack' }
 };
 
 /**
@@ -203,6 +204,91 @@ export function BuildRolzDamageMessage(
     .join(' ');
 
   return `${weaponName} Damage: [${baseRollExpr}] (Physical) ${extraParts}`;
+}
+
+export interface WeaponDamageVariants {
+  dmgValue: string;
+  rolzDmgRollMessage: string;
+  damageString: string;
+  sneakDmgValue?: string;
+  sneakRolzDmgRollMessage?: string;
+  sneakDamageString?: string;
+}
+
+/**
+ * Computes both normal (non-sneak) and Sneak Attack damage display strings,
+ * tooltips, and Rolz roll messages for a weapon, merging any weapon-specific
+ * sneak attack dice (e.g. Deadly Precision +1d6) with the character's class
+ * sneak attack dice.
+ */
+export function BuildWeaponDamageVariants(
+  weaponName: string,
+  baseDice: string,
+  baseBonus: number,
+  baseTooltip: string,
+  additionalDamages: AdditionalDamageComponent[],
+  charSneakDice: number,
+  charSneakEffectsString: string
+): WeaponDamageVariants {
+  const nonSneakDamages = (additionalDamages || []).filter(d => d.type !== 'sneak attack');
+  const weaponSneakDamages = (additionalDamages || []).filter(d => d.type === 'sneak attack');
+
+  let weaponSneakDice = 0;
+  for (const d of weaponSneakDamages) {
+    const match = d.diceOrFlat.match(/^(\d+)d6$/i);
+    if (match) {
+      weaponSneakDice += parseInt(match[1], 10);
+    }
+  }
+
+  const dmgSign = baseBonus >= 0 ? '+' : '-';
+  const baseDmgStr = `${baseDice} ${dmgSign} ${Math.abs(baseBonus)}`;
+
+  const nonSneakFormula = nonSneakDamages.map(d => `+ ${d.diceOrFlat} ${d.type}`).join(' ');
+  const dmgValue = nonSneakFormula ? `${baseDmgStr} ${nonSneakFormula}` : baseDmgStr;
+  const rolzDmgRollMessage = BuildRolzDamageMessage(weaponName, baseDice, baseBonus, nonSneakDamages);
+
+  const totalSneakDice = charSneakDice + weaponSneakDice;
+  if (totalSneakDice <= 0) {
+    return {
+      dmgValue,
+      rolzDmgRollMessage,
+      damageString: baseTooltip
+    };
+  }
+
+  const sneakDamages: AdditionalDamageComponent[] = [
+    ...nonSneakDamages,
+    {
+      diceOrFlat: `${totalSneakDice}d6`,
+      type: 'sneak attack',
+      source: 'Sneak Attack',
+      isDice: true
+    }
+  ];
+
+  const sneakFormula = sneakDamages.map(d => `+ ${d.diceOrFlat} ${d.type}`).join(' ');
+  const sneakDmgValue = `${baseDmgStr} ${sneakFormula}`;
+  const sneakRolzDmgRollMessage = BuildRolzDamageMessage(weaponName, baseDice, baseBonus, sneakDamages);
+
+  const breakdownParts: string[] = [];
+  if (charSneakEffectsString) {
+    breakdownParts.push(charSneakEffectsString);
+  }
+  if (weaponSneakDice > 0) {
+    breakdownParts.push(`+${weaponSneakDice} (Weapon)`);
+  }
+  const sneakBreakdown = breakdownParts.length > 0 ? ` (${breakdownParts.join(', ')})` : '';
+  const sneakDamageString = `${baseTooltip} | Sneak Attack: +${totalSneakDice}d6${sneakBreakdown}`;
+
+  return {
+    dmgValue,
+    rolzDmgRollMessage,
+    damageString: baseTooltip,
+    sneakDmgValue,
+    sneakRolzDmgRollMessage,
+    sneakDamageString
+  };
 }
 
 /**
