@@ -4,12 +4,39 @@ import { GetFirstNumberFromALine, normalizeQuotes } from '../../server/character
 import { IsSectionLine } from '../../server/character/parsers/doc_parser';
 import { AdapterResult } from '../../server/character/common_types';
 import { ClassesData } from '../../server/classes_data/_classes_general_data';
+import { CharacterSession } from '../../server/character/character_session';
+
+function hashString(str: string): number {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
+    }
+    return hash >>> 0;
+}
 
 /**
  * Local file system implementation of the DocumentAdapter.
  * Manipulates a local .txt file using docId as the absolute file path.
  */
 export class LocalAdapter extends DocumentAdapter {
+    private fileHashes = new Map<string, number>();
+
+    EnsureSessionCurrent(docId: string): void {
+        if (!fs.existsSync(docId)) {
+            this.fileHashes.delete(docId);
+            CharacterSession.reset(docId);
+            return;
+        }
+        const content = fs.readFileSync(docId, 'utf8').replace(/\r\n/g, '\n');
+        const currentHash = hashString(content);
+        const prevHash = this.fileHashes.get(docId);
+        if (prevHash !== undefined && prevHash !== currentHash) {
+            CharacterSession.reset(docId);
+        }
+        this.fileHashes.set(docId, currentHash);
+    }
+
     /**
      * Helper to read the lines of a file.
      * @param filePath
@@ -26,7 +53,10 @@ export class LocalAdapter extends DocumentAdapter {
      * @param lines
      */
     _writeLines(filePath: string, lines: string[]): void {
-        fs.writeFileSync(filePath, lines.join('\n'));
+        const content = lines.join('\n');
+        fs.writeFileSync(filePath, content);
+        this.fileHashes.set(filePath, hashString(content));
+        CharacterSession.reset(filePath);
     }
 
     UpdateHp(docId: string, newHp: number): AdapterResult {

@@ -2,6 +2,72 @@ import { GetLineThatContainsOneOfTheseTokens, GetParenthesesContent } from '../c
 import { SECTION_NAMES, IsSectionLine, ParsePreparedSpellsStructure } from '../character/parsers/doc_parser';
 import { AdapterResult } from '../character/common_types';
 import { ClassesData } from '../classes_data/_classes_general_data';
+import { CharacterSession } from '../character/character_session';
+
+class DocSessionManager {
+    private docs = new Map<string, GoogleAppsScript.Document.Document>();
+    private lastOpenByIdRef: unknown = null;
+
+    public ensureCurrent(): void {
+        const currentRef = typeof DocumentApp !== 'undefined' ? DocumentApp.openById : null;
+        if (currentRef !== this.lastOpenByIdRef) {
+            if (this.lastOpenByIdRef !== null) {
+                this.docs.clear();
+                CharacterSession.reset();
+            }
+            this.lastOpenByIdRef = currentRef;
+        }
+    }
+
+    public get(docId: string): GoogleAppsScript.Document.Document {
+        this.ensureCurrent();
+        let doc = this.docs.get(docId);
+        if (!doc) {
+            doc = DocumentApp.openById(docId);
+            this.docs.set(docId, doc);
+        }
+        return doc;
+    }
+
+    public reset(docId?: string): void {
+        if (docId !== undefined) {
+            this.docs.delete(docId);
+        } else {
+            this.docs.clear();
+            this.lastOpenByIdRef = null;
+        }
+    }
+}
+
+const DocSession = new DocSessionManager();
+
+export function EnsureDocSessionCurrent(): void {
+    DocSession.ensureCurrent();
+}
+
+export function ResetDocSession(docId?: string): void {
+    DocSession.reset(docId);
+}
+
+export function ReadDoc<T>(
+    docId: string,
+    fn: (doc: GoogleAppsScript.Document.Document) => T
+): T {
+    const doc = DocSession.get(docId);
+    return fn(doc);
+}
+
+export function MutateDoc<T>(
+    docId: string,
+    fn: (doc: GoogleAppsScript.Document.Document) => T
+): T {
+    const doc = DocSession.get(docId);
+    try {
+        return fn(doc);
+    } finally {
+        CharacterSession.reset(docId);
+    }
+}
 
 class ParagraphResult {
     public success: boolean;
@@ -44,55 +110,54 @@ function GetParagraphThatContainsText(doc: GoogleAppsScript.Document.Document, s
  */
 export function UpdateProperty(docId: string, propertyName: string, newValue: string | number): AdapterResult {
     try {
-        const doc = DocumentApp.openById(docId);
+        return MutateDoc(docId, doc => {
+            // Get the paragraph that contains the property
+            const paragraphResult = GetParagraphThatContainsText(doc, propertyName);
+            if (!paragraphResult.success) {
+                return { success: false, error: paragraphResult.error || 'Unknown error' };
+            }
 
-        // Get the paragraph that contains the property
-        const paragraphResult = GetParagraphThatContainsText(doc, propertyName);
-        if (!paragraphResult.success) {
-            return { success: false, error: paragraphResult.error || 'Unknown error' };
-        }
+            const paragraph = paragraphResult.paragraph!;
+            const paragraphText = paragraph.editAsText();
+            const targetLine = paragraph.getText();
 
-        const paragraph = paragraphResult.paragraph!;
-        const paragraphText = paragraph.editAsText();
-        const targetLine = paragraph.getText();
+            // Find the position of the property name in the line
+            const propertyStartIndex = targetLine.indexOf(propertyName);
 
-        // Find the position of the property name in the line
-        const propertyStartIndex = targetLine.indexOf(propertyName);
+            // Get the substring after the property name
+            const afterProperty = targetLine.substring(propertyStartIndex + propertyName.length);
 
-        // Get the substring after the property name
-        const afterProperty = targetLine.substring(propertyStartIndex + propertyName.length);
+            // Find the first number after the property name
+            const numberMatch = afterProperty.match(/(\d+)/);
+            if (!numberMatch) {
+                return {
+                    success: false,
+                    error: `No number found after property '${propertyName}' in line`
+                };
+            }
 
-        // Find the first number after the property name
-        const numberMatch = afterProperty.match(/(\d+)/);
-        if (!numberMatch) {
+            // Calculate the position of the number in the original line
+            const propertyValueStartIndex = propertyStartIndex + propertyName.length + (numberMatch.index || 0);
+
+            // record attributes
+            const attributes = paragraphText.getAttributes(propertyValueStartIndex);
+            const fcolor = paragraphText.getForegroundColor(propertyValueStartIndex);
+
+            const propertyEndIndex = propertyStartIndex + propertyName.length + (numberMatch.index || 0) + numberMatch[0].length;
+            const updatedText = targetLine.substring(propertyStartIndex, propertyValueStartIndex) + newValue.toString();
+
+            // Update the specific text range while preserving formatting
+            paragraphText.replaceText(targetLine.substring(propertyStartIndex, propertyEndIndex), updatedText);
+
+            // restore attributes
+            paragraphText.setAttributes(propertyValueStartIndex, propertyValueStartIndex + newValue.toString().length - 1, attributes);
+            paragraphText.setForegroundColor(propertyValueStartIndex, propertyValueStartIndex + newValue.toString().length - 1, fcolor);
+
             return {
-                success: false,
-                error: `No number found after property '${propertyName}' in line`
+                success: true,
+                message: `Successfully updated ${propertyName} to ${newValue}`
             };
-        }
-
-        // Calculate the position of the number in the original line
-        const propertyValueStartIndex = propertyStartIndex + propertyName.length + (numberMatch.index || 0);
-
-        // record attributes
-        const attributes = paragraphText.getAttributes(propertyValueStartIndex);
-        const fcolor = paragraphText.getForegroundColor(propertyValueStartIndex);
-
-        const propertyEndIndex = propertyStartIndex + propertyName.length + (numberMatch.index || 0) + numberMatch[0].length;
-        const updatedText = targetLine.substring(propertyStartIndex, propertyValueStartIndex) + newValue.toString();
-
-        // Update the specific text range while preserving formatting
-        paragraphText.replaceText(targetLine.substring(propertyStartIndex, propertyEndIndex), updatedText);
-
-        // restore attributes
-        paragraphText.setAttributes(propertyValueStartIndex, propertyValueStartIndex + newValue.toString().length - 1, attributes);
-        paragraphText.setForegroundColor(propertyValueStartIndex, propertyValueStartIndex + newValue.toString().length - 1, fcolor);
-
-        return {
-            success: true,
-            message: `Successfully updated ${propertyName} to ${newValue}`
-        };
-
+        });
     } catch (error) {
         console.error('Error updating property:', error);
         return {
@@ -111,37 +176,37 @@ export function UpdateProperty(docId: string, propertyName: string, newValue: st
  */
 export function UpdateSection(docId: string, sectionName: string, newLine: string): AdapterResult {
     try {
-        const doc = DocumentApp.openById(docId);
-        const body = doc.getBody();
-        const paragraphs = body.getParagraphs();
+        return MutateDoc(docId, doc => {
+            const body = doc.getBody();
+            const paragraphs = body.getParagraphs();
 
-        // Find the section start
-        const sectionStartIndex = paragraphs.findIndex(paragraph =>
-            paragraph.getText().includes(sectionName)
-        );
+            // Find the section start
+            const sectionStartIndex = paragraphs.findIndex(paragraph =>
+                paragraph.getText().includes(sectionName)
+            );
 
-        if (sectionStartIndex === -1) {
+            if (sectionStartIndex === -1) {
+                return {
+                    success: false,
+                    error: `Section '${sectionName}' not found in document`
+                };
+            }
+
+            // Find the section end (next section or end of document)
+            let sectionEndIndex = sectionStartIndex + 1;
+            while (sectionEndIndex < paragraphs.length &&
+                !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
+                sectionEndIndex++;
+            }
+
+            // Insert the new line at the end of the section
+            body.insertParagraph(sectionEndIndex, newLine);
+
             return {
-                success: false,
-                error: `Section '${sectionName}' not found in document`
+                success: true,
+                message: `Successfully added line to ${sectionName} section`
             };
-        }
-
-        // Find the section end (next section or end of document)
-        let sectionEndIndex = sectionStartIndex + 1;
-        while (sectionEndIndex < paragraphs.length &&
-            !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
-            sectionEndIndex++;
-        }
-
-        // Insert the new line at the end of the section
-        body.insertParagraph(sectionEndIndex, newLine);
-
-        return {
-            success: true,
-            message: `Successfully added line to ${sectionName} section`
-        };
-
+        });
     } catch (error) {
         console.error('Error updating section:', error);
         return {
@@ -160,59 +225,59 @@ export function UpdateSection(docId: string, sectionName: string, newLine: strin
  */
 export function RemoveLineFromSection(docId: string, sectionName: string, lineToRemove: string): AdapterResult {
     try {
-        const doc = DocumentApp.openById(docId);
-        const body = doc.getBody();
-        const paragraphs = body.getParagraphs();
+        return MutateDoc(docId, doc => {
+            const body = doc.getBody();
+            const paragraphs = body.getParagraphs();
 
-        // Find the section start
-        const sectionStartIndex = paragraphs.findIndex(paragraph =>
-            paragraph.getText().includes(sectionName)
-        );
+            // Find the section start
+            const sectionStartIndex = paragraphs.findIndex(paragraph =>
+                paragraph.getText().includes(sectionName)
+            );
 
-        if (sectionStartIndex === -1) {
-            return {
-                success: false,
-                error: `Section '${sectionName}' not found in document`
-            };
-        }
-
-        // Find the section end (next section or end of document)
-        let sectionEndIndex = sectionStartIndex + 1;
-        while (sectionEndIndex < paragraphs.length &&
-            !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
-            sectionEndIndex++;
-        }
-
-        // Find the specific line to remove within the section
-        const trimmedLine = lineToRemove.trim();
-        const baseName = trimmedLine.replace(/\s+[+-]\d+$/, '').trim();
-        const escapedBase = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const statusPattern = sectionName === 'Statuses' ? new RegExp(`^\\s*${escapedBase}(\\s+[+-]\\d+)?\\s*:`, 'i') : null;
-
-        let lineToRemoveIndex = -1;
-        for (let i = sectionStartIndex + 1; i < sectionEndIndex; i++) {
-            const pText = paragraphs[i].getText();
-            if ((statusPattern && statusPattern.test(pText)) || pText.includes(lineToRemove) || pText.trim() === trimmedLine) {
-                lineToRemoveIndex = i;
-                break;
+            if (sectionStartIndex === -1) {
+                return {
+                    success: false,
+                    error: `Section '${sectionName}' not found in document`
+                };
             }
-        }
 
-        if (lineToRemoveIndex === -1) {
+            // Find the section end (next section or end of document)
+            let sectionEndIndex = sectionStartIndex + 1;
+            while (sectionEndIndex < paragraphs.length &&
+                !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
+                sectionEndIndex++;
+            }
+
+            // Find the specific line to remove within the section
+            const trimmedLine = lineToRemove.trim();
+            const baseName = trimmedLine.replace(/\s+[+-]\d+$/, '').trim();
+            const escapedBase = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const statusPattern = sectionName === 'Statuses' ? new RegExp(`^\\s*${escapedBase}(\\s+[+-]\\d+)?\\s*:`, 'i') : null;
+
+            let lineToRemoveIndex = -1;
+            for (let i = sectionStartIndex + 1; i < sectionEndIndex; i++) {
+                const pText = paragraphs[i].getText();
+                if ((statusPattern && statusPattern.test(pText)) || pText.includes(lineToRemove) || pText.trim() === trimmedLine) {
+                    lineToRemoveIndex = i;
+                    break;
+                }
+            }
+
+            if (lineToRemoveIndex === -1) {
+                return {
+                    success: false,
+                    error: `Line '${lineToRemove}' not found in ${sectionName} section`
+                };
+            }
+
+            // Remove the specific line
+            paragraphs[lineToRemoveIndex].removeFromParent();
+
             return {
-                success: false,
-                error: `Line '${lineToRemove}' not found in ${sectionName} section`
+                success: true,
+                message: `Successfully removed line from ${sectionName} section`
             };
-        }
-
-        // Remove the specific line
-        paragraphs[lineToRemoveIndex].removeFromParent();
-
-        return {
-            success: true,
-            message: `Successfully removed line from ${sectionName} section`
-        };
-
+        });
     } catch (error) {
         console.error('Error removing line from section:', error);
         return {
@@ -229,33 +294,36 @@ export function RemoveLineFromSection(docId: string, sectionName: string, lineTo
  * @returns Array of raw lines
  */
 export function ParseGDocToRawLines(docId: string): string[] {
-    let doc = DocumentApp.openById(docId);
-    let body = doc.getBody();
-    if (body.getText().includes('\u000b')) {
-        doc.saveAndClose();
-        ReplaceSoftWithHardReturns(docId);
-        doc = DocumentApp.openById(docId);
-        body = doc.getBody();
-    }
-    const paragraphs = body.getParagraphs();
+    return ReadDoc(docId, initialDoc => {
+        let doc = initialDoc;
+        let body = doc.getBody();
+        if (body.getText().includes('\u000b')) {
+            doc.saveAndClose();
+            ResetDocSession(docId);
+            ReplaceSoftWithHardReturns(docId);
+            doc = ReadDoc(docId, d => d);
+            body = doc.getBody();
+        }
+        const paragraphs = body.getParagraphs();
 
-    const rawLines: string[] = [];
-    paragraphs.forEach(paragraph => {
-        // if it is a list item, get the text and strikethrough
-        let text = paragraph.getText().trim();
-        if (paragraph.getType() === DocumentApp.ElementType.LIST_ITEM) {
-            const listItem = paragraph.asListItem();
-            if (text === '') {
-                text = '[o]';
-            } else if (listItem.editAsText().isStrikethrough(0)) { // check if the first character is strikethrough
-                text = '[x]' + text;
+        const rawLines: string[] = [];
+        paragraphs.forEach(paragraph => {
+            // if it is a list item, get the text and strikethrough
+            let text = paragraph.getText().trim();
+            if (paragraph.getType() === DocumentApp.ElementType.LIST_ITEM) {
+                const listItem = paragraph.asListItem();
+                if (text === '') {
+                    text = '[o]';
+                } else if (listItem.editAsText().isStrikethrough(0)) { // check if the first character is strikethrough
+                    text = '[x]' + text;
+                }
             }
-        }
-        if (text !== '') {
-            rawLines.push(text);
-        }
+            if (text !== '') {
+                rawLines.push(text);
+            }
+        });
+        return rawLines;
     });
-    return rawLines;
 }
 
 export function ReplaceSoftWithHardReturns(docId: string): void {
@@ -331,39 +399,40 @@ export function ExtractListItemsArray(doc: GoogleAppsScript.Document.Document, s
  * @returns The spell list item or null
  */
 export function GetSpellListItem(docId: string, casterClass: string, spellLevel: string | number, slotIndex: number): GoogleAppsScript.Document.ListItem | null {
-    const doc = DocumentApp.openById(docId);
-    // Get raw items with potentially method access if they are ListItems
-    const listItems = ExtractListItemsArray(doc, 'Prepared Spells');
+    return ReadDoc(docId, doc => {
+        // Get raw items with potentially method access if they are ListItems
+        const listItems = ExtractListItemsArray(doc, 'Prepared Spells');
 
-    const lines = ParseGDocToRawLines(docId);
-    let domains: string[] = [];
-    const domainLine = GetLineThatContainsOneOfTheseTokens(lines, ['Domain', 'domains']);
-    if (domainLine) {
-        domains = GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
-    }
+        const lines = ParseGDocToRawLines(docId);
+        let domains: string[] = [];
+        const domainLine = GetLineThatContainsOneOfTheseTokens(lines, ['Domain', 'domains']);
+        if (domainLine) {
+            domains = GetParenthesesContent(domainLine).split(',').map(domain => domain.trim());
+        }
 
-    // Convert listItems to object array
-    const spellsItems = listItems.map(listItem => {
-        const text = listItem.getText().trim();
-        const isStruckThrough = text !== '' && listItem.editAsText().isStrikethrough(0);
-        return {
-            text: text,
-            isStrikeThrough: isStruckThrough,
-            listItem: listItem
-        };
+        // Convert listItems to object array
+        const spellsItems = listItems.map(listItem => {
+            const text = listItem.getText().trim();
+            const isStruckThrough = text !== '' && listItem.editAsText().isStrikethrough(0);
+            return {
+                text: text,
+                isStrikeThrough: isStruckThrough,
+                listItem: listItem
+            };
+        });
+
+        const preparedSpellsStructure = ParsePreparedSpellsStructure(spellsItems, domains, () => true);
+
+        // Filter for the specific spell level
+        // @ts-ignore
+        const levelItems = preparedSpellsStructure[casterClass][spellLevel];
+        if (!levelItems) return null;
+
+        // Find the specific slot index
+        const targetItem = levelItems[slotIndex];
+
+        return targetItem ? targetItem.listItem || null : null;
     });
-
-    const preparedSpellsStructure = ParsePreparedSpellsStructure(spellsItems, domains, () => true);
-
-    // Filter for the specific spell level
-    // @ts-ignore
-    const levelItems = preparedSpellsStructure[casterClass][spellLevel];
-    if (!levelItems) return null;
-
-    // Find the specific slot index
-    const targetItem = levelItems[slotIndex];
-
-    return targetItem ? targetItem.listItem || null : null;
 }
 
 /**
@@ -375,57 +444,57 @@ export function GetSpellListItem(docId: string, casterClass: string, spellLevel:
  */
 export function DecrementSpontaneousSlotsInGDoc(docId: string, sectionName: string, marker: string): AdapterResult {
     try {
-        const doc = DocumentApp.openById(docId);
-        const body = doc.getBody();
-        const paragraphs = body.getParagraphs();
+        return MutateDoc(docId, doc => {
+            const body = doc.getBody();
+            const paragraphs = body.getParagraphs();
 
-        // Find the section start
-        const sectionStartIndex = paragraphs.findIndex(paragraph =>
-            paragraph.getText().includes(sectionName)
-        );
+            // Find the section start
+            const sectionStartIndex = paragraphs.findIndex(paragraph =>
+                paragraph.getText().includes(sectionName)
+            );
 
-        if (sectionStartIndex === -1) {
-            return {
-                success: false,
-                error: `Section '${sectionName}' not found in document`
-            };
-        }
+            if (sectionStartIndex === -1) {
+                return {
+                    success: false,
+                    error: `Section '${sectionName}' not found in document`
+                };
+            }
 
-        // Find the section end
-        let sectionEndIndex = sectionStartIndex + 1;
-        while (sectionEndIndex < paragraphs.length &&
-            !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
-            sectionEndIndex++;
-        }
+            // Find the section end
+            let sectionEndIndex = sectionStartIndex + 1;
+            while (sectionEndIndex < paragraphs.length &&
+                !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
+                sectionEndIndex++;
+            }
 
-        // Find the specific line
-        for (let i = sectionStartIndex; i < sectionEndIndex; i++) {
-            const paragraph = paragraphs[i];
-            const text = paragraph.getText();
+            // Find the specific line
+            for (let i = sectionStartIndex; i < sectionEndIndex; i++) {
+                const paragraph = paragraphs[i];
+                const text = paragraph.getText();
 
-            const isTargetLine = text.toLowerCase().startsWith(marker.toLowerCase());
+                const isTargetLine = text.toLowerCase().startsWith(marker.toLowerCase());
 
-            if (isTargetLine) {
-                const match = text.match(/(\d+)\/(\d+)/);
-                if (match) {
-                    const remaining = parseInt(match[1]);
-                    const total = parseInt(match[2]);
-                    if (remaining > 0) {
-                        const newText = text.replace(`${remaining}/${total}`, `${remaining - 1}/${total}`);
-                        paragraph.setText(newText);
-                        paragraph.editAsText().setStrikethrough(false);
-                        return { success: true };
+                if (isTargetLine) {
+                    const match = text.match(/(\d+)\/(\d+)/);
+                    if (match) {
+                        const remaining = parseInt(match[1]);
+                        const total = parseInt(match[2]);
+                        if (remaining > 0) {
+                            const newText = text.replace(`${remaining}/${total}`, `${remaining - 1}/${total}`);
+                            paragraph.setText(newText);
+                            paragraph.editAsText().setStrikethrough(false);
+                            return { success: true };
+                        }
+                        return { success: false, error: 'No slots remaining' };
                     }
-                    return { success: false, error: 'No slots remaining' };
                 }
             }
-        }
 
-        return {
-            success: false,
-            error: `Marker '${marker}' not found in ${sectionName} section`
-        };
-
+            return {
+                success: false,
+                error: `Marker '${marker}' not found in ${sectionName} section`
+            };
+        });
     } catch (error) {
         console.error('Error decrementing spontaneous slots:', error);
         return {
@@ -443,37 +512,37 @@ export function DecrementSpontaneousSlotsInGDoc(docId: string, sectionName: stri
  */
 export function DecrementPropertyWithUpdateProperty(docId: string, propertyName: string): AdapterResult {
     try {
-        const doc = DocumentApp.openById(docId);
-        const paragraphResult = GetParagraphThatContainsText(doc, propertyName);
-        if (!paragraphResult.success) {
-            return { success: false, error: paragraphResult.error || 'Unknown error' };
-        }
+        return MutateDoc(docId, doc => {
+            const paragraphResult = GetParagraphThatContainsText(doc, propertyName);
+            if (!paragraphResult.success) {
+                return { success: false, error: paragraphResult.error || 'Unknown error' };
+            }
 
-        const paragraph = paragraphResult.paragraph!;
-        const text = paragraph.getText();
-        const propertyStartIndex = text.indexOf(propertyName);
-        const afterProperty = text.substring(propertyStartIndex + propertyName.length);
+            const paragraph = paragraphResult.paragraph!;
+            const text = paragraph.getText();
+            const propertyStartIndex = text.indexOf(propertyName);
+            const afterProperty = text.substring(propertyStartIndex + propertyName.length);
 
-        // Find the first number after the property name
-        const numberMatch = afterProperty.match(/(\d+)/);
-        if (!numberMatch) {
-            return {
-                success: false,
-                error: `No numeric value found to decrement for property '${propertyName}'`
-            };
-        }
+            // Find the first number after the property name
+            const numberMatch = afterProperty.match(/(\d+)/);
+            if (!numberMatch) {
+                return {
+                    success: false,
+                    error: `No numeric value found to decrement for property '${propertyName}'`
+                };
+            }
 
-        const currentValue = parseInt(numberMatch[1], 10);
-        if (currentValue <= 0) {
-            return {
-                success: false,
-                error: `Property '${propertyName}' is already zero.`
-            };
-        }
+            const currentValue = parseInt(numberMatch[1], 10);
+            if (currentValue <= 0) {
+                return {
+                    success: false,
+                    error: `Property '${propertyName}' is already zero.`
+                };
+            }
 
-        // Defer to the existing UpdateProperty behavior to preserve formatting
-        return UpdateProperty(docId, propertyName, currentValue - 1);
-
+            // Defer to the existing UpdateProperty behavior to preserve formatting
+            return UpdateProperty(docId, propertyName, currentValue - 1);
+        });
     } catch (error) {
         console.error('Error decrementing property:', error);
         return {
@@ -528,70 +597,71 @@ export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string)
             console.error('PARTIES_DOC_ID not set in script properties');
             return { memberNames: [], quickStatuses: [], partyNickname: null };
         }
-        const doc = DocumentApp.openById(partiesDocId);
-        let targetTab: any = null;
+        return ReadDoc(partiesDocId, doc => {
+            let targetTab: any = null;
 
-        // Iterate through tabs to find the matching party name
-        // @ts-ignore - getTabs is a newer feature in GAS DocumentApp
-        for (const tab of doc.getTabs()) {
-            if (tab.getTitle() === partyName) {
-                targetTab = tab;
-                break;
-            }
-        }
-
-        if (!targetTab) {
-            console.error(`Party "${partyName}" not found in Parties document`);
-            return { memberNames: [], quickStatuses: [], partyNickname: null };
-        }
-
-        const body = targetTab.asDocumentTab().getBody();
-        const text = body.getText();
-        const lines = text.split(/\r?\n/).map(line => line.trim());
-
-        const sectionLines: Record<string, string[]> = {};
-        let currentSection: string | null = null;
-
-        for (const line of lines) {
-            if (PARTY_SECTION_NAMES.includes(line as any)) {
-                currentSection = line;
-                sectionLines[currentSection] = [];
-                continue;
+            // Iterate through tabs to find the matching party name
+            // @ts-ignore - getTabs is a newer feature in GAS DocumentApp
+            for (const tab of doc.getTabs()) {
+                if (tab.getTitle() === partyName) {
+                    targetTab = tab;
+                    break;
+                }
             }
 
-            if (currentSection && line !== '') {
-                sectionLines[currentSection].push(line);
+            if (!targetTab) {
+                console.error(`Party "${partyName}" not found in Parties document`);
+                return { memberNames: [], quickStatuses: [], partyNickname: null };
             }
-        }
 
-        const memberLines = sectionLines['Party Members'] || [];
-        const quickStatuses = sectionLines['Quick Statuses'] || [];
+            const body = targetTab.asDocumentTab().getBody();
+            const text = body.getText();
+            const lines = text.split(/\r?\n/).map(line => line.trim());
 
-        let isMember = false;
-        let partyNickname: string | null = null;
-        const memberNames: string[] = [];
+            const sectionLines: Record<string, string[]> = {};
+            let currentSection: string | null = null;
 
-        // Format: "Character_Sheet_Name gdoc_id"
-        for (const line of memberLines) {
-            const parts = line.split(' ');
-            if (parts.length < 2) continue; // skip malformed lines
+            for (const line of lines) {
+                if (PARTY_SECTION_NAMES.includes(line as any)) {
+                    currentSection = line;
+                    sectionLines[currentSection] = [];
+                    continue;
+                }
 
-            const docId = parts.pop(); // The last part is the docId
-            const memberName = parts.join(' '); // Rejoin the rest as the name
-
-            if (docId === currentDocId) {
-                isMember = true;
-                partyNickname = memberName;
+                if (currentSection && line !== '') {
+                    sectionLines[currentSection].push(line);
+                }
             }
-            memberNames.push(memberName);
-        }
 
-        if (!isMember) {
-            console.error(`Validation failed: Current doc ID ${currentDocId} not found in party list for ${partyName}`);
-            return { memberNames: [], quickStatuses: [], partyNickname: null };
-        }
+            const memberLines = sectionLines['Party Members'] || [];
+            const quickStatuses = sectionLines['Quick Statuses'] || [];
 
-        return { memberNames, quickStatuses, partyNickname };
+            let isMember = false;
+            let partyNickname: string | null = null;
+            const memberNames: string[] = [];
+
+            // Format: "Character_Sheet_Name gdoc_id"
+            for (const line of memberLines) {
+                const parts = line.split(' ');
+                if (parts.length < 2) continue; // skip malformed lines
+
+                const docId = parts.pop(); // The last part is the docId
+                const memberName = parts.join(' '); // Rejoin the rest as the name
+
+                if (docId === currentDocId) {
+                    isMember = true;
+                    partyNickname = memberName;
+                }
+                memberNames.push(memberName);
+            }
+
+            if (!isMember) {
+                console.error(`Validation failed: Current doc ID ${currentDocId} not found in party list for ${partyName}`);
+                return { memberNames: [], quickStatuses: [], partyNickname: null };
+            }
+
+            return { memberNames, quickStatuses, partyNickname };
+        });
     } catch (e) {
         console.error('Error fetching party members:', e);
         return { memberNames: [], quickStatuses: [], partyNickname: null };
@@ -603,59 +673,60 @@ export function GetPartyMembersFromGDoc(partyName: string, currentDocId: string)
  */
 export function ReplenishPreparedSpellsInGDoc(docId: string, casterClass: string): AdapterResult {
     try {
-        const doc = DocumentApp.openById(docId);
-        const body = doc.getBody();
-        let startParsing = false;
-        let currentClass = '';
+        return MutateDoc(docId, doc => {
+            const body = doc.getBody();
+            let startParsing = false;
+            let currentClass = '';
 
-        for (let i = 0; i < body.getNumChildren(); i++) {
-            const element = body.getChild(i);
-            const type = element.getType();
-            let elementText = '';
+            for (let i = 0; i < body.getNumChildren(); i++) {
+                const element = body.getChild(i);
+                const type = element.getType();
+                let elementText = '';
 
-            try {
-                if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
-                    const textElement = element as GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem;
-                    elementText = textElement.getText().trim();
-                }
-            } catch (e) {
-                // Ignore complex elements
-            }
-
-            if (startParsing && IsSectionLine(elementText) && !elementText.startsWith('Prepared Spells')) {
-                startParsing = false;
-                break;
-            }
-
-            if (elementText.startsWith('Prepared Spells')) {
-                startParsing = true;
-                continue;
-            }
-
-            if (startParsing) {
-                if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
-                    const matchedClass = Array.from(ClassesData.keys()).find(
-                        cls => cls.toLowerCase() === elementText.toLowerCase()
-                    );
-                    if (matchedClass) {
-                        currentClass = matchedClass;
-                        continue;
+                try {
+                    if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
+                        const textElement = element as GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem;
+                        elementText = textElement.getText().trim();
                     }
+                } catch (e) {
+                    // Ignore complex elements
                 }
 
-                if (currentClass.toLowerCase() === casterClass.toLowerCase()) {
-                    if (type === DocumentApp.ElementType.LIST_ITEM) {
-                        const listItem = element.asListItem();
-                        if (listItem.getText().trim() !== '') {
-                            console.log(`Replenishing prepared spell: ${listItem.getText().trim()}`);
-                            listItem.editAsText().setStrikethrough(false);
+                if (startParsing && IsSectionLine(elementText) && !elementText.startsWith('Prepared Spells')) {
+                    startParsing = false;
+                    break;
+                }
+
+                if (elementText.startsWith('Prepared Spells')) {
+                    startParsing = true;
+                    continue;
+                }
+
+                if (startParsing) {
+                    if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
+                        const matchedClass = Array.from(ClassesData.keys()).find(
+                            cls => cls.toLowerCase() === elementText.toLowerCase()
+                        );
+                        if (matchedClass) {
+                            currentClass = matchedClass;
+                            continue;
+                        }
+                    }
+
+                    if (currentClass.toLowerCase() === casterClass.toLowerCase()) {
+                        if (type === DocumentApp.ElementType.LIST_ITEM) {
+                            const listItem = element.asListItem();
+                            if (listItem.getText().trim() !== '') {
+                                console.log(`Replenishing prepared spell: ${listItem.getText().trim()}`);
+                                listItem.editAsText().setStrikethrough(false);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        return { success: true };
+            return { success: true };
+        });
     } catch (error) {
         console.error('Error replenishing prepared spells in GDoc:', error);
         return { success: false, error: (error as Error).toString() };
@@ -667,68 +738,69 @@ export function ReplenishPreparedSpellsInGDoc(docId: string, casterClass: string
  */
 export function ReplenishSpontaneousSlotsInGDoc(docId: string, casterClass: string): AdapterResult {
     try {
-        const doc = DocumentApp.openById(docId);
-        const body = doc.getBody();
-        let startParsing = false;
-        let currentClass = '';
+        return MutateDoc(docId, doc => {
+            const body = doc.getBody();
+            let startParsing = false;
+            let currentClass = '';
 
-        for (let i = 0; i < body.getNumChildren(); i++) {
-            const element = body.getChild(i);
-            const type = element.getType();
-            let elementText = '';
+            for (let i = 0; i < body.getNumChildren(); i++) {
+                const element = body.getChild(i);
+                const type = element.getType();
+                let elementText = '';
 
-            try {
-                if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
-                    const textElement = element as GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem;
-                    elementText = textElement.getText().trim();
-                }
-            } catch (e) {
-                // Ignore complex elements
-            }
-
-            if (startParsing && IsSectionLine(elementText) && !elementText.startsWith('Prepared Spells')) {
-                startParsing = false;
-                break;
-            }
-
-            if (elementText.startsWith('Prepared Spells')) {
-                startParsing = true;
-                continue;
-            }
-
-            if (startParsing) {
-                if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
-                    const matchedClass = Array.from(ClassesData.keys()).find(
-                        cls => cls.toLowerCase() === elementText.toLowerCase()
-                    );
-                    if (matchedClass) {
-                        currentClass = matchedClass;
-                        continue;
-                    }
-                }
-
-                if (currentClass.toLowerCase() === casterClass.toLowerCase()) {
+                try {
                     if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
                         const textElement = element as GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem;
-                        const text = textElement.getText();
-                        const match = text.match(/(\d+)\/(\d+)/);
-                        if (match) {
-                            const total = match[2];
-                            const newText = text.replace(/(\d+)\/(\d+)/, `${total}/${total}`);
-                            console.log(`Replenished spontaneous slots for ${currentClass}: '${text}' -> '${newText}'`);
-                            if (type === DocumentApp.ElementType.PARAGRAPH) {
-                                (element as GoogleAppsScript.Document.Paragraph).setText(newText);
-                            } else {
-                                (element as GoogleAppsScript.Document.ListItem).setText(newText);
+                        elementText = textElement.getText().trim();
+                    }
+                } catch (e) {
+                    // Ignore complex elements
+                }
+
+                if (startParsing && IsSectionLine(elementText) && !elementText.startsWith('Prepared Spells')) {
+                    startParsing = false;
+                    break;
+                }
+
+                if (elementText.startsWith('Prepared Spells')) {
+                    startParsing = true;
+                    continue;
+                }
+
+                if (startParsing) {
+                    if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
+                        const matchedClass = Array.from(ClassesData.keys()).find(
+                            cls => cls.toLowerCase() === elementText.toLowerCase()
+                        );
+                        if (matchedClass) {
+                            currentClass = matchedClass;
+                            continue;
+                        }
+                    }
+
+                    if (currentClass.toLowerCase() === casterClass.toLowerCase()) {
+                        if (type === DocumentApp.ElementType.PARAGRAPH || type === DocumentApp.ElementType.LIST_ITEM) {
+                            const textElement = element as GoogleAppsScript.Document.Paragraph | GoogleAppsScript.Document.ListItem;
+                            const text = textElement.getText();
+                            const match = text.match(/(\d+)\/(\d+)/);
+                            if (match) {
+                                const total = match[2];
+                                const newText = text.replace(/(\d+)\/(\d+)/, `${total}/${total}`);
+                                console.log(`Replenished spontaneous slots for ${currentClass}: '${text}' -> '${newText}'`);
+                                if (type === DocumentApp.ElementType.PARAGRAPH) {
+                                    (element as GoogleAppsScript.Document.Paragraph).setText(newText);
+                                } else {
+                                    (element as GoogleAppsScript.Document.ListItem).setText(newText);
+                                }
+                                textElement.editAsText().setStrikethrough(false);
                             }
-                            textElement.editAsText().setStrikethrough(false);
                         }
                     }
                 }
             }
-        }
 
-        return { success: true };
+            return { success: true };
+        });
     } catch (error) {
         console.error('Error replenishing spontaneous slots in GDoc:', error);
         return { success: false, error: (error as Error).toString() };
@@ -740,66 +812,67 @@ export function ReplenishSpontaneousSlotsInGDoc(docId: string, casterClass: stri
  */
 export function MoveItemInGDoc(docId: string, itemName: string, fromSection: string, toSection: string): AdapterResult {
     try {
-        const doc = DocumentApp.openById(docId);
-        const body = doc.getBody();
-        const paragraphs = body.getParagraphs();
+        return MutateDoc(docId, doc => {
+            const body = doc.getBody();
+            const paragraphs = body.getParagraphs();
 
-        // 1. Find fromSection
-        const fromSectionStartIndex = paragraphs.findIndex(paragraph =>
-            paragraph.getText().includes(fromSection)
-        );
-        if (fromSectionStartIndex === -1) {
-            return { success: false, error: `Section '${fromSection}' not found in document` };
-        }
-
-        let fromSectionEndIndex = fromSectionStartIndex + 1;
-        while (fromSectionEndIndex < paragraphs.length &&
-            !SECTION_NAMES.some(name => paragraphs[fromSectionEndIndex].getText().includes(name))) {
-            fromSectionEndIndex++;
-        }
-
-        // Find item paragraph inside fromSection
-        let itemParagraphIndex = -1;
-        for (let i = fromSectionStartIndex + 1; i < fromSectionEndIndex; i++) {
-            if (paragraphs[i].getText().toLowerCase().includes(itemName.toLowerCase())) {
-                itemParagraphIndex = i;
-                break;
+            // 1. Find fromSection
+            const fromSectionStartIndex = paragraphs.findIndex(paragraph =>
+                paragraph.getText().includes(fromSection)
+            );
+            if (fromSectionStartIndex === -1) {
+                return { success: false, error: `Section '${fromSection}' not found in document` };
             }
-        }
 
-        if (itemParagraphIndex === -1) {
-            return { success: false, error: `Item '${itemName}' not found in ${fromSection} section` };
-        }
+            let fromSectionEndIndex = fromSectionStartIndex + 1;
+            while (fromSectionEndIndex < paragraphs.length &&
+                !SECTION_NAMES.some(name => paragraphs[fromSectionEndIndex].getText().includes(name))) {
+                fromSectionEndIndex++;
+            }
 
-        const itemParagraph = paragraphs[itemParagraphIndex];
-        const itemText = itemParagraph.getText();
+            // Find item paragraph inside fromSection
+            let itemParagraphIndex = -1;
+            for (let i = fromSectionStartIndex + 1; i < fromSectionEndIndex; i++) {
+                if (paragraphs[i].getText().toLowerCase().includes(itemName.toLowerCase())) {
+                    itemParagraphIndex = i;
+                    break;
+                }
+            }
 
-        // 2. Find toSection
-        const toSectionStartIndex = paragraphs.findIndex(paragraph =>
-            paragraph.getText().includes(toSection)
-        );
-        if (toSectionStartIndex === -1) {
-            return { success: false, error: `Section '${toSection}' not found in document` };
-        }
+            if (itemParagraphIndex === -1) {
+                return { success: false, error: `Item '${itemName}' not found in ${fromSection} section` };
+            }
 
-        let toSectionEndIndex = toSectionStartIndex + 1;
-        while (toSectionEndIndex < paragraphs.length &&
-            !SECTION_NAMES.some(name => paragraphs[toSectionEndIndex].getText().includes(name))) {
-            toSectionEndIndex++;
-        }
+            const itemParagraph = paragraphs[itemParagraphIndex];
+            const itemText = itemParagraph.getText();
 
-        // 3. Mutate: Remove from fromSection, insert into toSection
-        itemParagraph.removeFromParent();
+            // 2. Find toSection
+            const toSectionStartIndex = paragraphs.findIndex(paragraph =>
+                paragraph.getText().includes(toSection)
+            );
+            if (toSectionStartIndex === -1) {
+                return { success: false, error: `Section '${toSection}' not found in document` };
+            }
 
-        // Adjust target index if it was after the removed paragraph
-        let finalInsertIndex = toSectionEndIndex;
-        if (itemParagraphIndex < toSectionEndIndex) {
-            finalInsertIndex--;
-        }
+            let toSectionEndIndex = toSectionStartIndex + 1;
+            while (toSectionEndIndex < paragraphs.length &&
+                !SECTION_NAMES.some(name => paragraphs[toSectionEndIndex].getText().includes(name))) {
+                toSectionEndIndex++;
+            }
 
-        body.insertParagraph(finalInsertIndex, itemText);
+            // 3. Mutate: Remove from fromSection, insert into toSection
+            itemParagraph.removeFromParent();
 
-        return { success: true, message: `Successfully moved '${itemName}' from ${fromSection} to ${toSection}` };
+            // Adjust target index if it was after the removed paragraph
+            let finalInsertIndex = toSectionEndIndex;
+            if (itemParagraphIndex < toSectionEndIndex) {
+                finalInsertIndex--;
+            }
+
+            body.insertParagraph(finalInsertIndex, itemText);
+
+            return { success: true, message: `Successfully moved '${itemName}' from ${fromSection} to ${toSection}` };
+        });
     } catch (error) {
         console.error('Error moving item in GDoc:', error);
         return { success: false, error: (error as Error).toString() };
@@ -811,49 +884,50 @@ export function MoveItemInGDoc(docId: string, itemName: string, fromSection: str
  */
 export function ConsumeItemInGDoc(docId: string, itemName: string, sectionName: string): AdapterResult & { removedLineText?: string } {
     try {
-        const doc = DocumentApp.openById(docId);
-        const body = doc.getBody();
-        const paragraphs = body.getParagraphs();
+        return MutateDoc(docId, doc => {
+            const body = doc.getBody();
+            const paragraphs = body.getParagraphs();
 
-        // Find the section start
-        const sectionStartIndex = paragraphs.findIndex(paragraph =>
-            paragraph.getText().includes(sectionName)
-        );
-        if (sectionStartIndex === -1) {
-            return { success: false, error: `Section '${sectionName}' not found in document` };
-        }
-
-        let sectionEndIndex = sectionStartIndex + 1;
-        while (sectionEndIndex < paragraphs.length &&
-            !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
-            sectionEndIndex++;
-        }
-
-        // Find item paragraph inside section
-        let itemParagraphIndex = -1;
-        for (let i = sectionStartIndex + 1; i < sectionEndIndex; i++) {
-            if (paragraphs[i].getText().toLowerCase().includes(itemName.toLowerCase())) {
-                itemParagraphIndex = i;
-                break;
+            // Find the section start
+            const sectionStartIndex = paragraphs.findIndex(paragraph =>
+                paragraph.getText().includes(sectionName)
+            );
+            if (sectionStartIndex === -1) {
+                return { success: false, error: `Section '${sectionName}' not found in document` };
             }
-        }
 
-        if (itemParagraphIndex === -1) {
-            return { success: false, error: `Item '${itemName}' not found in ${sectionName} section` };
-        }
+            let sectionEndIndex = sectionStartIndex + 1;
+            while (sectionEndIndex < paragraphs.length &&
+                !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
+                sectionEndIndex++;
+            }
 
-        const itemParagraph = paragraphs[itemParagraphIndex];
-        const originalLine = itemParagraph.getText();
+            // Find item paragraph inside section
+            let itemParagraphIndex = -1;
+            for (let i = sectionStartIndex + 1; i < sectionEndIndex; i++) {
+                if (paragraphs[i].getText().toLowerCase().includes(itemName.toLowerCase())) {
+                    itemParagraphIndex = i;
+                    break;
+                }
+            }
 
-        const decrementedLine = decrementOrRemoveLine(originalLine);
+            if (itemParagraphIndex === -1) {
+                return { success: false, error: `Item '${itemName}' not found in ${sectionName} section` };
+            }
 
-        if (decrementedLine === null) {
-            itemParagraph.removeFromParent();
-        } else {
-            itemParagraph.setText(decrementedLine);
-        }
+            const itemParagraph = paragraphs[itemParagraphIndex];
+            const originalLine = itemParagraph.getText();
 
-        return { success: true, removedLineText: originalLine };
+            const decrementedLine = decrementOrRemoveLine(originalLine);
+
+            if (decrementedLine === null) {
+                itemParagraph.removeFromParent();
+            } else {
+                itemParagraph.setText(decrementedLine);
+            }
+
+            return { success: true, removedLineText: originalLine };
+        });
     } catch (error) {
         console.error('Error consuming item in GDoc:', error);
         return { success: false, error: (error as Error).toString() };

@@ -10,11 +10,18 @@ import { SpellsData } from './spells';
 import { ActionsData, NumberAction } from './actions/actions_effects';
 import { GetScriptProperty } from '../services/gdoc_utilities';
 import { sanitizeDbLink } from './parser_utils';
+import { CharacterSession } from './character_session';
 
 /**
  * Retrieves a character object by document ID.
  */
 export function GetCharacterByDocId(docId: string): Character | CharacterError {
+  adapter.EnsureSessionCurrent(docId);
+  const cached = CharacterSession.get(docId);
+  if (cached) {
+    return cached;
+  }
+
   const rawlines = adapter.GetCharacterLines(docId);
   const lines = adapter.CleanRawLines(rawlines);
 
@@ -32,6 +39,7 @@ export function GetCharacterByDocId(docId: string): Character | CharacterError {
     character.partyNickname = partyData.partyNickname ?? null;
   }
 
+  CharacterSession.set(docId, character);
   return character;
 }
 

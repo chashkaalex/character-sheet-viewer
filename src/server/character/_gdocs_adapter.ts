@@ -14,7 +14,9 @@ import {
     ReplenishPreparedSpellsInGDoc,
     ReplenishSpontaneousSlotsInGDoc,
     MoveItemInGDoc,
-    ConsumeItemInGDoc
+    ConsumeItemInGDoc,
+    MutateDoc,
+    EnsureDocSessionCurrent
 } from '../services/gdoc_utilities';
 
 /**
@@ -22,6 +24,9 @@ import {
  * Handles the raw Google Apps Script interactions.
  */
 export class GDocsAdapter extends DocumentAdapter {
+    EnsureSessionCurrent(_docId: string): void {
+        EnsureDocSessionCurrent();
+    }
     UpdateHp(docId: string, newHp: number): AdapterResult {
         return UpdateProperty(docId, 'Hp', newHp);
     }
@@ -43,20 +48,22 @@ export class GDocsAdapter extends DocumentAdapter {
         isSpontaneous: boolean
     ): AdapterResult {
         try {
-            const listItem = GetSpellListItem(docId, casterClass, spellLevel, slotIndex) as GoogleAppsScript.Document.ListItem;
-            if (!listItem) {
-                return { success: false, error: `Could not find spell slot for ${casterClass} level ${spellLevel} at index ${slotIndex}` };
-            }
+            return MutateDoc(docId, () => {
+                const listItem = GetSpellListItem(docId, casterClass, spellLevel, slotIndex) as GoogleAppsScript.Document.ListItem;
+                if (!listItem) {
+                    return { success: false, error: `Could not find spell slot for ${casterClass} level ${spellLevel} at index ${slotIndex}` };
+                }
 
-            const textElement = listItem.editAsText();
+                const textElement = listItem.editAsText();
 
-            // Basic validation
-            if (!isSpontaneous && !normalizeQuotes(textElement.getText()).includes(normalizeQuotes(spellName))) {
-                console.warn(`Warning: Marking spell as cast, but slot text (${textElement.getText()}) doesn't match expected spell (${spellName})`);
-            }
+                // Basic validation
+                if (!isSpontaneous && !normalizeQuotes(textElement.getText()).includes(normalizeQuotes(spellName))) {
+                    console.warn(`Warning: Marking spell as cast, but slot text (${textElement.getText()}) doesn't match expected spell (${spellName})`);
+                }
 
-            textElement.setStrikethrough(true);
-            return { success: true };
+                textElement.setStrikethrough(true);
+                return { success: true };
+            });
         } catch (e) {
             return { success: false, error: (e as Error).toString() };
         }
@@ -64,13 +71,15 @@ export class GDocsAdapter extends DocumentAdapter {
 
     SetPreparedSpell(docId: string, casterClass: string, spellLevel: string | number, slotIndex: number, spellName: string): AdapterResult {
         try {
-            const listItem = GetSpellListItem(docId, casterClass, spellLevel, slotIndex) as GoogleAppsScript.Document.ListItem;
-            if (!listItem) {
-                return { success: false, error: `Could not find spell slot for ${casterClass} level ${spellLevel} at index ${slotIndex}` };
-            }
+            return MutateDoc(docId, () => {
+                const listItem = GetSpellListItem(docId, casterClass, spellLevel, slotIndex) as GoogleAppsScript.Document.ListItem;
+                if (!listItem) {
+                    return { success: false, error: `Could not find spell slot for ${casterClass} level ${spellLevel} at index ${slotIndex}` };
+                }
 
-            listItem.editAsText().setText(spellName);
-            return { success: true };
+                listItem.editAsText().setText(spellName);
+                return { success: true };
+            });
         } catch (e) {
             return { success: false, error: (e as Error).toString() };
         }

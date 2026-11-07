@@ -138,6 +138,13 @@ export abstract class DocumentAdapter {
     ): AdapterResult;
 
     /**
+     * Ensures the underlying document session/cache is valid for the given docId.
+     */
+    EnsureSessionCurrent(_docId: string): void {
+        // Default no-op; overridden by concrete adapters as needed
+    }
+
+    /**
      * Cleans raw lines by removing empty ones.
      */
     CleanRawLines(rawLines: string[]): string[] {
