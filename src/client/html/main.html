@@ -52,10 +52,17 @@
   <!-- Character Sheet Container -->
   <div id="characterSheetContainer" class="character-sheet-container">
     <div class="container">
+      <div id="outdatedVersionBanner" class="outdated-version-banner" style="display: none;">
+        <span id="outdatedVersionText">⚠️ A newer version of the app has been deployed.</span>
+        <button type="button" class="outdated-reload-btn" onclick="reloadAppForUpdate()">Reload Now</button>
+      </div>
       <div class="header">
         <div class="header-top-row">
           <h1 id="characterName">Loading...</h1>
-          <button class="refresh-button" onclick="refreshCharacterData()" title="Refresh Data" aria-label="Refresh Data">🔄</button>
+          <div class="header-actions-group">
+            <span id="appVersionBadge" class="app-version-badge" title="Current loaded build version"></span>
+            <button class="refresh-button" onclick="refreshCharacterData()" title="Refresh Data" aria-label="Refresh Data">🔄</button>
+          </div>
         </div>
         <div class="section-titles">
           <span class="section-title active" data-section="0">Dashboard</span>

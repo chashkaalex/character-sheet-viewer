@@ -7,11 +7,13 @@ import { calculateNormalFullAttack, calculateTwfFullAttack } from './gear/weapon
 import { BuildWeaponDamageVariants } from './gear/weapons/weapon_extra_damage';
 import { sanitizeDbLink } from './parser_utils';
 import { GetScriptProperty } from '../services/gdoc_utilities';
+import { APP_VERSION } from './_version';
 
 /**
  * Character representation for the client.
  */
 export interface CharacterRep {
+  appVersion?: string;
   docId: string;
   mutationMessage?: string;
   parseWarnings: string[];
@@ -91,6 +93,7 @@ export interface CharacterRep {
  */
 export function getCharacterRep(character: ICharacter): CharacterRep {
   const characterObject: CharacterRep = {
+    appVersion: APP_VERSION,
     docId: character.docId,
     parseWarnings: character.parseWarnings,
     parseErrors: character.parseErrors,

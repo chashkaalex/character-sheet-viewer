@@ -2,9 +2,60 @@ import { characterRep, setCharacterRep } from './state';
 import { populateWeaponDropdown, populateSpecialAttackDropdown, RemoveStatus } from './dashboard_script';
 import { PrepareSpellsUI } from './spells_script';
 import { startPartyStatusListener } from './party_sync_listener';
+import { APP_VERSION as CLIENT_APP_VERSION } from '../../server/character/_version';
+
+export function checkAppVersion(serverVersion?: string) {
+  const badge = document.getElementById('appVersionBadge');
+  if (badge) {
+    badge.textContent = `v${CLIENT_APP_VERSION}`;
+  }
+
+  if (!serverVersion || serverVersion === CLIENT_APP_VERSION) {
+    return;
+  }
+
+  const banner = document.getElementById('outdatedVersionBanner');
+  const bannerText = document.getElementById('outdatedVersionText');
+  if (bannerText) {
+    bannerText.textContent = `⚠️ Outdated app version loaded (yours: v${CLIENT_APP_VERSION}, latest: v${serverVersion}). Please reload the page.`;
+  }
+  if (banner) {
+    banner.style.display = 'flex';
+  }
+  if (badge) {
+    badge.classList.add('outdated');
+    badge.title = `Outdated! Loaded: v${CLIENT_APP_VERSION} | Latest on server: v${serverVersion}`;
+  }
+}
+
+export function reloadAppForUpdate() {
+  try {
+    const scriptUrl = (window as any).SCRIPT_URL;
+    const charId = (window as any).CHARACTER_ID || (characterRep && characterRep.docId);
+    if (scriptUrl && !scriptUrl.includes('scriptUrl')) {
+      const targetUrl = charId ? `${scriptUrl}?id=${encodeURIComponent(charId)}` : scriptUrl;
+      window.top!.location.href = targetUrl;
+      return;
+    }
+  } catch (_) {
+    // Fallback to standard reload
+  }
+  window.location.reload();
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && typeof (window as any).google !== 'undefined' && (window as any).google.script?.run) {
+      (window as any).google.script.run
+        .withSuccessHandler((serverVer: string) => checkAppVersion(serverVer))
+        .GetAppVersion();
+    }
+  });
+}
 
 export function onCharacterRepresentation(response) {
   console.log('char response handler called!!!');
+  checkAppVersion(response?.appVersion);
 
   if (response.error) {
     let errorMessage = response.errorMessage;

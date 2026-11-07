@@ -229,9 +229,14 @@ export function RemoveLineFromSection(docId: string, sectionName: string, lineTo
  * @returns Array of raw lines
  */
 export function ParseGDocToRawLines(docId: string): string[] {
-    ReplaceSoftWithHardReturns(docId);
-    const doc = DocumentApp.openById(docId);
-    const body = doc.getBody();
+    let doc = DocumentApp.openById(docId);
+    let body = doc.getBody();
+    if (body.getText().includes('\u000b')) {
+        doc.saveAndClose();
+        ReplaceSoftWithHardReturns(docId);
+        doc = DocumentApp.openById(docId);
+        body = doc.getBody();
+    }
     const paragraphs = body.getParagraphs();
 
     const rawLines: string[] = [];

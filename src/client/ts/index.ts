@@ -22,6 +22,8 @@ const globalRegistry: Record<string, any> = {
 
     // Character
     onCharacterRepresentation: Character.onCharacterRepresentation,
+    checkAppVersion: Character.checkAppVersion,
+    reloadAppForUpdate: Character.reloadAppForUpdate,
     addTooltip: Character.addTooltip,
     UpdateValueAndTooltip: Character.UpdateValueAndTooltip,
     populateInventory: Character.populateInventory,

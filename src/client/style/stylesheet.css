@@ -1862,4 +1862,62 @@
         background-color: rgba(0, 0, 0, 0.05);
     }
 
+    /* App Version Badge & Outdated Banner */
+    .header-actions-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .app-version-badge {
+        font-size: 0.72em;
+        color: rgba(255, 255, 255, 0.65);
+        background: rgba(0, 0, 0, 0.25);
+        padding: 3px 8px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        font-family: monospace;
+        white-space: nowrap;
+    }
+
+    .app-version-badge.outdated {
+        background: #dc3545;
+        color: #fff;
+        border-color: #ffc107;
+        font-weight: bold;
+    }
+
+    .outdated-version-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background-color: #fff3cd;
+        color: #664d03;
+        border: 2px solid #ffecb5;
+        border-left: 6px solid #ffc107;
+        border-radius: 6px;
+        padding: 10px 16px;
+        margin-bottom: 12px;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .outdated-reload-btn {
+        background-color: #d97706;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 14px;
+        font-weight: bold;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color 0.2s ease;
+    }
+
+    .outdated-reload-btn:hover {
+        background-color: #b45309;
+    }
+
+
 

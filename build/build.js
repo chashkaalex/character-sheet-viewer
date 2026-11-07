@@ -10,7 +10,24 @@ const srcDir = path.join(rootDir, 'src');
 console.log('Starting build...');
 console.log(`Target directory: ${distDir}`);
 
-
+// 0a. Stamp APP_VERSION into src/server/character/_version.ts
+try {
+    let gitHash = 'local';
+    try {
+        gitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+    } catch (_) {
+        // Fallback if git is unavailable
+    }
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const dateStamp = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+    const appVersion = `${dateStamp} (${gitHash})`;
+    const versionFilePath = path.join(srcDir, 'server', 'character', '_version.ts');
+    fs.writeFileSync(versionFilePath, `export const APP_VERSION = '${appVersion}';\n`);
+    console.log(`Stamped APP_VERSION: ${appVersion}`);
+} catch (e) {
+    console.warn('⚠️ Could not stamp APP_VERSION:', e.message);
+}
 
 // 0. Run Type Checking
 console.log('Running type check...');

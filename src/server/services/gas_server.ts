@@ -1,6 +1,7 @@
 import { CharacterError } from '../character/character';
 import { recordUserLog } from './gsheet_logger';
 import { CharacterRep } from '../character/character_rep';
+import { APP_VERSION } from '../character/_version';
 import {
     GetCharacterByDocId,
     GetCharacterRepByDocId,
@@ -120,6 +121,10 @@ function getConnectedUserEmail(): string {
  */
 export function include(filename: string): string {
     return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+export function GetAppVersion(): string {
+    return APP_VERSION;
 }
 
 function PostRollToRolz(room: string, text: string, from: string): string {
