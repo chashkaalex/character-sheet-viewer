@@ -129,14 +129,9 @@ export function RemoveStatusFromCharacter(docId: string, statusName: string): Ch
  * Removes all active statuses from the character
  */
 export function RemoveAllStatusesFromCharacter(docId: string): CharacterRep | CharacterError {
-  const character = GetCharacterByDocId(docId);
-  if (character instanceof CharacterError) {
-    return character;
-  }
-  if (character.statuses && character.statuses.length > 0) {
-    character.statuses.forEach(status => {
-      _removeStatusFromCharacter(docId, status.name);
-    });
+  const clearResult = adapter.RemoveAllStatuses(docId);
+  if (!clearResult.success) {
+    console.log('Failed to remove all statuses from document:', clearResult.error);
   }
   return GetCharacterRepByDocId(docId);
 }
@@ -159,14 +154,12 @@ export function OnRoundsElapsed(docId: string, amount: number): CharacterRep | C
 
   if (character.statuses && character.statuses.length > 0) {
     const statusesToKeep = character.OnRoundsElapsed(amount);
-    // remove all the statuses
-    character.statuses.forEach((status: any) => {
-      _removeStatusFromCharacter(docId, status.name);
-    });
+    // remove all the statuses in one pass
+    adapter.RemoveAllStatuses(docId);
 
     // add the statuses that are still active back
     statusesToKeep.forEach((status: any) => {
-      _addStatusToCharacter(docId, status.name, status.duration, status.elapsed);
+      AddStatusLine(docId, `${status.name}: ${status.elapsed} rounds/${status.duration} rounds`);
     });
   }
   return GetCharacterRepByDocId(docId);

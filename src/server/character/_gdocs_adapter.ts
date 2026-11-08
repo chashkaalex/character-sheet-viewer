@@ -7,6 +7,7 @@ import {
     UpdateProperty,
     UpdateSection,
     RemoveLineFromSection,
+    ClearSection,
     GetSpellListItem,
     DecrementSpontaneousSlotsInGDoc,
     GetPartyMembersFromGDoc,
@@ -37,6 +38,10 @@ export class GDocsAdapter extends DocumentAdapter {
 
     RemoveStatus(docId: string, statusLine: string): AdapterResult {
         return RemoveLineFromSection(docId, 'Statuses', statusLine);
+    }
+
+    RemoveAllStatuses(docId: string): AdapterResult {
+        return ClearSection(docId, 'Statuses');
     }
 
     MarkSpellAsCast(

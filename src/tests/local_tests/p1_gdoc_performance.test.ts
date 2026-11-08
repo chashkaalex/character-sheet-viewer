@@ -3,12 +3,13 @@ import {
   UpdateProperty,
   UpdateSection,
   RemoveLineFromSection,
+  ClearSection,
   ReadDoc,
   MutateDoc,
   ResetDocSession
 } from '../../server/services/gdoc_utilities';
 import { CharacterSession } from '../../server/character/character_session';
-import { GetCharacterByDocId } from '../../server/character/character_manipulation';
+import { GetCharacterByDocId, RemoveAllStatusesFromCharacter } from '../../server/character/character_manipulation';
 
 describe('P1.1: ParseGDocToRawLines Soft-Return Guard', () => {
   const originalDocumentApp = (global as any).DocumentApp;
@@ -153,9 +154,9 @@ describe('P1.2: ReadDoc / MutateDoc Singleton & CharacterSession Reset', () => {
           replaceText: (pattern: string, replacement: string) => {
             text = text.replace(pattern, replacement);
           },
-          setAttributes: () => {},
-          setForegroundColor: () => {},
-          setStrikethrough: () => {}
+          setAttributes: () => { },
+          setForegroundColor: () => { },
+          setStrikethrough: () => { }
         })
       };
       return p;
@@ -271,6 +272,66 @@ describe('P1.2: ReadDoc / MutateDoc Singleton & CharacterSession Reset', () => {
       const char3 = GetCharacterByDocId(tempFile);
       expect(char3).not.toBe(char1);
     } finally {
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
+    }
+  });
+
+  test('ClearSection removes all status lines in the Statuses section in a single pass', () => {
+    const { doc } = createInMemoryGDoc([
+      'Mortfinn aep Dessantein',
+      '(Elf Rogue 5)',
+      'Statuses:',
+      'Bless: 1 rounds/10 rounds',
+      'Haste: 2 rounds/5 rounds',
+      'Custom Note Status: 3 rounds/3 rounds',
+      'Skills:',
+      'Hide: 10'
+    ]);
+
+    const openByIdMock = jest.fn(() => doc);
+    (global as any).DocumentApp = {
+      openById: openByIdMock,
+      ElementType: { LIST_ITEM: 'LIST_ITEM', PARAGRAPH: 'PARAGRAPH' }
+    };
+
+    const result = ClearSection('morty-doc-id', 'Statuses');
+    expect(result.success).toBe(true);
+
+    const remainingLines = ParseGDocToRawLines('morty-doc-id');
+    expect(remainingLines).toEqual([
+      'Mortfinn aep Dessantein',
+      '(Elf Rogue 5)',
+      'Statuses:',
+      'Skills:',
+      'Hide: 10'
+    ]);
+    expect(openByIdMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('RemoveAllStatusesFromCharacter clears all lines in Statuses section directly via adapter.RemoveAllStatuses', () => {
+    const path = require('path');
+    const fs = require('fs');
+    const { adapter } = require('../../server/character/adapter_selector');
+    const sourceFile = path.join(__dirname, 'test_character_sheets', 'bess_test.txt');
+    const tempFile = path.join(__dirname, 'test_character_sheets', 'temp', 'temp_p1_2_bess_clear.txt');
+    if (!fs.existsSync(path.dirname(tempFile))) {
+      fs.mkdirSync(path.dirname(tempFile), { recursive: true });
+    }
+    fs.copyFileSync(sourceFile, tempFile);
+
+    const removeAllSpy = jest.spyOn(adapter, 'RemoveAllStatuses');
+    const removeSingleSpy = jest.spyOn(adapter, 'RemoveStatus');
+
+    try {
+      const rep = RemoveAllStatusesFromCharacter(tempFile);
+      expect((rep as any).statuses).toHaveLength(0);
+      expect(removeAllSpy).toHaveBeenCalledTimes(1);
+      expect(removeSingleSpy).not.toHaveBeenCalled();
+    } finally {
+      removeAllSpy.mockRestore();
+      removeSingleSpy.mockRestore();
       if (fs.existsSync(tempFile)) {
         fs.unlinkSync(tempFile);
       }

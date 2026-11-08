@@ -31,6 +31,13 @@ export abstract class DocumentAdapter {
     abstract RemoveStatus(docId: string, statusLine: string): AdapterResult;
 
     /**
+     * Removes all active status lines from the character's Statuses section.
+     * @param docId - The character's document/storage ID
+     * @returns Result object
+     */
+    abstract RemoveAllStatuses(docId: string): AdapterResult;
+
+    /**
      * Marks a specific spell slot as consumed/cast (e.g., strikethrough in GDocs).
      * @param docId - The character's document/storage ID
      * @param casterClass - The name of the casting class

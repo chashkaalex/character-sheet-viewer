@@ -288,6 +288,55 @@ export function RemoveLineFromSection(docId: string, sectionName: string, lineTo
 }
 
 /**
+ * Removes all non-empty lines from a section in a Google Doc in a single pass
+ * @param docId The Google Doc ID
+ * @param sectionName The section name to clear (e.g., "Statuses")
+ * @returns Result object with success status and message
+ */
+export function ClearSection(docId: string, sectionName: string): AdapterResult {
+    try {
+        return MutateDoc(docId, doc => {
+            const body = doc.getBody();
+            const paragraphs = body.getParagraphs();
+
+            const sectionStartIndex = paragraphs.findIndex(paragraph =>
+                paragraph.getText().includes(sectionName)
+            );
+
+            if (sectionStartIndex === -1) {
+                return {
+                    success: false,
+                    error: `Section '${sectionName}' not found in document`
+                };
+            }
+
+            let sectionEndIndex = sectionStartIndex + 1;
+            while (sectionEndIndex < paragraphs.length &&
+                !SECTION_NAMES.some(name => paragraphs[sectionEndIndex].getText().includes(name))) {
+                sectionEndIndex++;
+            }
+
+            for (let i = sectionEndIndex - 1; i > sectionStartIndex; i--) {
+                if (paragraphs[i].getText().trim() !== '') {
+                    paragraphs[i].removeFromParent();
+                }
+            }
+
+            return {
+                success: true,
+                message: `Successfully cleared ${sectionName} section`
+            };
+        });
+    } catch (error) {
+        console.error('Error clearing section:', error);
+        return {
+            success: false,
+            error: (error as Error).toString()
+        };
+    }
+}
+
+/**
  * Parses a Google Doc to raw lines including styles like:
  * - list items being strikethrough (for spells state)
  * @param docId The Google Doc ID

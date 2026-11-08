@@ -124,6 +124,28 @@ export class LocalAdapter extends DocumentAdapter {
         return { success: false, error: 'Status line not found' };
     }
 
+    RemoveAllStatuses(docId: string): AdapterResult {
+        const lines = this._readLines(docId);
+        if (!lines) return { success: false, error: 'File not found' };
+
+        const statusSectionIdx = lines.findIndex(l => l.startsWith('Statuses'));
+        if (statusSectionIdx === -1) return { success: false, error: 'Statuses section not found' };
+
+        let endIdx = statusSectionIdx + 1;
+        while (endIdx < lines.length && !IsSectionLine(lines[endIdx])) {
+            endIdx++;
+        }
+
+        for (let i = endIdx - 1; i > statusSectionIdx; i--) {
+            if (lines[i].trim() !== '') {
+                lines.splice(i, 1);
+            }
+        }
+
+        this._writeLines(docId, lines);
+        return { success: true };
+    }
+
     /**
      * Helper logic to locate the correct list item line in the file
      */
