@@ -211,25 +211,6 @@
     }
 
     /* Spellcasting class styles */
-    #generalActionsContainer {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-        align-items: flex-start;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .action-category-section {
-        flex: 1 1 auto;
-        min-width: 160px;
-        margin-bottom: 0 !important;
-    }
-
-    .action-category-section .spell-level-slots {
-        margin-bottom: 0;
-    }
-
     .spellcasting-class.collapsed .spell-slots-container {
         display: none;
     }
@@ -238,6 +219,32 @@
         border-bottom: none !important;
         padding-bottom: 0 !important;
         margin-bottom: 0 !important;
+    }
+
+    .spell-level-slots.collapsed .spell-slot-grid {
+        display: none;
+    }
+
+    .spell-level-slots.collapsed .action-level-header {
+        margin-bottom: 0 !important;
+    }
+
+    .action-level-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .action-level-header h4 {
+        margin: 0 !important;
+    }
+
+    .action-level-header .collapse-button {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
     }
     .spellcasting-class {
         background-color: var(--background-secondary);

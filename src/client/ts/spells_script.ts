@@ -1029,7 +1029,7 @@ export function renderGeneralActionsUI() {
 
   const collapsedIds = new Set<string>();
   if (typeof container.querySelectorAll === 'function') {
-    container.querySelectorAll('.spellcasting-class.collapsed').forEach((el: any) => {
+    container.querySelectorAll('.collapsed').forEach((el: any) => {
       if (el.id) collapsedIds.add(el.id);
     });
   }
@@ -1041,7 +1041,7 @@ export function renderGeneralActionsUI() {
     return;
   }
 
-  container.style.display = 'flex';
+  container.style.display = 'block';
 
   const ACTION_SECTIONS: Array<{ category: string; title: string }> = [
     { category: 'general', title: 'General Actions' },
@@ -1077,6 +1077,12 @@ export function renderGeneralActionsUI() {
     });
   }
 
+  const isActionsCollapsed = collapsedIds.has('actionsSection');
+  const actionsDiv = document.createElement('div');
+  actionsDiv.id = 'actionsSection';
+  actionsDiv.className = 'spellcasting-class' + (isActionsCollapsed ? ' collapsed' : '');
+
+  let innerLevelsHtml = '';
   let globalSlotIndex = 0;
   ACTION_SECTIONS.forEach(section => {
     const sectionActions = categorized[section.category] || [];
@@ -1085,19 +1091,14 @@ export function renderGeneralActionsUI() {
     const sectionKey = `actionCategory_${section.category}`;
     const sectionId = `${sectionKey}Section`;
     const isCollapsed = collapsedIds.has(sectionId);
-    const classDiv = document.createElement('div');
-    classDiv.id = sectionId;
-    classDiv.className = 'spellcasting-class action-category-section' + (isCollapsed ? ' collapsed' : '');
-    classDiv.setAttribute('data-action-category', section.category);
 
-    let html = `
-      <div class="spellcasting-class-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
-          <h3 style="margin: 0; border: none; padding: 0; font-size: 1.3em; color: var(--primary-color);">${section.title}</h3>
+    innerLevelsHtml += `
+      <div id="${sectionId}" class="spell-level-slots${isCollapsed ? ' collapsed' : ''}" data-action-category="${section.category}">
+        <div class="action-level-header">
+          <h4>${section.title}</h4>
           <button class="collapse-button" id="${sectionKey}CollapseBtn" onclick="toggleCollapse('${sectionKey}')" title="Collapse/Expand">${isCollapsed ? '▼' : '▲'}</button>
-      </div>
-      <div class="spell-slots-container">
-        <div class="spell-level-slots">
-          <div class="spell-slot-grid">
+        </div>
+        <div class="spell-slot-grid">
     `;
 
     sectionActions.forEach(actionName => {
@@ -1107,18 +1108,26 @@ export function renderGeneralActionsUI() {
       const slotClass = 'filled';
       const usedClass = isActive ? 'used' : '';
 
-      html += `<div class="spell-slot ${slotClass} ${usedClass}" data-level="actions" data-slot="${globalSlotIndex++}" data-spell="${actionName}" data-used="${isActive}" data-valid="true" data-class="Actions" data-preparation="Actions" data-category="${section.category}" title="${actionName}">${actionName}</div>`;
+      innerLevelsHtml += `<div class="spell-slot ${slotClass} ${usedClass}" data-level="actions" data-slot="${globalSlotIndex++}" data-spell="${actionName}" data-used="${isActive}" data-valid="true" data-class="Actions" data-preparation="Actions" data-category="${section.category}" title="${actionName}">${actionName}</div>`;
     });
 
-    html += `
-          </div>
+    innerLevelsHtml += `
         </div>
       </div>
     `;
-
-    classDiv.innerHTML = html;
-    container.appendChild(classDiv);
   });
+
+  actionsDiv.innerHTML = `
+    <div class="spellcasting-class-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+        <h3 style="margin: 0; border: none; padding: 0; font-size: 1.3em; color: var(--primary-color);">Actions</h3>
+        <button class="collapse-button" id="actionsCollapseBtn" onclick="toggleCollapse('actions')" title="Collapse/Expand">${isActionsCollapsed ? '▼' : '▲'}</button>
+    </div>
+    <div class="spell-slots-container">
+      ${innerLevelsHtml}
+    </div>
+  `;
+
+  container.appendChild(actionsDiv);
 }
 
 /**

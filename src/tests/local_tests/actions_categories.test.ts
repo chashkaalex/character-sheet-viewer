@@ -68,9 +68,18 @@ function createMockElement(): MockElement {
       if (child.id) {
         elementRegistry.set(child.id, child);
       }
-      // Register collapse button if present in innerHTML
-      const btnMatch = child.innerHTML.match(/id="(actionCategory_[a-z]+CollapseBtn)"[^>]*>([^<]+)<\/button>/);
-      if (btnMatch) {
+      // Register inner collapsible sections and buttons present in innerHTML
+      const sectionRegex = /id="(actionCategory_[a-z]+Section)"\s+class="([^"]*)"/g;
+      let secMatch: RegExpExecArray | null;
+      while ((secMatch = sectionRegex.exec(child.innerHTML)) !== null) {
+        const secEl = createMockElement();
+        secEl.id = secMatch[1];
+        secEl.className = secMatch[2];
+        elementRegistry.set(secEl.id, secEl);
+      }
+      const btnRegex = /id="([a-zA-Z0-9_]+CollapseBtn)"[^>]*>([^<]+)<\/button>/g;
+      let btnMatch: RegExpExecArray | null;
+      while ((btnMatch = btnRegex.exec(child.innerHTML)) !== null) {
         const btnEl = createMockElement();
         btnEl.id = btnMatch[1];
         btnEl.textContent = btnMatch[2];
@@ -78,6 +87,9 @@ function createMockElement(): MockElement {
       }
     },
     querySelectorAll(selector: string) {
+      if (selector === '.collapsed') {
+        return Array.from(elementRegistry.values()).filter(c => c.classList.contains('collapsed'));
+      }
       if (selector === '.spellcasting-class.collapsed') {
         return this.children.filter(c => c.classList.contains('spellcasting-class') && c.classList.contains('collapsed'));
       }
@@ -222,7 +234,7 @@ describe('Action Categories & Separated UI Sections', () => {
     expect(rep.actionsMetadata?.['Sacred Flames']?.category).toBe('class');
   });
 
-  it('renders separate stackable, collapsible UI sections in renderGeneralActionsUI and omits empty categories', () => {
+  it('renders a single Actions card with collapsible inner category lists and omits empty categories', () => {
     // 1. Test with Thror (has general, class, feat, item; no stances)
     const throrPath = path.join(SHEETS_DIR, 'thror_test.txt');
     const throrRep = GetCharacterRepByDocId(throrPath);
@@ -232,35 +244,35 @@ describe('Action Categories & Separated UI Sections', () => {
     setCharacterRep(throrRep);
     renderGeneralActionsUI();
 
-    expect(mockContainer.style.display).toBe('flex');
-    expect(mockContainer.children.map(c => c.getAttribute('data-action-category'))).toEqual([
-      'general',
-      'class',
-      'feat',
-      'item'
-    ]);
-    mockContainer.children.forEach(c => {
-      expect(c.classList.contains('action-category-section')).toBe(true);
-      expect(c.innerHTML).toContain('collapse-button');
-    });
+    expect(mockContainer.style.display).toBe('block');
+    expect(mockContainer.children.length).toBe(1);
 
-    const classSection = mockContainer.children.find(c => c.getAttribute('data-action-category') === 'class')!;
-    expect(classSection.innerHTML).toContain('Class Actions');
-    expect(classSection.innerHTML).toContain('Turn Undead');
-    expect(classSection.innerHTML).toContain('Feat of Strength');
-    expect(classSection.innerHTML).toContain('Protective Ward');
+    const actionsCard = mockContainer.children[0];
+    expect(actionsCard.id).toBe('actionsSection');
+    expect(actionsCard.classList.contains('spellcasting-class')).toBe(true);
+    expect(actionsCard.innerHTML).toContain('>Actions</h3>');
 
-    // Verify collapsibility and state preservation across re-renders
-    expect(classSection.classList.contains('collapsed')).toBe(false);
+    const throrCategories = Array.from(actionsCard.innerHTML.matchAll(/data-action-category="([a-z]+)"/g)).map(m => m[1]);
+    expect(throrCategories).toEqual(['general', 'class', 'feat', 'item']);
+    expect(actionsCard.innerHTML).toContain('Class Actions');
+    expect(actionsCard.innerHTML).toContain('Turn Undead');
+    expect(actionsCard.innerHTML).toContain('Feat of Strength');
+    expect(actionsCard.innerHTML).toContain('Protective Ward');
+
+    // Verify collapsibility of inner category list and state preservation across re-renders
+    const classInnerSection = elementRegistry.get('actionCategory_classSection')!;
+    expect(classInnerSection).toBeDefined();
+    expect(classInnerSection.classList.contains('collapsed')).toBe(false);
+
     toggleCollapse('actionCategory_class');
-    expect(classSection.classList.contains('collapsed')).toBe(true);
+    expect(classInnerSection.classList.contains('collapsed')).toBe(true);
     expect(elementRegistry.get('actionCategory_classCollapseBtn')?.textContent).toBe('▼');
 
     // Re-render and verify collapsed state is preserved
     renderGeneralActionsUI();
-    const reRenderedClassSection = mockContainer.children.find(c => c.getAttribute('data-action-category') === 'class')!;
-    expect(reRenderedClassSection.classList.contains('collapsed')).toBe(true);
-    expect(reRenderedClassSection.innerHTML).toContain('>▼</button>');
+    const reRenderedCard = mockContainer.children[0];
+    expect(reRenderedCard.innerHTML).toContain('id="actionCategory_classSection" class="spell-level-slots collapsed"');
+    expect(reRenderedCard.innerHTML).toContain('id="actionCategory_classCollapseBtn" onclick="toggleCollapse(\'actionCategory_class\')" title="Collapse/Expand">▼</button>');
 
     // 2. Test with Naethan (has all 5 categories including Stances)
     mockContainer.children = [];
@@ -273,17 +285,13 @@ describe('Action Categories & Separated UI Sections', () => {
     setCharacterRep(naethanRep);
     renderGeneralActionsUI();
 
-    expect(mockContainer.children.map(c => c.getAttribute('data-action-category'))).toEqual([
-      'general',
-      'class',
-      'feat',
-      'stance',
-      'item'
-    ]);
-    const stanceSectionHtml = mockContainer.children.find(c => c.getAttribute('data-action-category') === 'stance')!.innerHTML;
-    expect(stanceSectionHtml).toContain('Stances');
-    expect(stanceSectionHtml).toContain('Iron Guard\'s Glare Stance');
-    expect(stanceSectionHtml).toContain('Roots of the Mountain Stance');
-    expect(stanceSectionHtml).toContain('Bolstering Voice Stance');
+    expect(mockContainer.children.length).toBe(1);
+    const naethanCard = mockContainer.children[0];
+    const naethanCategories = Array.from(naethanCard.innerHTML.matchAll(/data-action-category="([a-z]+)"/g)).map(m => m[1]);
+    expect(naethanCategories).toEqual(['general', 'class', 'feat', 'stance', 'item']);
+    expect(naethanCard.innerHTML).toContain('Stances');
+    expect(naethanCard.innerHTML).toContain('Iron Guard\'s Glare Stance');
+    expect(naethanCard.innerHTML).toContain('Roots of the Mountain Stance');
+    expect(naethanCard.innerHTML).toContain('Bolstering Voice Stance');
   });
 });
