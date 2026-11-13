@@ -30,6 +30,7 @@ interface Window {
   showPartyModal: () => void;
   closePartyModal: () => void;
   PrepareSpellsUI: () => void;
+  selectActionCategoryTab: (category: string) => void;
   hideSpellPopup: () => void;
   prepareSpell: (casterClassName: string, spellLevel: string, slotIndex: number, spellName: string) => void;
   castSpell: (casterClassName: string, spellLevel: string, slotIndex: number) => void;

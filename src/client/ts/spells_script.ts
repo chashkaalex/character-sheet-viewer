@@ -3,6 +3,27 @@ import { onCharacterRepresentation } from './character_script';
 import { SpellSlotData } from '../../server/character/common_types';
 
 let currentSlotData: SpellSlotData | null = null;
+let activeActionCategoryTab: string | null = null;
+
+export function selectActionCategoryTab(category: string) {
+  activeActionCategoryTab = category;
+  const container = document.getElementById('generalActionsContainer');
+  if (!container || typeof container.querySelectorAll !== 'function') return;
+
+  container.querySelectorAll('.action-tab').forEach((tab: any) => {
+    const isMatch = tab.getAttribute('data-action-tab') === category;
+    if (tab.classList) {
+      tab.classList.toggle('active', isMatch);
+    }
+  });
+
+  container.querySelectorAll('.action-tab-panel').forEach((panel: any) => {
+    const isMatch = panel.getAttribute('data-action-category') === category;
+    if (panel.classList) {
+      panel.classList.toggle('active', isMatch);
+    }
+  });
+}
 
 export function renderSpellsUI() {
   const container = document.getElementById('spellsDynamicContainer');
@@ -1077,45 +1098,51 @@ export function renderGeneralActionsUI() {
     });
   }
 
+  const nonEmptySections = ACTION_SECTIONS.filter(
+    section => (categorized[section.category] || []).length > 0
+  );
+
+  if (!activeActionCategoryTab || !nonEmptySections.some(s => s.category === activeActionCategoryTab)) {
+    activeActionCategoryTab = nonEmptySections[0]?.category || null;
+  }
+
   const isActionsCollapsed = collapsedIds.has('actionsSection');
   const actionsDiv = document.createElement('div');
   actionsDiv.id = 'actionsSection';
   actionsDiv.className = 'spellcasting-class' + (isActionsCollapsed ? ' collapsed' : '');
 
-  let innerLevelsHtml = '';
+  let tabsHtml = '<div class="action-tabs">';
+  let panelsHtml = '';
   let globalSlotIndex = 0;
-  ACTION_SECTIONS.forEach(section => {
+
+  nonEmptySections.forEach(section => {
     const sectionActions = categorized[section.category] || [];
-    if (sectionActions.length === 0) return;
+    const isActive = section.category === activeActionCategoryTab;
 
-    const sectionKey = `actionCategory_${section.category}`;
-    const sectionId = `${sectionKey}Section`;
-    const isCollapsed = collapsedIds.has(sectionId);
+    tabsHtml += `<span class="action-tab${isActive ? ' active' : ''}" data-action-tab="${section.category}" onclick="selectActionCategoryTab('${section.category}')">${section.title}</span>`;
 
-    innerLevelsHtml += `
-      <div id="${sectionId}" class="spell-level-slots${isCollapsed ? ' collapsed' : ''}" data-action-category="${section.category}">
-        <div class="action-level-header">
-          <h4>${section.title}</h4>
-          <button class="collapse-button" id="${sectionKey}CollapseBtn" onclick="toggleCollapse('${sectionKey}')" title="Collapse/Expand">${isCollapsed ? '▼' : '▲'}</button>
-        </div>
+    panelsHtml += `
+      <div class="action-tab-panel${isActive ? ' active' : ''}" data-action-category="${section.category}">
         <div class="spell-slot-grid">
     `;
 
     sectionActions.forEach(actionName => {
       const metadata = (characterRep as any).actionsMetadata && (characterRep as any).actionsMetadata[actionName];
       const statusName = (metadata && metadata.statusName) || actionName;
-      const isActive = characterRep.statuses && characterRep.statuses.some((s: any) => s.name === statusName);
+      const isActionActive = characterRep.statuses && characterRep.statuses.some((s: any) => s.name === statusName);
       const slotClass = 'filled';
-      const usedClass = isActive ? 'used' : '';
+      const usedClass = isActionActive ? 'used' : '';
 
-      innerLevelsHtml += `<div class="spell-slot ${slotClass} ${usedClass}" data-level="actions" data-slot="${globalSlotIndex++}" data-spell="${actionName}" data-used="${isActive}" data-valid="true" data-class="Actions" data-preparation="Actions" data-category="${section.category}" title="${actionName}">${actionName}</div>`;
+      panelsHtml += `<div class="spell-slot ${slotClass} ${usedClass}" data-level="actions" data-slot="${globalSlotIndex++}" data-spell="${actionName}" data-used="${isActionActive}" data-valid="true" data-class="Actions" data-preparation="Actions" data-category="${section.category}" title="${actionName}">${actionName}</div>`;
     });
 
-    innerLevelsHtml += `
+    panelsHtml += `
         </div>
       </div>
     `;
   });
+
+  tabsHtml += '</div>';
 
   actionsDiv.innerHTML = `
     <div class="spellcasting-class-header" style="display: flex; justify-content: flex-start; align-items: center; gap: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
@@ -1123,7 +1150,8 @@ export function renderGeneralActionsUI() {
         <button class="collapse-button" id="actionsCollapseBtn" onclick="toggleCollapse('actions')" title="Collapse/Expand">${isActionsCollapsed ? '▼' : '▲'}</button>
     </div>
     <div class="spell-slots-container">
-      ${innerLevelsHtml}
+      ${tabsHtml}
+      ${panelsHtml}
     </div>
   `;
 

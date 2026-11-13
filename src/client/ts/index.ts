@@ -61,6 +61,7 @@ const globalRegistry: Record<string, any> = {
     castSpell: Spells.castSpell,
     replenishClassSpellSlots: Spells.replenishClassSpellSlots,
     useAction: Spells.useAction,
+    selectActionCategoryTab: Spells.selectActionCategoryTab,
     hideMovePopup: Spells.hideMovePopup,
     moveAction: Spells.moveAction,
     hideNumberActionPopup: Spells.hideNumberActionPopup,

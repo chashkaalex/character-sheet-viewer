@@ -221,43 +221,47 @@
         margin-bottom: 0 !important;
     }
 
-    #actionsSection .spell-slots-container {
+    /* Action Category Tabs (modeled on top-bar .section-titles) */
+    .action-tabs {
         display: flex;
+        gap: 8px;
         flex-wrap: wrap;
-        gap: 16px 24px;
-        align-items: flex-start;
+        background-color: var(--header-bg);
+        padding: 8px 10px;
+        border-radius: 6px;
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 14px;
     }
 
-    #actionsSection .spell-level-slots {
-        margin-bottom: 0;
-        flex: 0 1 auto;
-        max-width: 100%;
+    .action-tab {
+        padding: 6px 14px;
+        color: var(--background-primary);
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        font-weight: bold;
+        font-size: 0.95em;
+        user-select: none;
     }
 
-    .spell-level-slots.collapsed .spell-slot-grid {
+    .action-tab:hover {
+        color: var(--accent-color);
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .action-tab.active {
+        color: var(--accent-color);
+        border-color: var(--accent-color);
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .action-tab-panel {
         display: none;
     }
 
-    .spell-level-slots.collapsed .action-level-header {
-        margin-bottom: 0 !important;
-    }
-
-    .action-level-header {
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
-    }
-
-    .action-level-header h4 {
-        margin: 0 !important;
-    }
-
-    .action-level-header .collapse-button {
-        width: 24px;
-        height: 24px;
-        font-size: 12px;
+    .action-tab-panel.active {
+        display: block;
     }
 
     .spell-slot.filled:not(.used)[data-category="general"] {

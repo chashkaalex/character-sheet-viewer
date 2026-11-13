@@ -43,18 +43,20 @@ function createMockElement(): MockElement {
       contains(cls: string) {
         return el.className.split(/\s+/).filter(Boolean).includes(cls);
       },
-      toggle(cls: string) {
+      toggle(cls: string, force?: boolean) {
         const parts = el.className.split(/\s+/).filter(Boolean);
         const idx = parts.indexOf(cls);
-        if (idx >= 0) {
-          parts.splice(idx, 1);
-          el.className = parts.join(' ');
-          return false;
-        } else {
+        const shouldAdd = force !== undefined ? force : idx < 0;
+        if (shouldAdd && idx < 0) {
           parts.push(cls);
           el.className = parts.join(' ');
           return true;
+        } else if (!shouldAdd && idx >= 0) {
+          parts.splice(idx, 1);
+          el.className = parts.join(' ');
+          return false;
         }
+        return shouldAdd;
       }
     },
     setAttribute(name: string, value: string) {
@@ -68,14 +70,22 @@ function createMockElement(): MockElement {
       if (child.id) {
         elementRegistry.set(child.id, child);
       }
-      // Register inner collapsible sections and buttons present in innerHTML
-      const sectionRegex = /id="(actionCategory_[a-z]+Section)"\s+class="([^"]*)"/g;
-      let secMatch: RegExpExecArray | null;
-      while ((secMatch = sectionRegex.exec(child.innerHTML)) !== null) {
-        const secEl = createMockElement();
-        secEl.id = secMatch[1];
-        secEl.className = secMatch[2];
-        elementRegistry.set(secEl.id, secEl);
+      // Register action tabs and panels present in innerHTML
+      const tabRegex = /<span class="([^"]*action-tab[^"]*)" data-action-tab="([a-z]+)"/g;
+      let tabMatch: RegExpExecArray | null;
+      while ((tabMatch = tabRegex.exec(child.innerHTML)) !== null) {
+        const tabEl = createMockElement();
+        tabEl.className = tabMatch[1];
+        tabEl.setAttribute('data-action-tab', tabMatch[2]);
+        elementRegistry.set(`tab_${tabMatch[2]}`, tabEl);
+      }
+      const panelRegex = /<div class="([^"]*action-tab-panel[^"]*)" data-action-category="([a-z]+)"/g;
+      let panelMatch: RegExpExecArray | null;
+      while ((panelMatch = panelRegex.exec(child.innerHTML)) !== null) {
+        const panelEl = createMockElement();
+        panelEl.className = panelMatch[1];
+        panelEl.setAttribute('data-action-category', panelMatch[2]);
+        elementRegistry.set(`panel_${panelMatch[2]}`, panelEl);
       }
       const btnRegex = /id="([a-zA-Z0-9_]+CollapseBtn)"[^>]*>([^<]+)<\/button>/g;
       let btnMatch: RegExpExecArray | null;
@@ -89,6 +99,12 @@ function createMockElement(): MockElement {
     querySelectorAll(selector: string) {
       if (selector === '.collapsed') {
         return Array.from(elementRegistry.values()).filter(c => c.classList.contains('collapsed'));
+      }
+      if (selector === '.action-tab') {
+        return Array.from(elementRegistry.values()).filter(c => c.classList.contains('action-tab'));
+      }
+      if (selector === '.action-tab-panel') {
+        return Array.from(elementRegistry.values()).filter(c => c.classList.contains('action-tab-panel'));
       }
       if (selector === '.spellcasting-class.collapsed') {
         return this.children.filter(c => c.classList.contains('spellcasting-class') && c.classList.contains('collapsed'));
@@ -120,7 +136,7 @@ import { ActionsData } from '../../server/character/actions/actions_effects';
 import { GetCharacterRepByDocId } from '../../server/character/character_manipulation';
 import { CharacterError } from '../../server/character/character';
 import { setCharacterRep } from '../../client/ts/state';
-import { renderGeneralActionsUI } from '../../client/ts/spells_script';
+import { renderGeneralActionsUI, selectActionCategoryTab } from '../../client/ts/spells_script';
 import { toggleCollapse } from '../../client/ts/character_script';
 
 describe('Action Categories & Separated UI Sections', () => {
@@ -234,7 +250,7 @@ describe('Action Categories & Separated UI Sections', () => {
     expect(rep.actionsMetadata?.['Sacred Flames']?.category).toBe('class');
   });
 
-  it('renders a single Actions card with collapsible inner category lists and omits empty categories', () => {
+  it('renders a single Actions card with category tabs where only one tab is active at a time', () => {
     // 1. Test with Thror (has general, class, feat, item; no stances)
     const throrPath = path.join(SHEETS_DIR, 'thror_test.txt');
     const throrRep = GetCharacterRepByDocId(throrPath);
@@ -252,27 +268,36 @@ describe('Action Categories & Separated UI Sections', () => {
     expect(actionsCard.classList.contains('spellcasting-class')).toBe(true);
     expect(actionsCard.innerHTML).toContain('>Actions</h3>');
 
-    const throrCategories = Array.from(actionsCard.innerHTML.matchAll(/data-action-category="([a-z]+)"/g)).map(m => m[1]);
-    expect(throrCategories).toEqual(['general', 'class', 'feat', 'item']);
+    const throrTabs = Array.from(actionsCard.innerHTML.matchAll(/data-action-tab="([a-z]+)"/g)).map(m => m[1]);
+    expect(throrTabs).toEqual(['general', 'class', 'feat', 'item']);
     expect(actionsCard.innerHTML).toContain('Class Actions');
     expect(actionsCard.innerHTML).toContain('Turn Undead');
     expect(actionsCard.innerHTML).toContain('Feat of Strength');
     expect(actionsCard.innerHTML).toContain('Protective Ward');
 
-    // Verify collapsibility of inner category list and state preservation across re-renders
-    const classInnerSection = elementRegistry.get('actionCategory_classSection')!;
-    expect(classInnerSection).toBeDefined();
-    expect(classInnerSection.classList.contains('collapsed')).toBe(false);
+    // Only the first tab ('general') is active initially
+    expect(elementRegistry.get('tab_general')?.classList.contains('active')).toBe(true);
+    expect(elementRegistry.get('panel_general')?.classList.contains('active')).toBe(true);
+    expect(elementRegistry.get('tab_class')?.classList.contains('active')).toBe(false);
+    expect(elementRegistry.get('panel_class')?.classList.contains('active')).toBe(false);
 
-    toggleCollapse('actionCategory_class');
-    expect(classInnerSection.classList.contains('collapsed')).toBe(true);
-    expect(elementRegistry.get('actionCategory_classCollapseBtn')?.textContent).toBe('▼');
+    // Switch to 'class' tab — only 'class' should be active
+    selectActionCategoryTab('class');
+    expect(elementRegistry.get('tab_general')?.classList.contains('active')).toBe(false);
+    expect(elementRegistry.get('panel_general')?.classList.contains('active')).toBe(false);
+    expect(elementRegistry.get('tab_class')?.classList.contains('active')).toBe(true);
+    expect(elementRegistry.get('panel_class')?.classList.contains('active')).toBe(true);
 
-    // Re-render and verify collapsed state is preserved
+    // Outer Actions card collapse still works and active tab persists across re-render
+    toggleCollapse('actions');
+    expect(actionsCard.classList.contains('collapsed')).toBe(true);
+
+    elementRegistry.clear();
+    elementRegistry.set('actionsSection', actionsCard);
     renderGeneralActionsUI();
-    const reRenderedCard = mockContainer.children[0];
-    expect(reRenderedCard.innerHTML).toContain('id="actionCategory_classSection" class="spell-level-slots collapsed"');
-    expect(reRenderedCard.innerHTML).toContain('id="actionCategory_classCollapseBtn" onclick="toggleCollapse(\'actionCategory_class\')" title="Collapse/Expand">▼</button>');
+    expect(elementRegistry.get('tab_class')?.classList.contains('active')).toBe(true);
+    expect(elementRegistry.get('panel_class')?.classList.contains('active')).toBe(true);
+    expect(mockContainer.children[0].classList.contains('collapsed')).toBe(true);
 
     // 2. Test with Naethan (has all 5 categories including Stances)
     mockContainer.children = [];
@@ -287,8 +312,8 @@ describe('Action Categories & Separated UI Sections', () => {
 
     expect(mockContainer.children.length).toBe(1);
     const naethanCard = mockContainer.children[0];
-    const naethanCategories = Array.from(naethanCard.innerHTML.matchAll(/data-action-category="([a-z]+)"/g)).map(m => m[1]);
-    expect(naethanCategories).toEqual(['general', 'class', 'feat', 'stance', 'item']);
+    const naethanTabs = Array.from(naethanCard.innerHTML.matchAll(/data-action-tab="([a-z]+)"/g)).map(m => m[1]);
+    expect(naethanTabs).toEqual(['general', 'class', 'feat', 'stance', 'item']);
     expect(naethanCard.innerHTML).toContain('Stances');
     expect(naethanCard.innerHTML).toContain('Iron Guard\'s Glare Stance');
     expect(naethanCard.innerHTML).toContain('Roots of the Mountain Stance');
