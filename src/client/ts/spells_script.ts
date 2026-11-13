@@ -1,5 +1,6 @@
 import { characterRep } from './state';
 import { onCharacterRepresentation } from './character_script';
+import { checkActionCostWithPrompt, consumeActionCost, ActionCostType } from './round_actions';
 import { SpellSlotData } from '../../server/character/common_types';
 
 let currentSlotData: SpellSlotData | null = null;
@@ -992,11 +993,18 @@ export function castSpell() {
 
   slotData.targets = selectedTargets;
 
+  if (!checkActionCostWithPrompt(characterRep.docId, 'standard')) {
+    return;
+  }
+
   console.log('Casting spell:', slotData.spellName, 'for slot:', slotData, 'targets:', slotData.targets);
 
   // Call server function to cast the spell
   google.script.run
-    .withSuccessHandler(onCharacterRepresentation)
+    .withSuccessHandler((rep: any) => {
+      consumeActionCost(characterRep.docId, slotData.spellName || 'Cast Spell', 'standard');
+      onCharacterRepresentation(rep);
+    })
     .withFailureHandler(function (error) {
       console.error('Error casting spell:', error);
       alert('Error casting spell: ' + error.message);
@@ -1168,10 +1176,21 @@ export function useAction() {
     return;
   }
 
+  const metadata = (characterRep as any).actionsMetadata?.[slotData.spellName];
+  const actionCost: ActionCostType = metadata?.actionType || 'standard';
+  const isMovement = ['Charge', 'Run', 'Withdraw'].includes(slotData.spellName);
+
+  if (!checkActionCostWithPrompt(characterRep.docId, actionCost, { isMovement })) {
+    return;
+  }
+
   console.log('Using action:', slotData.spellName);
 
   google.script.run
-    .withSuccessHandler(onCharacterRepresentation)
+    .withSuccessHandler((rep: any) => {
+      consumeActionCost(characterRep.docId, slotData.spellName, actionCost, { isMovement });
+      onCharacterRepresentation(rep);
+    })
     .withFailureHandler(function (error) {
       console.error('Error using action:', error);
       alert('Error using action: ' + error.message);
@@ -1250,10 +1269,17 @@ export function moveAction() {
     return;
   }
 
+  if (!checkActionCostWithPrompt(characterRep.docId, 'move', { isMovement: true })) {
+    return;
+  }
+
   console.log('Executing Move Action:', feet);
 
   google.script.run
-    .withSuccessHandler(onCharacterRepresentation)
+    .withSuccessHandler((rep: any) => {
+      consumeActionCost(characterRep.docId, `Move ${feet} ft`, 'move', { isMovement: true });
+      onCharacterRepresentation(rep);
+    })
     .withFailureHandler(function (error) {
       console.error('Error executing move:', error);
       alert('Error: ' + error.message);
@@ -1327,10 +1353,18 @@ export function useNumberAction(actionName: string) {
     return;
   }
 
+  const actionCost: ActionCostType = metadata.actionType || 'free';
+  if (!checkActionCostWithPrompt(characterRep.docId, actionCost)) {
+    return;
+  }
+
   console.log(`Executing Number Action ${actionName}:`, value);
 
   google.script.run
-    .withSuccessHandler(onCharacterRepresentation)
+    .withSuccessHandler((rep: any) => {
+      consumeActionCost(characterRep.docId, actionName, actionCost);
+      onCharacterRepresentation(rep);
+    })
     .withFailureHandler(function (error) {
       console.error(`Error executing number action ${actionName}:`, error);
       alert('Error: ' + error.message);

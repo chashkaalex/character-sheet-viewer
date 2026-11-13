@@ -29,6 +29,13 @@ interface Window {
   onSpecialAttackChange: () => void;
   showPartyModal: () => void;
   closePartyModal: () => void;
+  toggleActionSlot: (slot: 'standard' | 'move' | 'swift' | '5-foot-step') => void;
+  resetRoundActions: () => void;
+  triggerOffTurnImmediate: () => void;
+  startCombatMode: () => void;
+  endCombatMode: () => void;
+  onCurrentInitClick: () => void;
+  rollAllFullAttacks: () => void;
   PrepareSpellsUI: () => void;
   selectActionCategoryTab: (category: string) => void;
   hideSpellPopup: () => void;

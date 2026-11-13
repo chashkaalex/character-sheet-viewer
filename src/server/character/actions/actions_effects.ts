@@ -4,10 +4,21 @@ import { registerStatusEffects } from '../_general_effects';
 
 export type ActionCategory = 'general' | 'class' | 'feat' | 'stance' | 'item';
 
+export type ActionCostType =
+  | 'standard'
+  | 'move'
+  | 'full-round'
+  | 'swift'
+  | 'immediate'
+  | '5-foot-step'
+  | 'free'
+  | 'none';
+
 export interface ActionData {
   statusName: string;
   calculateDuration: (character: ICharacter) => number;
   category: ActionCategory;
+  actionType?: ActionCostType;
   effects?: EffectData[];
   healFormula?: string;
 }
@@ -21,7 +32,8 @@ export class NumberAction implements ActionData {
     public minNumber: number = 1,
     public label: string = 'Value:',
     public category: ActionCategory = 'general',
-    public effects?: EffectData[]
+    public effects?: EffectData[],
+    public actionType: ActionCostType = 'free'
   ) { }
 }
 
@@ -43,11 +55,13 @@ export const ActionsData: Record<string, ActionData> = {
   'Cast Expeditious Retreat': {
     statusName: 'Expeditious Retreat',
     category: 'item',
+    actionType: 'standard',
     calculateDuration: (_character) => 10
   },
   'Absolute Steel Stance': {
     statusName: 'Absolute Steel Stance',
     category: 'stance',
+    actionType: 'swift',
     calculateDuration: (_character) => 10,
     effects: [
       { status: 'Absolute Steel Stance', property: 'speed', modifierType: 'Competence', value: 10 },
@@ -77,7 +91,9 @@ export const ActionsData: Record<string, ActionData> = {
     (character) => character.speed.currentScore,
     1,
     'Distance (feet):',
-    'general'
+    'general',
+    undefined,
+    'move'
   ),
   'Combat Expertise': new NumberAction(
     'Combat Expertise',
@@ -90,11 +106,13 @@ export const ActionsData: Record<string, ActionData> = {
   'Stunning Fist': {
     statusName: 'Stunning Fist',
     category: 'feat',
+    actionType: 'free',
     calculateDuration: (_character) => 1
   },
   'Defensive Stance': {
     statusName: 'Defensive Stance',
     category: 'class',
+    actionType: 'free',
     calculateDuration: (character) => {
       const conAbility = character.abilities.Con;
       return conAbility ? (3 + conAbility.modifier) : 10;
@@ -111,11 +129,13 @@ export const ActionsData: Record<string, ActionData> = {
   'Turn Undead': {
     statusName: 'Turn Undead',
     category: 'class',
+    actionType: 'standard',
     calculateDuration: (_character) => 1
   },
   'Feat of Strength': {
     statusName: 'Feat of Strength',
     category: 'class',
+    actionType: 'free',
     calculateDuration: (_character) => 1,
     effects: [
       {
@@ -133,6 +153,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Protective Ward': {
     statusName: 'Protective Ward',
     category: 'class',
+    actionType: 'standard',
     calculateDuration: (_character) => 600,
     effects: [
       {
@@ -170,6 +191,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Use Thror\'s Holy Symbol': {
     statusName: 'Use Thror\'s Holy Symbol',
     category: 'item',
+    actionType: 'standard',
     calculateDuration: (_character) => 10,
     effects: [
       {
@@ -188,6 +210,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Sacred Flames': {
     statusName: 'Sacred Flames',
     category: 'class',
+    actionType: 'swift',
     calculateDuration: (_character) => 10,
     effects: [
       {
@@ -213,11 +236,13 @@ export const ActionsData: Record<string, ActionData> = {
   'Greater Invisibility (Whisperleaf Striders)': {
     statusName: 'Invisible',
     category: 'item',
+    actionType: 'standard',
     calculateDuration: (_character) => 7
   },
   'Chameleon Power (Hide +10)': {
     statusName: 'Chameleon Power',
     category: 'item',
+    actionType: 'standard',
     calculateDuration: (_character) => -1,
     effects: [
       { status: 'Chameleon Power', property: 'Hide', modifierType: 'Competence', value: 10 }
@@ -226,12 +251,14 @@ export const ActionsData: Record<string, ActionData> = {
   'Cure Critical Wounds (Helm of Glorious Recovery)': {
     statusName: 'Helm of Glorious Recovery (Used)',
     category: 'item',
+    actionType: 'swift',
     calculateDuration: (_character) => -1,
     healFormula: '4d8+7'
   },
   'Cure Serious Wounds (Hair Shirt of Suffering)': {
     statusName: 'Hair Shirt of Suffering (Used)',
     category: 'item',
+    actionType: 'standard',
     calculateDuration: (_character) => -1,
     healFormula: '3d8+9'
   },
@@ -249,6 +276,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Smite': {
     statusName: 'Smite',
     category: 'class',
+    actionType: 'free',
     calculateDuration: (_character) => 1,
     effects: [
       {
@@ -268,6 +296,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Devoted Bulwark': {
     statusName: 'Devoted Bulwark',
     category: 'feat',
+    actionType: 'free',
     calculateDuration: (_character) => 1,
     effects: [
       { status: 'Devoted Bulwark', property: 'ac', modifierType: 'Morale', value: 1 }
@@ -276,6 +305,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Iron Guard\'s Glare Stance': {
     statusName: 'Iron Guard\'s Glare Stance',
     category: 'stance',
+    actionType: 'swift',
     calculateDuration: (_character) => -1,
     effects: [
       {
@@ -287,6 +317,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Roots of the Mountain Stance': {
     statusName: 'Roots of the Mountain Stance',
     category: 'stance',
+    actionType: 'swift',
     calculateDuration: (_character) => -1,
     effects: [
       { status: 'Roots of the Mountain Stance', property: 'Bull rush', modifierType: 'Generic', value: 10 },
@@ -302,6 +333,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Bolstering Voice Stance': {
     statusName: 'Bolstering Voice Stance',
     category: 'stance',
+    actionType: 'swift',
     calculateDuration: (_character) => -1,
     effects: [
       { status: 'Bolstering Voice Stance', property: 'Will', modifierType: 'Morale', value: 2 },
@@ -314,6 +346,7 @@ export const ActionsData: Record<string, ActionData> = {
   '5-Foot Step': {
     statusName: 'Moved 5 feet',
     category: 'general',
+    actionType: '5-foot-step',
     calculateDuration: (_character) => 1,
     effects: [
       {
@@ -325,6 +358,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Fighting Defensively': {
     statusName: 'Fighting Defensively',
     category: 'general',
+    actionType: 'free',
     calculateDuration: (_character) => 1,
     effects: [
       { status: 'Fighting Defensively', property: 'bab', modifierType: 'Generic', value: -4 },
@@ -340,6 +374,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Total Defense': {
     statusName: 'Total Defense',
     category: 'general',
+    actionType: 'standard',
     calculateDuration: (_character) => 1,
     effects: [
       {
@@ -358,6 +393,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Charge': {
     statusName: 'Charge',
     category: 'general',
+    actionType: 'full-round',
     calculateDuration: (_character) => 1,
     effects: [
       { status: 'Charge', property: 'bab', modifierType: 'Generic', value: 2 },
@@ -373,6 +409,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Run': {
     statusName: 'Run',
     category: 'general',
+    actionType: 'full-round',
     calculateDuration: (_character) => 1,
     effects: [
       {
@@ -394,6 +431,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Withdraw': {
     statusName: 'Withdraw',
     category: 'general',
+    actionType: 'full-round',
     calculateDuration: (_character) => 1,
     effects: [
       {
@@ -411,6 +449,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Casting Defensively': {
     statusName: 'Casting Defensively',
     category: 'general',
+    actionType: 'free',
     calculateDuration: (_character) => 1,
     effects: [
       {
@@ -422,6 +461,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Aid Another': {
     statusName: 'Aid Another',
     category: 'general',
+    actionType: 'standard',
     calculateDuration: (_character) => 1,
     effects: [
       {
@@ -433,6 +473,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Ready Action': {
     statusName: 'Ready Action',
     category: 'general',
+    actionType: 'standard',
     calculateDuration: (_character) => 1,
     effects: [
       {
@@ -444,6 +485,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Delay': {
     statusName: 'Delay',
     category: 'general',
+    actionType: 'none',
     calculateDuration: (_character) => 1,
     effects: [
       {
@@ -455,6 +497,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Chameleon Power (Disguise Self)': {
     statusName: 'Disguise Self',
     category: 'item',
+    actionType: 'standard',
     calculateDuration: (_character) => 600
   }
 };

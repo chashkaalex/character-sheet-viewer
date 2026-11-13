@@ -53,6 +53,13 @@ const globalRegistry: Record<string, any> = {
     onSpecialAttackChange: Dashboard.onSpecialAttackChange,
     showPartyModal: Dashboard.showPartyModal,
     closePartyModal: Dashboard.closePartyModal,
+    toggleActionSlot: Dashboard.toggleActionSlotHandler,
+    resetRoundActions: Dashboard.resetRoundActions,
+    triggerOffTurnImmediate: Dashboard.triggerOffTurnImmediateHandler,
+    startCombatMode: Dashboard.startCombatMode,
+    endCombatMode: Dashboard.endCombatMode,
+    onCurrentInitClick: Dashboard.onCurrentInitClick,
+    rollAllFullAttacks: Dashboard.rollAllFullAttacks,
 
     // Actions & Spells
     PrepareSpellsUI: Spells.PrepareSpellsUI,

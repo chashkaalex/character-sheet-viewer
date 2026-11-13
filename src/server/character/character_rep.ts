@@ -1,7 +1,7 @@
 import { ICharacter } from './icharacter';
 import { AbilityNames } from './properties/abilities/ability_types';
 import { CharacterClass } from './properties/race_and_classes';
-import { ActionCategory, ActionsData, NumberAction } from './actions/actions_effects';
+import { ActionCategory, ActionCostType, ActionsData, NumberAction } from './actions/actions_effects';
 import { calculateTwf, TwfData } from './gear/weapons/twf';
 import { calculateNormalFullAttack, calculateTwfFullAttack } from './gear/weapons/full_attack';
 import { BuildWeaponDamageVariants } from './gear/weapons/weapon_extra_damage';
@@ -56,6 +56,7 @@ export interface CharacterRep {
     maxNumber?: number;
     label?: string;
     category?: ActionCategory;
+    actionType?: ActionCostType;
   }>;
   categorizedActions?: Record<ActionCategory, string[]>;
   twf?: {
@@ -183,7 +184,8 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
           minNumber: isNumberAction ? (action as any).minNumber : undefined,
           maxNumber: isNumberAction ? (action as any).maxNumberResolver(character) : undefined,
           label: isNumberAction ? (action as any).label : undefined,
-          category: cat
+          category: cat,
+          actionType: action.actionType || 'standard'
         };
         categorizedActions[cat].push(actionName);
       } else {

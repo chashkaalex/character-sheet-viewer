@@ -1997,4 +1997,97 @@
     }
 
 
-
+
+
+/* Round Action Economy & Combat State */
+.round-actions-bar {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.round-actions-inactive,
+.round-actions-active {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.combat-badge {
+  font-size: 0.8em;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.combat-badge.out-of-combat {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.combat-badge.in-combat {
+  background: rgba(220, 38, 38, 0.15);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.4);
+}
+
+.round-slots-group,
+.round-controls-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.round-slot-pill,
+.round-btn-small,
+.roll-all-attacks-btn {
+  font-size: 0.8em;
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  background: var(--bg-card);
+  color: var(--text-color);
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.round-slot-pill.available {
+  border-color: var(--primary-color);
+  font-weight: 600;
+}
+
+.round-slot-pill.spent,
+.round-btn-small.spent {
+  opacity: 0.5;
+  text-decoration: line-through;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.round-btn-small.end-combat {
+  border-color: rgba(220, 38, 38, 0.5);
+  color: #dc2626;
+}
+
+.roll-all-attacks-btn {
+  margin-left: 6px;
+  border-color: var(--primary-color);
+  font-weight: 600;
+}
+
+.multi-atk-span.attack-rolled {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+#currentInit.in-combat {
+  color: #dc2626;
+  font-weight: 700;
+}

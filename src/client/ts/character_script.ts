@@ -3,6 +3,7 @@ import { populateWeaponDropdown, populateSpecialAttackDropdown, RemoveStatus } f
 import { PrepareSpellsUI } from './spells_script';
 import { startPartyStatusListener } from './party_sync_listener';
 import { APP_VERSION as CLIENT_APP_VERSION } from '../../server/character/_version';
+import { enterCombat, checkActionCostWithPrompt, consumeActionCost, getRoundState, renderRoundActionsUI, ActionCostType } from './round_actions';
 
 export function checkAppVersion(serverVersion?: string) {
   const badge = document.getElementById('appVersionBadge');
@@ -130,6 +131,7 @@ export function onCharacterRepresentation(response) {
   }
   //render initiative and AC
   UpdateValueAndTooltip('initBonus', characterRep.initBonus);
+  renderRoundActionsUI(characterRep.docId);
 
   //render speed
   document.getElementById('speedValue').innerHTML = characterRep.speed?.currentScore || '-';
@@ -437,6 +439,14 @@ export function showTooltip(element) {
       rollBtn.addEventListener('click', (e) => {
         e.stopPropagation();
 
+        const attackMode = element.dataset.attackMode as ActionCostType | undefined;
+        if (attackMode && characterRep?.docId) {
+          const isFollowUp = attackMode === 'full-round' && getRoundState(characterRep.docId).fullAttackInProgress;
+          if (!checkActionCostWithPrompt(characterRep.docId, attackMode, { isFullAttackFollowUp: isFollowUp })) {
+            return;
+          }
+        }
+
         rollBtn.disabled = true;
         rollBtn.textContent = '🎲 Rolling...';
 
@@ -450,6 +460,21 @@ export function showTooltip(element) {
               const res = JSON.parse(responseStr);
               const items = res.message?.content?.items;
               if (items && items.length > 0) {
+                if (characterRep?.docId) {
+                  if (element.id === 'initBonus') {
+                    const initVal = parseInt(items[0].result, 10);
+                    enterCombat(characterRep.docId, isNaN(initVal) ? null : initVal);
+                  } else if (element.dataset.attackMode === 'standard') {
+                    consumeActionCost(characterRep.docId, element.dataset.attackLabel || 'Weapon Attack', 'standard');
+                  } else if (element.dataset.attackMode === 'full-round') {
+                    const isFollowUp = getRoundState(characterRep.docId).fullAttackInProgress;
+                    consumeActionCost(characterRep.docId, element.dataset.attackLabel || 'Full Attack', 'full-round', {
+                      isFullAttack: true,
+                      isFullAttackFollowUp: isFollowUp,
+                      attackId: element.id
+                    });
+                  }
+                }
                 if (items.length === 1) {
                   const item = items[0];
                   const resultVal = item.result;

@@ -1,5 +1,18 @@
 import { characterRep } from './state';
 import { onCharacterRepresentation, addTooltip, UpdateValueAndTooltip } from './character_script';
+import {
+  advanceRound,
+  checkActionCostWithPrompt,
+  consumeActionCost,
+  endCombat,
+  enterCombat,
+  getRoundState,
+  renderRoundActionsUI,
+  resetRound,
+  saveRoundState,
+  toggleActionSlot,
+  triggerOffTurnImmediate
+} from './round_actions';
 
 let showFullAttack = false;
 let showSneakAttack = false;
@@ -297,7 +310,12 @@ export function onTimePassed() {
 
   // Call server function to handle time elapsed
   google.script.run
-    .withSuccessHandler(onCharacterRepresentation)
+    .withSuccessHandler((rep: any) => {
+      if (roundsElapsed >= 1 && characterRep?.docId) {
+        advanceRound(characterRep.docId, roundsElapsed);
+      }
+      onCharacterRepresentation(rep);
+    })
     .withFailureHandler(function (error) {
       console.error('Error processing time elapsed:', error);
       alert('Error processing time elapsed: ' + error.message);
@@ -415,6 +433,7 @@ function renderWeaponTogglesHtml(): string {
       <input type="checkbox" id="fullAttackToggle" onchange="onFullAttackToggle(this)" ${showFullAttack ? 'checked' : ''}>
       show full
     </label>
+    ${showFullAttack ? '<button type="button" class="roll-all-attacks-btn" onclick="rollAllFullAttacks()" title="Roll all remaining attacks in this Full Attack sequence">🎲 Roll All</button>' : ''}
     ${hasSneak ? `
       <label class="full-attack-toggle"${sneakTitle}>
         <input type="checkbox" id="sneakAttackToggle" onchange="onSneakAttackToggle(this)" ${showSneakAttack ? 'checked' : ''}>
@@ -453,7 +472,12 @@ function renderWeaponStats(
     ${idPrefix === 'weapon' ? renderWeaponTogglesHtml() : ''}
   `;
 
-  addTooltip(document.getElementById(`${idPrefix}AtkValue`), atkTooltip, atkRolzRollMessage);
+  const atkEl = document.getElementById(`${idPrefix}AtkValue`);
+  if (atkEl) {
+    atkEl.dataset.attackMode = 'standard';
+    atkEl.dataset.attackLabel = 'Weapon Attack';
+  }
+  addTooltip(atkEl, atkTooltip, atkRolzRollMessage);
   addTooltip(document.getElementById(`${idPrefix}DmgValue`), dmgTooltip, dmgRolzRollMessage);
   if (warningText) {
     addTooltip(document.getElementById(`${idPrefix}WarningBadge`), warningText);
@@ -565,8 +589,15 @@ function updateWeaponStatsDisplay() {
       `;
 
       // Apply tooltips for MH
+      const rolledIds = characterRep?.docId ? getRoundState(characterRep.docId).rolledAttackIds : [];
       mhSequence.attacks.forEach((a: any, idx: number) => {
-        addTooltip(document.getElementById(`mhAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
+        const el = document.getElementById(`mhAtkValue_${idx}`);
+        if (el) {
+          el.dataset.attackMode = 'full-round';
+          el.dataset.attackLabel = `${mainWeapon.name} (MH #${idx + 1})`;
+          if (rolledIds.includes(el.id)) el.classList.add('attack-rolled');
+        }
+        addTooltip(el, a.tooltip, a.rolzAtkRollMessage);
       });
       addTooltip(document.getElementById('mhDmgValue'), mainDmgTooltip, mainDmgRolz);
       if (mainWeapon.additionalDamageWarning) {
@@ -575,7 +606,13 @@ function updateWeaponStatsDisplay() {
 
       // Apply tooltips for OH
       ohSequence.attacks.forEach((a: any, idx: number) => {
-        addTooltip(document.getElementById(`ohAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
+        const el = document.getElementById(`ohAtkValue_${idx}`);
+        if (el) {
+          el.dataset.attackMode = 'full-round';
+          el.dataset.attackLabel = `${offWeapon.name} (OH #${idx + 1})`;
+          if (rolledIds.includes(el.id)) el.classList.add('attack-rolled');
+        }
+        addTooltip(el, a.tooltip, a.rolzAtkRollMessage);
       });
       addTooltip(document.getElementById('ohDmgValue'), offDmgTooltip, offDmgRolz);
       if (offWeapon.additionalDamageWarning) {
@@ -604,8 +641,15 @@ function updateWeaponStatsDisplay() {
         ${renderWeaponTogglesHtml()}
       `;
 
+      const rolledIds = characterRep?.docId ? getRoundState(characterRep.docId).rolledAttackIds : [];
       sequence.attacks.forEach((a: any, idx: number) => {
-        addTooltip(document.getElementById(`normalAtkValue_${idx}`), a.tooltip, a.rolzAtkRollMessage);
+        const el = document.getElementById(`normalAtkValue_${idx}`);
+        if (el) {
+          el.dataset.attackMode = 'full-round';
+          el.dataset.attackLabel = `${mainWeapon.name} (#${idx + 1})`;
+          if (rolledIds.includes(el.id)) el.classList.add('attack-rolled');
+        }
+        addTooltip(el, a.tooltip, a.rolzAtkRollMessage);
       });
       addTooltip(document.getElementById('weaponDmgValue'), mainDmgTooltip, mainDmgRolz);
       if (mainWeapon.additionalDamageWarning) {
@@ -822,3 +866,114 @@ if (typeof window !== 'undefined') {
   });
 }
 
+
+export function toggleActionSlotHandler(slot: 'standard' | 'move' | 'swift' | '5-foot-step') {
+  if (!characterRep?.docId) return;
+  toggleActionSlot(characterRep.docId, slot);
+}
+
+export function resetRoundActions() {
+  if (!characterRep?.docId) return;
+  resetRound(characterRep.docId);
+}
+
+export function triggerOffTurnImmediateHandler() {
+  if (!characterRep?.docId) return;
+  triggerOffTurnImmediate(characterRep.docId);
+}
+
+export function startCombatMode() {
+  if (!characterRep?.docId) return;
+  const input = window.prompt('Enter Initiative score (leave blank for none):', '');
+  if (input === null) return;
+  const parsed = input.trim() === '' ? null : parseInt(input.trim(), 10);
+  enterCombat(characterRep.docId, parsed !== null && !isNaN(parsed) ? parsed : null);
+}
+
+export function endCombatMode() {
+  if (!characterRep?.docId) return;
+  endCombat(characterRep.docId);
+}
+
+export function onCurrentInitClick() {
+  if (!characterRep?.docId) return;
+  const state = getRoundState(characterRep.docId);
+  if (!state.inCombat) {
+    startCombatMode();
+    return;
+  }
+  const currentStr = state.currentInitiative !== null ? String(state.currentInitiative) : '';
+  const input = window.prompt('Edit Initiative score (or type "end" to exit Combat):', currentStr);
+  if (input === null) return;
+  if (input.trim().toLowerCase() === 'end') {
+    endCombat(characterRep.docId);
+    return;
+  }
+  const parsed = input.trim() === '' ? null : parseInt(input.trim(), 10);
+  const next = { ...state, currentInitiative: parsed !== null && !isNaN(parsed) ? parsed : state.currentInitiative };
+  // Preserve current round slots while updating initiative
+  saveRoundState(characterRep.docId, next);
+  renderRoundActionsUI(characterRep.docId);
+}
+
+export function rollAllFullAttacks() {
+  if (!characterRep?.docId) return;
+  if (!characterRep.rolzRoomId) {
+    alert('Rolz Room ID is not configured in your character sheet.');
+    return;
+  }
+
+  const allSpans = Array.from(document.querySelectorAll('.multi-atk-span')) as HTMLElement[];
+  const unrolled = allSpans.filter(el => el.dataset.rolzRollMessage && !el.classList.contains('attack-rolled'));
+  const targets = unrolled.length > 0 ? unrolled : allSpans.filter(el => el.dataset.rolzRollMessage);
+
+  if (targets.length === 0) {
+    alert('No attack rolls available.');
+    return;
+  }
+
+  const isFollowUp = getRoundState(characterRep.docId).fullAttackInProgress;
+  if (!checkActionCostWithPrompt(characterRep.docId, 'full-round', { isFullAttackFollowUp: isFollowUp })) {
+    return;
+  }
+
+  const results: string[] = [];
+  const rollNext = (idx: number) => {
+    if (idx >= targets.length) {
+      alert(`🎲 Full Attack Results\n────────────────────────\n${results.join('\n')}`);
+      return;
+    }
+    const el = targets[idx];
+    const rollMsg = el.dataset.rolzRollMessage!;
+    const label = el.dataset.attackLabel || `Attack ${idx + 1}`;
+
+    // @ts-ignore
+    google.script.run
+      .withSuccessHandler((responseStr: string) => {
+        try {
+          const res = JSON.parse(responseStr);
+          const item = res.message?.content?.items?.[0];
+          if (item) {
+            results.push(`• ${label}: ${item.result} ${item.details || ''}`.trim());
+          } else {
+            results.push(`• ${label}: (no result)`);
+          }
+        } catch {
+          results.push(`• ${label}: (parse error)`);
+        }
+        const followUp = getRoundState(characterRep.docId).fullAttackInProgress;
+        consumeActionCost(characterRep.docId, label, 'full-round', {
+          isFullAttack: true,
+          isFullAttackFollowUp: followUp,
+          attackId: el.id
+        });
+        rollNext(idx + 1);
+      })
+      .withFailureHandler((err: any) => {
+        alert(`Error rolling ${label}: ${err.message}`);
+      })
+      .PostRollToRolz(characterRep.rolzRoomId, rollMsg, characterRep.name);
+  };
+
+  rollNext(0);
+}
