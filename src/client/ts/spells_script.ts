@@ -1118,7 +1118,7 @@ export function renderGeneralActionsUI() {
   });
 
   actionsDiv.innerHTML = `
-    <div class="spellcasting-class-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+    <div class="spellcasting-class-header" style="display: flex; justify-content: flex-start; align-items: center; gap: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
         <h3 style="margin: 0; border: none; padding: 0; font-size: 1.3em; color: var(--primary-color);">Actions</h3>
         <button class="collapse-button" id="actionsCollapseBtn" onclick="toggleCollapse('actions')" title="Collapse/Expand">${isActionsCollapsed ? '▼' : '▲'}</button>
     </div>

@@ -221,6 +221,19 @@
         margin-bottom: 0 !important;
     }
 
+    #actionsSection .spell-slots-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px 24px;
+        align-items: flex-start;
+    }
+
+    #actionsSection .spell-level-slots {
+        margin-bottom: 0;
+        flex: 0 1 auto;
+        max-width: 100%;
+    }
+
     .spell-level-slots.collapsed .spell-slot-grid {
         display: none;
     }
@@ -231,7 +244,7 @@
 
     .action-level-header {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
         gap: 8px;
         margin-bottom: 8px;
@@ -245,6 +258,31 @@
         width: 24px;
         height: 24px;
         font-size: 12px;
+    }
+
+    .spell-slot.filled:not(.used)[data-category="general"] {
+        background-color: #4a607a;
+        border-color: #34495e;
+    }
+
+    .spell-slot.filled:not(.used)[data-category="class"] {
+        background-color: #6c4a8e;
+        border-color: #4f336b;
+    }
+
+    .spell-slot.filled:not(.used)[data-category="feat"] {
+        background-color: #c17f24;
+        border-color: #8f5c16;
+    }
+
+    .spell-slot.filled:not(.used)[data-category="stance"] {
+        background-color: #2e7d5b;
+        border-color: #1f5a40;
+    }
+
+    .spell-slot.filled:not(.used)[data-category="item"] {
+        background-color: #24788f;
+        border-color: #185566;
     }
     .spellcasting-class {
         background-color: var(--background-secondary);
