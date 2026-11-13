@@ -16,11 +16,16 @@
   <link rel="stylesheet" href="../style/stylesheet.css">
   <link rel="stylesheet" href="../style/landing_styles.css">
   <script type="module" src="../ts/index.ts"></script>
-  
+
   <? if (hasId) { ?>
   <style>
-    #landingPage { display: none !important; }
-    .character-sheet-container { display: block !important; }
+    #landingPage {
+      display: none !important;
+    }
+
+    .character-sheet-container {
+      display: block !important;
+    }
   </style>
   <? } ?>
 </head>
@@ -61,7 +66,8 @@
           <h1 id="characterName">Loading...</h1>
           <div class="header-actions-group">
             <span id="appVersionBadge" class="app-version-badge" title="Current loaded build version"></span>
-            <button class="refresh-button" onclick="refreshCharacterData()" title="Refresh Data" aria-label="Refresh Data">🔄</button>
+            <button class="refresh-button" onclick="refreshCharacterData()" title="Refresh Data"
+              aria-label="Refresh Data">🔄</button>
           </div>
         </div>
         <div class="section-titles">
@@ -124,7 +130,8 @@
                 </div>
                 <div class="combat-item">
                   <label>Current Init:</label>
-                  <span id="currentInit" onclick="onCurrentInitClick()" style="cursor: pointer;" title="Roll Initiative or click to enter/edit Combat">-</span>
+                  <span id="currentInit" onclick="onCurrentInitClick()" style="cursor: pointer;"
+                    title="Roll Initiative or click to enter/edit Combat">-</span>
                 </div>
               </div>
               <div class="weapon-section">
@@ -171,7 +178,8 @@
                 <option value="minutes">Minute(s)</option>
                 <option value="hours">Hour(s)</option>
               </select>
-              <button id="partyButton" class="passed-button" style="display: none;" onclick="showPartyModal()">Party</button>
+              <button id="partyButton" class="passed-button" style="display: none;"
+                onclick="showPartyModal()">Party</button>
               <div id="roundActionsBar" class="round-actions-bar"></div>
             </div>
           </div>
@@ -183,7 +191,8 @@
             </div>
             <div id="statusesList">
               <div id="emptyStatus" class="status-item">
-                <input type="text" class="status-name-input" placeholder="Status Name" style="display:none;" list="quickStatusesList" />
+                <input type="text" class="status-name-input" placeholder="Status Name" style="display:none;"
+                  list="quickStatusesList" />
                 <span class="timed-controls" style="display:none;">
                   <label>duration:</label>
                   <input type="number" class="status-duration-input" value="1" min="1" />
@@ -251,8 +260,8 @@
                   <div class="header-left">
                     <h3>Battle Gear</h3>
                     <div class="filter-container">
-                      <button class="filter-button" id="battleGearFilterBtn" onclick="toggleFilterDropdown('battleGear')"
-                        title="Filter items">🔽</button>
+                      <button class="filter-button" id="battleGearFilterBtn"
+                        onclick="toggleFilterDropdown('battleGear')" title="Filter items">🔽</button>
                       <div class="filter-dropdown" id="battleGearFilter">
                         <div class="filter-option" onclick="filterItems('battleGear', 'all')">All</div>
                         <div class="filter-option" onclick="filterItems('battleGear', 'equipment')">𐂫 Equipment</div>
@@ -275,8 +284,8 @@
                   <div class="header-left">
                     <h3>Possessions</h3>
                     <div class="filter-container">
-                      <button class="filter-button" id="possessionsFilterBtn" onclick="toggleFilterDropdown('possessions')"
-                        title="Filter items">🔽</button>
+                      <button class="filter-button" id="possessionsFilterBtn"
+                        onclick="toggleFilterDropdown('possessions')" title="Filter items">🔽</button>
                       <div class="filter-dropdown" id="possessionsFilter">
                         <div class="filter-option" onclick="filterItems('possessions', 'all')">All</div>
                         <div class="filter-option" onclick="filterItems('possessions', 'equipment')">𐂫 Equipment</div>
@@ -314,9 +323,12 @@
   <div id="custom-tooltip" class="custom-tooltip"></div>
 
   <!-- Party Modal -->
-  <div id="partyModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4);">
-    <div class="modal-content" style="background-color:#fefefe; margin:15% auto; padding:20px; border:1px solid #888; width:80%; max-width:400px; border-radius:8px;">
-      <span class="close" onclick="closePartyModal()" style="color:#aaa; float:right; font-size:28px; font-weight:bold; cursor:pointer;">&times;</span>
+  <div id="partyModal" class="modal"
+    style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4);">
+    <div class="modal-content"
+      style="background-color:#fefefe; margin:15% auto; padding:20px; border:1px solid #888; width:80%; max-width:400px; border-radius:8px;">
+      <span class="close" onclick="closePartyModal()"
+        style="color:#aaa; float:right; font-size:28px; font-weight:bold; cursor:pointer;">&times;</span>
       <h2 id="partyModalTitle">Party Name</h2>
       <ul id="partyModalList" style="list-style-type:none; padding:0; margin-top:15px; font-size:16px;">
         <!-- Members injected here -->
@@ -325,7 +337,8 @@
   </div>
 
   <!-- Inflict Damage Modal -->
-  <div id="inflictModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4);">
+  <div id="inflictModal" class="modal"
+    style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4);">
     <div class="modal-content inflict-modal-content">
       <span class="close" onclick="closeInflictModal()">&times;</span>
       <h2 id="inflictModalTitle">Inflict Damage</h2>
@@ -338,7 +351,8 @@
 
       <!-- Extendable section: Closed list of additional types -->
       <div class="expandable-damage-section">
-        <button type="button" id="toggleAdditionalDamageBtn" class="toggle-damage-types-btn" onclick="toggleAdditionalDamageTypes()">
+        <button type="button" id="toggleAdditionalDamageBtn" class="toggle-damage-types-btn"
+          onclick="toggleAdditionalDamageTypes()">
           <span id="toggleAdditionalDamageIcon">▶</span> Additional Damage Types
         </button>
         <div id="additionalDamageTypesContainer" class="additional-damage-types" style="display:none;">

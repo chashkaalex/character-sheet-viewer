@@ -26,6 +26,7 @@ interface Window {
   refreshCharacterData: () => void;
   onTimePassed: () => void;
   onWeaponChange: () => void;
+  onTwfToggle: (checkbox: HTMLInputElement) => void;
   onSpecialAttackChange: () => void;
   showPartyModal: () => void;
   closePartyModal: () => void;

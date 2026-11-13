@@ -63,7 +63,7 @@ function getTwfPenalties(hasTWF: boolean, offHandIsLight: boolean): { mainPenalt
  * Determines if a weapon is eligible for off-hand TWF use (melee only).
  */
 function isEligibleForTwf(weapon: Weapon): boolean {
-  return weapon.rangeType === 'Melee';
+  return weapon.rangeType === 'Melee' && weapon.encumbrance !== 'Two-Handed';
 }
 
 /**
@@ -85,13 +85,6 @@ function calculateOffHandDamageBonus(weapon: Weapon, strModifier: number): numbe
  */
 export function calculateTwf(character: ICharacter, weapons: Weapon[]): TwfData | null {
   const hasTWF = character.HasFeat('Two-Weapon Fighting');
-
-  // Even without the TWF feat, a character can fight with two weapons
-  // (just with bigger penalties). However, we only show the off-hand dropdown
-  // when the character has the TWF feat for now.
-  if (!hasTWF) {
-    return null;
-  }
 
   const hasImprovedTWF = character.HasFeat('Improved Two-Weapon Fighting');
   const hasGreaterTWF = character.HasFeat('Greater Two-Weapon Fighting');

@@ -175,23 +175,30 @@ describe('TWF Feature', () => {
     });
   });
 
-  describe('Characters without TWF', () => {
-    test('Thror (Monk) has no TWF data', () => {
+  describe('Characters without TWF feat', () => {
+    test('Thror (Monk) has hasTWF=false and non-feat TWF combinations', () => {
       const char = getCharacter(THROR_TEST_FILE);
       const twfData = calculateTwf(char, char.weapons);
-      expect(twfData).toBeNull();
+      expect(twfData).not.toBeNull();
+      expect(twfData!.hasTWF).toBe(false);
+      expect(twfData!.combinations.length).toBeGreaterThan(0);
+      expect(twfData!.combinations[0].mainPenalty).toBe(-4);
+      expect(twfData!.combinations[0].offPenalty).toBe(-8);
     });
 
-    test('Bess (Bard) has no TWF data', () => {
+    test('Bess (Bard) has hasTWF=false and non-feat TWF combinations', () => {
       const char = getCharacter(BESS_TEST_FILE);
       const twfData = calculateTwf(char, char.weapons);
-      expect(twfData).toBeNull();
+      expect(twfData).not.toBeNull();
+      expect(twfData!.hasTWF).toBe(false);
+      expect(twfData!.combinations.length).toBeGreaterThan(0);
     });
 
-    test('Bess rep does not include TWF field', () => {
+    test('Bess rep includes TWF field with hasTWF=false', () => {
       const char = getCharacter(BESS_TEST_FILE);
       const rep = getCharacterRep(char);
-      expect(rep.twf).toBeUndefined();
+      expect(rep.twf).toBeDefined();
+      expect(rep.twf!.hasTWF).toBe(false);
     });
   });
 
@@ -241,13 +248,42 @@ describe('TWF Feature', () => {
       expect(combo!.offPenalty).toBe(-2);
     });
 
-    test('Fighter without TWF feat gets null TWF data', () => {
+    test('Fighter without TWF feat and light off-hand gets -4/-8', () => {
       const { twfData } = createCharWithTwf(
         [],
         ['Short Sword (1d6/19-20)', 'Dagger (1d4/19-20)']
       );
 
-      expect(twfData).toBeNull();
+      expect(twfData).not.toBeNull();
+      expect(twfData!.hasTWF).toBe(false);
+      const combo = twfData!.combinations.find(c => c.mainPenalty === -4 && c.offPenalty === -8);
+      expect(combo).toBeDefined();
+    });
+
+    test('Fighter without TWF feat and one-handed off-hand gets -6/-10', () => {
+      const { twfData } = createCharWithTwf(
+        [],
+        ['Short Sword (1d6/19-20)', 'Longsword (1d8/19-20)']
+      );
+
+      expect(twfData).not.toBeNull();
+      expect(twfData!.hasTWF).toBe(false);
+      const combo = twfData!.combinations.find(c => c.mainPenalty === -6 && c.offPenalty === -10);
+      expect(combo).toBeDefined();
+    });
+
+    test('Two-Handed weapons are excluded from TWF combinations', () => {
+      const { twfData, char } = createCharWithTwf(
+        ['Two-Weapon Fighting'],
+        ['Greatsword (2d6/19-20)']
+      );
+
+      const greatswordIdx = char.weapons.findIndex(w => w.name === 'Greatsword');
+      expect(greatswordIdx).toBeGreaterThanOrEqual(0);
+      const usesGreatsword = twfData!.combinations.some(
+        c => c.mainWeaponIndex === greatswordIdx || c.offWeaponIndex === greatswordIdx
+      );
+      expect(usesGreatsword).toBe(false);
     });
 
     test('Fighter with TWF and one-handed off-hand gets -4/-4', () => {
