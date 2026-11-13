@@ -1,7 +1,7 @@
 import { ICharacter } from './icharacter';
 import { AbilityNames } from './properties/abilities/ability_types';
 import { CharacterClass } from './properties/race_and_classes';
-import { ActionsData, NumberAction } from './actions/actions_effects';
+import { ActionCategory, ActionsData, NumberAction } from './actions/actions_effects';
 import { calculateTwf, TwfData } from './gear/weapons/twf';
 import { calculateNormalFullAttack, calculateTwfFullAttack } from './gear/weapons/full_attack';
 import { BuildWeaponDamageVariants } from './gear/weapons/weapon_extra_damage';
@@ -55,7 +55,9 @@ export interface CharacterRep {
     minNumber?: number;
     maxNumber?: number;
     label?: string;
+    category?: ActionCategory;
   }>;
+  categorizedActions?: Record<ActionCategory, string[]>;
   twf?: {
     hasTWF: boolean;
     hasImprovedTWF: boolean;
@@ -162,21 +164,34 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
   if (character.actions) {
     characterObject.actions = character.actions;
     const actionsMetadata: Record<string, any> = {};
+    const categorizedActions: Record<ActionCategory, string[]> = {
+      general: [],
+      class: [],
+      feat: [],
+      stance: [],
+      item: []
+    };
     character.actions.forEach(actionName => {
       const action = ActionsData[actionName];
       if (action) {
         const isNumberAction = action instanceof NumberAction;
+        const cat: ActionCategory = action.category || 'general';
         actionsMetadata[actionName] = {
           name: actionName,
           statusName: action.statusName,
           acceptsNumber: isNumberAction,
           minNumber: isNumberAction ? (action as any).minNumber : undefined,
           maxNumber: isNumberAction ? (action as any).maxNumberResolver(character) : undefined,
-          label: isNumberAction ? (action as any).label : undefined
+          label: isNumberAction ? (action as any).label : undefined,
+          category: cat
         };
+        categorizedActions[cat].push(actionName);
+      } else {
+        categorizedActions.general.push(actionName);
       }
     });
     characterObject.actionsMetadata = actionsMetadata;
+    characterObject.categorizedActions = categorizedActions;
   }
 
   // Add spell casting

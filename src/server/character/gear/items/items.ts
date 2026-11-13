@@ -77,6 +77,7 @@ export const ItemEffects: Record<string, EffectData[]> = {
           if (!ActionsData[actionName]) {
             ActionsData[actionName] = {
               statusName: spellName,
+              category: 'item',
               calculateDuration: () => 10
             };
           }

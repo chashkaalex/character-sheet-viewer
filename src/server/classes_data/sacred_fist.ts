@@ -45,6 +45,9 @@ export const SacredFist: ClassData = createClassData({
     if (level > 0) {
       character.GetModifiableProperty('effectiveMonkLevel').applyPermanentEffect(level);
     }
+    if (level >= 4 && !character.actions.includes('Sacred Flames')) {
+      character.actions.push('Sacred Flames');
+    }
   }
 });
 

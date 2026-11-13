@@ -1005,7 +1005,7 @@ export function replenishClassSpellSlots(buttonElement: HTMLButtonElement, class
 }
 
 /**
- * Renders the general actions UI grid.
+ * Renders the categorized actions UI grids (General, Class, Feat, Stance, Item).
  */
 export function renderGeneralActionsUI() {
   const container = document.getElementById('generalActionsContainer');
@@ -1019,36 +1019,77 @@ export function renderGeneralActionsUI() {
 
   container.style.display = 'block';
 
-  const classDiv = document.createElement('div');
-  classDiv.className = 'spellcasting-class';
+  const ACTION_SECTIONS: Array<{ category: string; title: string }> = [
+    { category: 'general', title: 'General Actions' },
+    { category: 'class', title: 'Class Actions' },
+    { category: 'feat', title: 'Feat Actions' },
+    { category: 'stance', title: 'Stances' },
+    { category: 'item', title: 'Item Actions' }
+  ];
 
-  let html = `
-    <div class="spellcasting-class-header" style="border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
-        <h3 style="margin: 0; border: none; padding: 0; font-size: 1.3em; color: var(--primary-color);">General Actions</h3>
-    </div>
-    <div class="spell-slots-container">
-      <div class="spell-level-slots">
-        <div class="spell-slot-grid">
-  `;
+  const categorized: Record<string, string[]> = {
+    general: [],
+    class: [],
+    feat: [],
+    stance: [],
+    item: []
+  };
 
-  characterRep.actions.forEach((actionName, index) => {
-    const metadata = (characterRep as any).actionsMetadata && (characterRep as any).actionsMetadata[actionName];
-    const statusName = (metadata && metadata.statusName) || actionName;
-    const isActive = characterRep.statuses && characterRep.statuses.some((s: any) => s.name === statusName);
-    const slotClass = 'filled';
-    const usedClass = isActive ? 'used' : '';
+  if ((characterRep as any).categorizedActions) {
+    for (const key of Object.keys(categorized)) {
+      if (Array.isArray((characterRep as any).categorizedActions[key])) {
+        categorized[key] = (characterRep as any).categorizedActions[key];
+      }
+    }
+  } else {
+    characterRep.actions.forEach(actionName => {
+      const metadata = (characterRep as any).actionsMetadata && (characterRep as any).actionsMetadata[actionName];
+      const cat = (metadata && metadata.category) || 'general';
+      if (categorized[cat]) {
+        categorized[cat].push(actionName);
+      } else {
+        categorized.general.push(actionName);
+      }
+    });
+  }
 
-    html += `<div class="spell-slot ${slotClass} ${usedClass}" data-level="actions" data-slot="${index}" data-spell="${actionName}" data-used="${isActive}" data-valid="true" data-class="Actions" data-preparation="Actions" title="${actionName}">${actionName}</div>`;
-  });
+  let globalSlotIndex = 0;
+  ACTION_SECTIONS.forEach(section => {
+    const sectionActions = categorized[section.category] || [];
+    if (sectionActions.length === 0) return;
 
-  html += `
+    const classDiv = document.createElement('div');
+    classDiv.className = 'spellcasting-class';
+    classDiv.setAttribute('data-action-category', section.category);
+
+    let html = `
+      <div class="spellcasting-class-header" style="border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+          <h3 style="margin: 0; border: none; padding: 0; font-size: 1.3em; color: var(--primary-color);">${section.title}</h3>
+      </div>
+      <div class="spell-slots-container">
+        <div class="spell-level-slots">
+          <div class="spell-slot-grid">
+    `;
+
+    sectionActions.forEach(actionName => {
+      const metadata = (characterRep as any).actionsMetadata && (characterRep as any).actionsMetadata[actionName];
+      const statusName = (metadata && metadata.statusName) || actionName;
+      const isActive = characterRep.statuses && characterRep.statuses.some((s: any) => s.name === statusName);
+      const slotClass = 'filled';
+      const usedClass = isActive ? 'used' : '';
+
+      html += `<div class="spell-slot ${slotClass} ${usedClass}" data-level="actions" data-slot="${globalSlotIndex++}" data-spell="${actionName}" data-used="${isActive}" data-valid="true" data-class="Actions" data-preparation="Actions" data-category="${section.category}" title="${actionName}">${actionName}</div>`;
+    });
+
+    html += `
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
 
-  classDiv.innerHTML = html;
-  container.appendChild(classDiv);
+    classDiv.innerHTML = html;
+    container.appendChild(classDiv);
+  });
 }
 
 /**
