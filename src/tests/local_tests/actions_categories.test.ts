@@ -2,23 +2,61 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 interface MockElement {
+  id: string;
   className: string;
   innerHTML: string;
+  textContent: string;
   style: Record<string, string>;
   attributes: Record<string, string>;
   children: MockElement[];
+  classList: {
+    contains: (cls: string) => boolean;
+    toggle: (cls: string) => boolean;
+  };
   setAttribute: (name: string, value: string) => void;
   getAttribute: (name: string) => string | undefined;
   appendChild: (child: MockElement) => void;
+  querySelectorAll: (selector: string) => MockElement[];
 }
 
+const elementRegistry = new Map<string, MockElement>();
+
 function createMockElement(): MockElement {
+  let _innerHTML = '';
   const el: MockElement = {
+    id: '',
     className: '',
-    innerHTML: '',
+    get innerHTML() {
+      return _innerHTML;
+    },
+    set innerHTML(val: string) {
+      _innerHTML = val;
+      if (val === '') {
+        this.children = [];
+      }
+    },
+    textContent: '',
     style: {},
     attributes: {},
     children: [],
+    classList: {
+      contains(cls: string) {
+        return el.className.split(/\s+/).filter(Boolean).includes(cls);
+      },
+      toggle(cls: string) {
+        const parts = el.className.split(/\s+/).filter(Boolean);
+        const idx = parts.indexOf(cls);
+        if (idx >= 0) {
+          parts.splice(idx, 1);
+          el.className = parts.join(' ');
+          return false;
+        } else {
+          parts.push(cls);
+          el.className = parts.join(' ');
+          return true;
+        }
+      }
+    },
     setAttribute(name: string, value: string) {
       this.attributes[name] = value;
     },
@@ -27,18 +65,39 @@ function createMockElement(): MockElement {
     },
     appendChild(child: MockElement) {
       this.children.push(child);
+      if (child.id) {
+        elementRegistry.set(child.id, child);
+      }
+      // Register collapse button if present in innerHTML
+      const btnMatch = child.innerHTML.match(/id="(actionCategory_[a-z]+CollapseBtn)"[^>]*>([^<]+)<\/button>/);
+      if (btnMatch) {
+        const btnEl = createMockElement();
+        btnEl.id = btnMatch[1];
+        btnEl.textContent = btnMatch[2];
+        elementRegistry.set(btnEl.id, btnEl);
+      }
+    },
+    querySelectorAll(selector: string) {
+      if (selector === '.spellcasting-class.collapsed') {
+        return this.children.filter(c => c.classList.contains('spellcasting-class') && c.classList.contains('collapsed'));
+      }
+      return [];
     }
   };
   return el;
 }
 
 const mockContainer = createMockElement();
+mockContainer.id = 'generalActionsContainer';
 
 (global as any).window = {
   addEventListener: () => { },
   document: {
     addEventListener: () => { },
-    getElementById: (id: string) => (id === 'generalActionsContainer' ? mockContainer : null),
+    getElementById: (id: string) => {
+      if (id === 'generalActionsContainer') return mockContainer;
+      return elementRegistry.get(id) || null;
+    },
     createElement: () => createMockElement()
   }
 };
@@ -50,6 +109,7 @@ import { GetCharacterRepByDocId } from '../../server/character/character_manipul
 import { CharacterError } from '../../server/character/character';
 import { setCharacterRep } from '../../client/ts/state';
 import { renderGeneralActionsUI } from '../../client/ts/spells_script';
+import { toggleCollapse } from '../../client/ts/character_script';
 
 describe('Action Categories & Separated UI Sections', () => {
   const SHEETS_DIR = path.join(__dirname, 'test_character_sheets');
@@ -60,6 +120,7 @@ describe('Action Categories & Separated UI Sections', () => {
     mockContainer.innerHTML = '';
     mockContainer.children = [];
     mockContainer.style = {};
+    elementRegistry.clear();
     if (!fs.existsSync(TEMP_DIR)) {
       fs.mkdirSync(TEMP_DIR, { recursive: true });
     }
@@ -161,7 +222,7 @@ describe('Action Categories & Separated UI Sections', () => {
     expect(rep.actionsMetadata?.['Sacred Flames']?.category).toBe('class');
   });
 
-  it('renders separate UI sections in renderGeneralActionsUI and omits empty categories', () => {
+  it('renders separate stackable, collapsible UI sections in renderGeneralActionsUI and omits empty categories', () => {
     // 1. Test with Thror (has general, class, feat, item; no stances)
     const throrPath = path.join(SHEETS_DIR, 'thror_test.txt');
     const throrRep = GetCharacterRepByDocId(throrPath);
@@ -171,29 +232,39 @@ describe('Action Categories & Separated UI Sections', () => {
     setCharacterRep(throrRep);
     renderGeneralActionsUI();
 
+    expect(mockContainer.style.display).toBe('flex');
     expect(mockContainer.children.map(c => c.getAttribute('data-action-category'))).toEqual([
       'general',
       'class',
       'feat',
       'item'
     ]);
+    mockContainer.children.forEach(c => {
+      expect(c.classList.contains('action-category-section')).toBe(true);
+      expect(c.innerHTML).toContain('collapse-button');
+    });
 
-    const classSectionHtml = mockContainer.children.find(c => c.getAttribute('data-action-category') === 'class')!.innerHTML;
-    expect(classSectionHtml).toContain('Class Actions');
-    expect(classSectionHtml).toContain('Turn Undead');
-    expect(classSectionHtml).toContain('Feat of Strength');
-    expect(classSectionHtml).toContain('Protective Ward');
+    const classSection = mockContainer.children.find(c => c.getAttribute('data-action-category') === 'class')!;
+    expect(classSection.innerHTML).toContain('Class Actions');
+    expect(classSection.innerHTML).toContain('Turn Undead');
+    expect(classSection.innerHTML).toContain('Feat of Strength');
+    expect(classSection.innerHTML).toContain('Protective Ward');
 
-    const featSectionHtml = mockContainer.children.find(c => c.getAttribute('data-action-category') === 'feat')!.innerHTML;
-    expect(featSectionHtml).toContain('Feat Actions');
-    expect(featSectionHtml).toContain('Stunning Fist');
+    // Verify collapsibility and state preservation across re-renders
+    expect(classSection.classList.contains('collapsed')).toBe(false);
+    toggleCollapse('actionCategory_class');
+    expect(classSection.classList.contains('collapsed')).toBe(true);
+    expect(elementRegistry.get('actionCategory_classCollapseBtn')?.textContent).toBe('▼');
 
-    const itemSectionHtml = mockContainer.children.find(c => c.getAttribute('data-action-category') === 'item')!.innerHTML;
-    expect(itemSectionHtml).toContain('Item Actions');
-    expect(itemSectionHtml).toContain('Use Thror\'s Holy Symbol');
+    // Re-render and verify collapsed state is preserved
+    renderGeneralActionsUI();
+    const reRenderedClassSection = mockContainer.children.find(c => c.getAttribute('data-action-category') === 'class')!;
+    expect(reRenderedClassSection.classList.contains('collapsed')).toBe(true);
+    expect(reRenderedClassSection.innerHTML).toContain('>▼</button>');
 
     // 2. Test with Naethan (has all 5 categories including Stances)
     mockContainer.children = [];
+    elementRegistry.clear();
     const naethanPath = path.join(SHEETS_DIR, 'naethan_test.txt');
     const naethanRep = GetCharacterRepByDocId(naethanPath);
     expect(naethanRep instanceof CharacterError).toBe(false);

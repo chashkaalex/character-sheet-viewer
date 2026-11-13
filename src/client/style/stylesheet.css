@@ -211,6 +211,34 @@
     }
 
     /* Spellcasting class styles */
+    #generalActionsContainer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: flex-start;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .action-category-section {
+        flex: 1 1 auto;
+        min-width: 160px;
+        margin-bottom: 0 !important;
+    }
+
+    .action-category-section .spell-level-slots {
+        margin-bottom: 0;
+    }
+
+    .spellcasting-class.collapsed .spell-slots-container {
+        display: none;
+    }
+
+    .spellcasting-class.collapsed .spellcasting-class-header {
+        border-bottom: none !important;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+    }
     .spellcasting-class {
         background-color: var(--background-secondary);
         border: 2px solid var(--border-color);

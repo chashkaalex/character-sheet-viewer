@@ -6,6 +6,15 @@ let currentSlotData: SpellSlotData | null = null;
 
 export function renderSpellsUI() {
   const container = document.getElementById('spellsDynamicContainer');
+  if (!container) return;
+
+  const collapsedIds = new Set<string>();
+  if (typeof container.querySelectorAll === 'function') {
+    container.querySelectorAll('.spellcasting-class.collapsed').forEach((el: any) => {
+      if (el.id) collapsedIds.add(el.id);
+    });
+  }
+
   container.innerHTML = '';
 
   if (!characterRep || !characterRep.spellCasting || !characterRep.spellCasting.classSpellCastingData) {
@@ -17,8 +26,12 @@ export function renderSpellsUI() {
 
   // Display each spellcasting class
   spellCastingData.forEach(casterClassData => {
+    const safeClassKey = `spellClass_${String(casterClassData.className).replace(/\s+/g, '_')}`;
+    const sectionId = `${safeClassKey}Section`;
+    const isCollapsed = collapsedIds.has(sectionId);
     const classDiv = document.createElement('div');
-    classDiv.className = 'spellcasting-class';
+    classDiv.id = sectionId;
+    classDiv.className = 'spellcasting-class' + (isCollapsed ? ' collapsed' : '');
 
     let classTitle = `${casterClassData.className} (Level ${casterClassData.level})`;
     if (casterClassData.domains && casterClassData.domains.length > 0) {
@@ -26,9 +39,12 @@ export function renderSpellsUI() {
     }
 
     classDiv.innerHTML = `
-            <div class="spellcasting-class-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+            <div class="spellcasting-class-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
                 <h3 style="margin: 0; border: none; padding: 0; font-size: 1.3em; color: var(--primary-color);">${classTitle}</h3>
-                <button class="replenish-button" style="margin: 0; padding: 6px 12px; font-size: 0.9em;" onclick="replenishClassSpellSlots(this, '${casterClassData.className}')">Replenish Slots</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button class="replenish-button" style="margin: 0; padding: 6px 12px; font-size: 0.9em;" onclick="replenishClassSpellSlots(this, '${casterClassData.className}')">Replenish Slots</button>
+                    <button class="collapse-button" id="${safeClassKey}CollapseBtn" onclick="toggleCollapse('${safeClassKey}')" title="Collapse/Expand">${isCollapsed ? '▼' : '▲'}</button>
+                </div>
             </div>
             <div class="spell-slots-container">
                 ${renderSpellSlots(casterClassData.spellSlots, casterClassData.preparedSpells, casterClassData.className, casterClassData.preparation)}
@@ -1010,6 +1026,14 @@ export function replenishClassSpellSlots(buttonElement: HTMLButtonElement, class
 export function renderGeneralActionsUI() {
   const container = document.getElementById('generalActionsContainer');
   if (!container) return;
+
+  const collapsedIds = new Set<string>();
+  if (typeof container.querySelectorAll === 'function') {
+    container.querySelectorAll('.spellcasting-class.collapsed').forEach((el: any) => {
+      if (el.id) collapsedIds.add(el.id);
+    });
+  }
+
   container.innerHTML = '';
 
   if (!characterRep || !characterRep.actions || characterRep.actions.length === 0) {
@@ -1017,7 +1041,7 @@ export function renderGeneralActionsUI() {
     return;
   }
 
-  container.style.display = 'block';
+  container.style.display = 'flex';
 
   const ACTION_SECTIONS: Array<{ category: string; title: string }> = [
     { category: 'general', title: 'General Actions' },
@@ -1058,13 +1082,18 @@ export function renderGeneralActionsUI() {
     const sectionActions = categorized[section.category] || [];
     if (sectionActions.length === 0) return;
 
+    const sectionKey = `actionCategory_${section.category}`;
+    const sectionId = `${sectionKey}Section`;
+    const isCollapsed = collapsedIds.has(sectionId);
     const classDiv = document.createElement('div');
-    classDiv.className = 'spellcasting-class';
+    classDiv.id = sectionId;
+    classDiv.className = 'spellcasting-class action-category-section' + (isCollapsed ? ' collapsed' : '');
     classDiv.setAttribute('data-action-category', section.category);
 
     let html = `
-      <div class="spellcasting-class-header" style="border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+      <div class="spellcasting-class-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
           <h3 style="margin: 0; border: none; padding: 0; font-size: 1.3em; color: var(--primary-color);">${section.title}</h3>
+          <button class="collapse-button" id="${sectionKey}CollapseBtn" onclick="toggleCollapse('${sectionKey}')" title="Collapse/Expand">${isCollapsed ? '▼' : '▲'}</button>
       </div>
       <div class="spell-slots-container">
         <div class="spell-level-slots">
