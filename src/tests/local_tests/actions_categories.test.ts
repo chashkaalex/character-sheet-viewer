@@ -132,7 +132,7 @@ mockContainer.id = 'generalActionsContainer';
 (global as any).document = (global as any).window.document;
 
 import '../../server/character/character';
-import { ActionsData } from '../../server/character/actions/actions_effects';
+import { ActionsData, STANDARD_COMBAT_ACTIONS } from '../../server/character/actions/actions_effects';
 import { GetCharacterRepByDocId } from '../../server/character/character_manipulation';
 import { CharacterError } from '../../server/character/character';
 import { setCharacterRep } from '../../client/ts/state';
@@ -203,7 +203,7 @@ describe('Action Categories & Separated UI Sections', () => {
     if (rep instanceof CharacterError) return;
 
     expect(rep.categorizedActions).toBeDefined();
-    expect(rep.categorizedActions!.general).toEqual(['Move']);
+    expect(rep.categorizedActions!.general).toEqual([...STANDARD_COMBAT_ACTIONS]);
     expect(rep.categorizedActions!.class).toEqual(expect.arrayContaining(['Furious Counterstrike', 'Smite']));
     expect(rep.categorizedActions!.feat).toEqual(expect.arrayContaining(['Combat Expertise', 'Devoted Bulwark']));
     expect(rep.categorizedActions!.stance).toEqual(expect.arrayContaining([

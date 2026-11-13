@@ -450,7 +450,18 @@ export const FeatEffects: Record<string, EffectData[]> = {
   ],
   'Run': [
     { status: 'Run', description: 'When running, you move five times your normal speed (instead of four times for light/medium load or three times for heavy load) [33, 34].' },
-    { status: 'Run', property: 'Jump Checks (running start)', modifierType: 'Generic', value: 4 }
+    { status: 'Run', property: 'Jump Checks (running start)', modifierType: 'Generic', value: 4 },
+    {
+      status: 'Run',
+      property: 'speed',
+      modifierType: 'Generic',
+      valueResolver: (character: Readonly<ICharacter>) => {
+        if (!character.HasStatus('Run')) return 0;
+        const isHeavyArmor = character.battleGear.some((item: any) => item?.armorType === 'Heavy');
+        const currentRunMultiplier = isHeavyArmor ? 3 : 4;
+        return Math.round(character.speed.currentScore / currentRunMultiplier);
+      }
+    }
   ],
   'Self-Sufficient': [
     { status: 'Self-Sufficient', property: 'Heal', modifierType: 'Generic', value: 2 },

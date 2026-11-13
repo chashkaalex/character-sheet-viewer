@@ -25,6 +25,20 @@ export class NumberAction implements ActionData {
   ) { }
 }
 
+export const STANDARD_COMBAT_ACTIONS: readonly string[] = [
+  'Move',
+  '5-Foot Step',
+  'Fighting Defensively',
+  'Total Defense',
+  'Charge',
+  'Run',
+  'Withdraw',
+  'Casting Defensively',
+  'Aid Another',
+  'Ready Action',
+  'Delay'
+];
+
 export const ActionsData: Record<string, ActionData> = {
   'Cast Expeditious Retreat': {
     statusName: 'Expeditious Retreat',
@@ -294,6 +308,147 @@ export const ActionsData: Record<string, ActionData> = {
       {
         status: 'Bolstering Voice Stance',
         description: 'You and allies within 60 ft. gain a +2 morale bonus on Will saves (+4 morale bonus on saves against fear effects).'
+      }
+    ]
+  },
+  '5-Foot Step': {
+    statusName: 'Moved 5 feet',
+    category: 'general',
+    calculateDuration: (_character) => 1,
+    effects: [
+      {
+        status: 'Moved 5 feet',
+        description: 'Moved 5 feet without provoking attacks of opportunity (only if no other movement is taken this round).'
+      }
+    ]
+  },
+  'Fighting Defensively': {
+    statusName: 'Fighting Defensively',
+    category: 'general',
+    calculateDuration: (_character) => 1,
+    effects: [
+      { status: 'Fighting Defensively', property: 'bab', modifierType: 'Generic', value: -4 },
+      {
+        status: 'Fighting Defensively',
+        property: 'ac',
+        modifierType: 'Dodge',
+        valueResolver: (character: Readonly<ICharacter>) =>
+          (character.skills.find(s => s.name === 'Tumble')?.score ?? 0) >= 5 ? 3 : 2
+      }
+    ]
+  },
+  'Total Defense': {
+    statusName: 'Total Defense',
+    category: 'general',
+    calculateDuration: (_character) => 1,
+    effects: [
+      {
+        status: 'Total Defense',
+        property: 'ac',
+        modifierType: 'Dodge',
+        valueResolver: (character: Readonly<ICharacter>) =>
+          (character.skills.find(s => s.name === 'Tumble')?.score ?? 0) >= 5 ? 6 : 4
+      },
+      {
+        status: 'Total Defense',
+        description: 'Cannot attack or make attacks of opportunity until your next turn.'
+      }
+    ]
+  },
+  'Charge': {
+    statusName: 'Charge',
+    category: 'general',
+    calculateDuration: (_character) => 1,
+    effects: [
+      { status: 'Charge', property: 'bab', modifierType: 'Generic', value: 2 },
+      { status: 'Charge', property: 'ac', modifierType: 'Generic', value: -2 },
+      {
+        status: 'Charge',
+        property: 'speed',
+        modifierType: 'Generic',
+        valueResolver: (character: Readonly<ICharacter>) => character.speed.currentScore
+      }
+    ]
+  },
+  'Run': {
+    statusName: 'Run',
+    category: 'general',
+    calculateDuration: (_character) => 1,
+    effects: [
+      {
+        status: 'Run',
+        property: 'speed',
+        modifierType: 'Generic',
+        valueResolver: (character: Readonly<ICharacter>) => {
+          const isHeavyArmor = character.battleGear.some((item: any) => item?.armorType === 'Heavy');
+          const multiplier = isHeavyArmor ? 3 : 4;
+          return character.speed.currentScore * (multiplier - 1);
+        }
+      },
+      {
+        status: 'Run',
+        description: 'Move up to 4x speed in a straight line (3x in heavy armor; +1x with Run feat). Lose Dexterity bonus to AC unless you have the Run feat.'
+      }
+    ]
+  },
+  'Withdraw': {
+    statusName: 'Withdraw',
+    category: 'general',
+    calculateDuration: (_character) => 1,
+    effects: [
+      {
+        status: 'Withdraw',
+        property: 'speed',
+        modifierType: 'Generic',
+        valueResolver: (character: Readonly<ICharacter>) => character.speed.currentScore
+      },
+      {
+        status: 'Withdraw',
+        description: 'Move up to 2x speed; the square you start in is not considered threatened by any opponent you can see.'
+      }
+    ]
+  },
+  'Casting Defensively': {
+    statusName: 'Casting Defensively',
+    category: 'general',
+    calculateDuration: (_character) => 1,
+    effects: [
+      {
+        status: 'Casting Defensively',
+        description: 'Cast a spell without provoking attacks of opportunity (Concentration check DC 15 + spell level). Grants +4 Concentration with Combat Casting feat.'
+      }
+    ]
+  },
+  'Aid Another': {
+    statusName: 'Aid Another',
+    category: 'general',
+    calculateDuration: (_character) => 1,
+    effects: [
+      {
+        status: 'Aid Another',
+        description: 'Make a melee attack roll against AC 10 to grant an adjacent ally a +2 bonus on their next attack roll or +2 bonus to AC against the opponent.'
+      }
+    ]
+  },
+  'Ready Action': {
+    statusName: 'Ready Action',
+    category: 'general',
+    calculateDuration: (_character) => 1,
+    effects: [
+      {
+        status: 'Ready Action',
+        description: 'Prepare a standard, move, or free action to trigger on a specified condition. Your initiative shifts to just before the triggering action.'
+      }
+    ]
+  },
+  'Delay': {
+    statusName: 'Delay',
+    category: 'general',
+    calculateDuration: (_character) => 1,
+    effects: [
+      {
+        status: 'Delay',
+        description: 'Voluntarily take no action and act later in the initiative order. Your initiative shifts to the point when you choose to act.'
       }
     ]
   },

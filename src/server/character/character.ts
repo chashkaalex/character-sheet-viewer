@@ -1,4 +1,5 @@
 import { ParseDocLines } from './parsers/doc_parser';
+import { STANDARD_COMBAT_ACTIONS } from './actions/actions_effects';
 import {
     ModifiableProperty,
     CreatureSize,
@@ -77,7 +78,7 @@ export class Character implements ICharacter, IPropertyRegistry {
     public classes: CharacterClass[] = [];
     public skills: Skill[] = [];
     public statuses: Status[] = [];
-    public actions: string[] = ['Move'];
+    public actions: string[] = [...STANDARD_COMBAT_ACTIONS];
     public feats: EffectData[][] = [];
     public flaws: EffectData[][] = [];
     public battleGear: Item[] = [];
@@ -231,7 +232,7 @@ export class Character implements ICharacter, IPropertyRegistry {
             this.size = new CreatureSize(Sizes['Medium']);
             this.bodySlots = new Map(BodySlots.map(slot => [slot.slotName, slot.possibleAmount]));
             this.spellCasting = new SpellCasting();
-            this.actions = ['Move'];
+            this.actions = [...STANDARD_COMBAT_ACTIONS];
             this.bab = new ModifiableProperty(0, 'bab');
             this.acp = new ModifiableProperty(0, 'acp');
             this.hp = { current: 0, max: 0 };
