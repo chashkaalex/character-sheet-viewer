@@ -6,6 +6,7 @@ export interface ActionData {
   statusName: string;
   calculateDuration: (character: ICharacter) => number;
   effects?: EffectData[];
+  healFormula?: string;
 }
 
 export class NumberAction implements ActionData {
@@ -189,6 +190,86 @@ export const ActionsData: Record<string, ActionData> = {
     calculateDuration: (_character) => -1,
     effects: [
       { status: 'Chameleon Power', property: 'Hide', modifierType: 'Competence', value: 10 }
+    ]
+  },
+  'Cure Critical Wounds (Helm of Glorious Recovery)': {
+    statusName: 'Helm of Glorious Recovery (Used)',
+    calculateDuration: (_character) => -1,
+    healFormula: '4d8+7'
+  },
+  'Cure Serious Wounds (Hair Shirt of Suffering)': {
+    statusName: 'Hair Shirt of Suffering (Used)',
+    calculateDuration: (_character) => -1,
+    healFormula: '3d8+9'
+  },
+  'Furious Counterstrike': new NumberAction(
+    'Furious Counterstrike',
+    (_character) => 1,
+    (character) => {
+      const level = character.GetClassLevel('Crusader');
+      return level > 0 ? (Math.floor(level / 4) + 1) * 5 : 5;
+    },
+    1,
+    'Delayed damage pool:'
+  ),
+  'Smite': {
+    statusName: 'Smite',
+    calculateDuration: (_character) => 1,
+    effects: [
+      {
+        status: 'Smite',
+        property: 'bab',
+        modifierType: 'Generic',
+        valueResolver: (character: ICharacter) => Math.max(0, character.abilities.Cha?.modifier || 0)
+      },
+      {
+        status: 'Smite',
+        property: 'damageBonus',
+        modifierType: 'Generic',
+        valueResolver: (character: ICharacter) => character.GetClassLevel('Crusader')
+      }
+    ]
+  },
+  'Devoted Bulwark': {
+    statusName: 'Devoted Bulwark',
+    calculateDuration: (_character) => 1,
+    effects: [
+      { status: 'Devoted Bulwark', property: 'ac', modifierType: 'Morale', value: 1 }
+    ]
+  },
+  'Iron Guard\'s Glare Stance': {
+    statusName: 'Iron Guard\'s Glare Stance',
+    calculateDuration: (_character) => -1,
+    effects: [
+      {
+        status: 'Iron Guard\'s Glare Stance',
+        description: 'Any opponent that you threaten takes a -4 penalty on attack rolls against your allies.'
+      }
+    ]
+  },
+  'Roots of the Mountain Stance': {
+    statusName: 'Roots of the Mountain Stance',
+    calculateDuration: (_character) => -1,
+    effects: [
+      { status: 'Roots of the Mountain Stance', property: 'Bull rush', modifierType: 'Generic', value: 10 },
+      { status: 'Roots of the Mountain Stance', property: 'Overrun', modifierType: 'Generic', value: 10 },
+      { status: 'Roots of the Mountain Stance', property: 'Trip', modifierType: 'Generic', value: 10 },
+      { status: 'Roots of the Mountain Stance', property: 'Tumble', modifierType: 'Generic', value: 10 },
+      {
+        status: 'Roots of the Mountain Stance',
+        description: 'Gain DR 2/- and +10 bonus on checks against bull rush, overrun, trip, and tumble. Ends immediately if you move more than 5 feet.'
+      }
+    ]
+  },
+  'Bolstering Voice Stance': {
+    statusName: 'Bolstering Voice Stance',
+    calculateDuration: (_character) => -1,
+    effects: [
+      { status: 'Bolstering Voice Stance', property: 'Will', modifierType: 'Morale', value: 2 },
+      {
+        status: 'Bolstering Voice Stance',
+        description: 'You and allies within 60 ft. gain a +2 morale bonus on Will saves (+4 morale bonus on saves against fear effects).'
+      }
     ]
   },
   'Chameleon Power (Disguise Self)': {

@@ -352,6 +352,26 @@ export function OnUseAction(docId: string, actionName: string): CharacterRep | C
   }
 
   const duration = action.calculateDuration(character);
+  if (action.healFormula) {
+    if (!character.rolzRoomId || character.rolzRoomId.trim() === '') {
+      return new CharacterError('Healing action requires a Rolz Room ID to be configured in your character sheet.');
+    }
+    const roll = RollWithRolz(character.rolzRoomId, action.healFormula, character.name, actionName);
+    if (!roll) {
+      return new CharacterError('Rolz API is unavailable. Healing action could not be completed.');
+    }
+    const oldHp = character.hp.current;
+    _addStatusToCharacter(docId, action.statusName, duration);
+    const updateResult = UpdateHp(docId, roll.total, 'cure');
+    if (updateResult instanceof CharacterError) {
+      return updateResult;
+    }
+    const newChar = GetCharacterByDocId(docId);
+    const newHp = !(newChar instanceof CharacterError) ? newChar.hp.current : oldHp;
+    const healedAmount = newHp - oldHp;
+    updateResult.mutationMessage = `Activated ${actionName}. Healed for ${healedAmount} HP (${roll.detail}). HP is now ${newHp}/${character.hp.max}.`;
+    return updateResult;
+  }
   _addStatusToCharacter(docId, action.statusName, duration);
 
   return GetCharacterRepByDocId(docId);
@@ -446,8 +466,8 @@ export function MoveInventoryItem(docId: string, itemName: string, fromSection: 
   return GetCharacterRepByDocId(docId);
 }
 
-export function RollWithRolz(room: string, formula: string, characterName: string): { total: number; detail: string } | null {
-  const rollText = `Potion Heal [${formula}]`;
+export function RollWithRolz(room: string, formula: string, characterName: string, label: string = 'Potion Heal'): { total: number; detail: string } | null {
+  const rollText = `${label} [${formula}]`;
   const responseText = adapter.PostRollToRolz(room, rollText, characterName);
   if (!responseText) return null;
 
@@ -557,4 +577,3 @@ export function UsePotion(docId: string, potionName: string): CharacterRep | Cha
   updatedRep.mutationMessage = `Successfully consumed ${potionName}. ` + healingMessage;
   return updatedRep;
 }
-

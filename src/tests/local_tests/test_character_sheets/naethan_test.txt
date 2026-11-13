@@ -1,0 +1,168 @@
+Naethan
+(Human Crusader 9)
+
+Init: +1; Senses: Listen +0, Spot +0;
+BAb: +9/+4; Grapple: +14; Hp: 101/101; Speed: 20 ft.
+Attack: +13 Cold Iron Masterwork Longsword (1d8 + 5/19-20x2) or +14 Magic +1 Masterwork Spiked Chain (2d4 + 6/x2) or +13 Masterwork Punching Dagger (1d4 + 5/x3) or +6 Shortbow (1d6/x3).
+Full Attack: +13/+8 Cold Iron Masterwork Longsword (1d8 + 5/19-20x2) or +14/+9 Magic +1 Masterwork Spiked Chain (2d4 + 6/x2) or +6/+1 Shortbow (1d6/x3).
+AC: 28 (10 +9 Armor +4 Shield +3 Deflection +1 Dex +1 Luck), Touch 15, Flat-footed 27.
+Saves: Fort +11; Ref +6; Will +7 (+1 resistance, +1 luck, +2 Indomitable Soul).
+Str: 19 (+4) +2 Belt of Strength (+5)
+Dex: 11 (+0) +1 Gloves of Dexterity (+1)
+Con: 16 (+3)
+Int: 13 (+1)
+Wis: 10 (+0)
+Cha: 15 (+2)
+Action Points: 1.
+
+Statuses:
+
+Feats:
+Combat Expertise,
+Improved Trip,
+Exotic Weapon Proficiency (Spiked Chain),
+Extra Granted Maneuver,
+Faith Unswerving,
+Devoted Bulwark,
+Luck of Heroes,
+Iron Guard's Glare (Stance) – Enemies you threaten take a -4 penalty on attack rolls against your allies,
+Roots of the Mountain (Stance) – +10 bonus on checks against bull rush, overrun, trip, and tumble, and gain DR 2/-,
+Bolstering Voice (Stance) – Allies within 60 ft. gain +2 morale bonus on Will saves (+4 against fear).
+
+Special Abilities:
+Furious Counterstrike,
+Steely Resolve 15,
+Indomitable Soul (+Cha to Will saves),
+Zealous Surge (1/day reroll save),
+Smite (1/day),
+Weapon Proficiency (Simple, Martial, Spiked Chain),
+Armor Proficiency (Light, Medium, Heavy),
+Shield Proficiency (All, including Tower Shields),
+Maneuvers Known (Crusader's Strike, Charging Minotaur, Foehammer, Mountain Hammer, White Raven Tactics, Revitalizing Strike, Divine Surge, Bonesplitting Strike, Elder Mountain Hammer).
+
+Racial Traits:
+Quick to Master (+1 Bonus Feat at 1st level),
+Versatile and Capable (+4 skill points at 1st level, +1 skill point per level).
+
+Bonus Abilities:
+
+Flaws, Traits, Quirks:
+Shaky (-2 penalty on ranged attack rolls),
+No Time For Book Learning (Illiterate).
+
+Languages:
+Common,
+Chondathan.
+
+Skills:
+Balance (Dex): 8
+Intimidate (Cha): 12
+Jump (Str): 12
+Martial Lore (Int): 12
+Ride (Dex): 8
+Tumble (Dex): 6
+
+Skills Synergy:
+Balance: +2 Tumble
+Jump: +2 Tumble
+Tumble: +2 Jump
+
+Skill Tricks:
+Never Outnumbered,
+Up the Hill,
+Twisted Charge,
+Nimble Charge.
+
+Battle Gear:
+Magic +1 Masterwork Spiked Chain (+1, 2d4 + 1/x2, 4 lb.),
+Cold Iron Masterwork Longsword (+1, 1d8/19-20x2, 4 lb.),
+Masterwork Punching Dagger (+1, 1d4/x3, 1 lb.),
+Masterwork Morningstar (+1, 1d8/x2, 6 lb.),
+Silver Dagger (1d4/19-20x2, 1 lb.),
+Cold Iron Dagger (1d4/19-20x2, 1 lb.),
+Shortbow (1d6/x3, 2 lb.),
+Restful Full Plate +1 (+8+1 AC, +1 max Dex, -6 penalty, 35% spell failure, 50 lb.),
+Tower Shield (+4 AC, +2 max Dex, -10 penalty, -2 atk, 50% spell failure, 45 lb.),
+Ring of Protection +3 (+3 AC deflection, 0.01 lb.),
+Cloak of Resistance +1 (+1 saves, 0.5 lb.),
+Belt of Giant Strength +2 (+2 Str, 0.3 lb.),
+Gloves of Dexterity +1 (+1 Dex, 0.1 lb.),
+Helm of Glorious Recovery (+2 Cha in Cormyr, Cure Critical Wounds 4d8 + 7 1/day, 0.5 lb.),
+Potion of Cure Serious Wounds (3d8 + 5) (0.05 lb.),
+Potion of Cure Moderate Wounds (2d8 + 3) x 2 (0.1 lb.),
+Potion of Cure Light Wounds (1d8 + 1) x 2 (0.1 lb.),
+Potion of Bear's Endurance x 2 (0.1 lb.),
+Potion of Remove Fear (1 lb.),
+Potion of Remove Disease (0.05 lb.),
+Oil of Magic Weapon (0.05 lb.),
+Flint and Steel (1 lb.).
+
+Possessions:
+Handy Haversack (5 lb.),
+Bag of Holding III (35 lb.),
+Ragash's Chain Shirt +2 (25 lb.),
+Dented Silver-Plated Goblet (1 lb.),
+Winter Blanket (3 lb.),
+Casm Camp: Magic Wand (Faint Evocation, 0.1 lb.),
+Casm Camp: Amulet (Faint Evocation, 0.01 lb.),
+Shaman's Spear (Enhancement, 6 lb.),
+Cold Rapier (Medium Enchantment/Conjuration, 2 lb.),
+Unidentified Magic Large Hat (4 lb.),
+Gloves on the Mage (Faint Transmutation, 0.5 lb.),
+Wand of "???" (0.01 lb.),
+4 Horseshoes (Faint Transmutation, 0.04 lb.),
+Ragash Large Fullblade Sword (Exotic 3d8 Human Bane, 23 lb.),
+Full Plate Magic (Faint Enchantment, 45 lb.),
+Trail Rations (Per Day) x 30 (30 lb.),
+Water Bags (1 Gallon) x 12 (100.08 lb.),
+Winter Clothing x 10 (70 lb.),
+Big Giant's Tent (6-Person Tent, 40 lb.),
+Heward's Fortifying Bedroll (2 lb.),
+Pedestal for Iceworking (15 lb.),
+Masterwork Tools for Ice Forming (5 lb.),
+Masterwork Forging Tools (5 lb.),
+Blue Ice x 14 (14 lb.),
+Sealed Jugs (Simulacrum Dust, 400 gp total) x 34 (17 lb.),
+Magic Stone Oil (0.01 lb.),
+Shortbow x 3 (4.5 lb.),
+Scimitar x 2 (8 lb.),
+Handaxe x 2 (6 lb.),
+Small Morningstar x 10 (30 lb.),
+Small Javelin x 20 (20 lb.),
+Large Chain Shirt (50 lb.),
+Masterwork Light Crossbow x 8 (32 lb.),
+Bows x 20 (40 lb.),
+Masterwork Ice Rapier x 3 (6 lb.),
+Masterwork Ice Handaxe x 3 (9 lb.),
+Masterwork Ice Breastplate x 4 (120 lb.),
+Masterwork Ice Greatsword (8 lb.),
+Arrows x 200 (200 lb.),
+Orc Ears x 76 (76 lb.),
+Giant Ears (1 lb.),
+Troll Ears x 7 (7 lb.),
+Gruumsh Holy Symbol (0.05 lb.),
+Clay Statuette of Woman (2 lb.),
+Unappraised Jewellery (5 lb.),
+12x Golden Rings (5 lb.),
+Troll's Ring (0.01 lb.),
+Gems from Trolls x 2 (0.02 lb.),
+3x Aquamarine,
+1x Malachite.
+
+Money: 0 Crowns (230 in Bag of Holding), 12 Falcons (2499 in Bag of Holding), 160 Thumbs (1000 in Bag of Holding)
+
+Food: Waterskin (4 lb.), Trail Rations (5 days, 5 lb.).
+
+Personal Information
+Height/Weight: 6'2"/215 lb.
+Eyes/Hair color: Green/Red
+Region: Elven Court / South of Elventree
+Age: 34
+Alignment: Lawful Neutral
+ExP: 44759
+Deity worshiped: Angharradh / Ezra
+
+Parties Membership
+TeamD20_T&E
+Rolz Room ID: 1jgtoswkc0
+

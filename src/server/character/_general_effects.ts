@@ -137,6 +137,13 @@ const DynamicStatusesEffects: Record<string, DynamicEffectGenerator> = {
     });
     return effects;
   },
+  'Furious Counterstrike': (parsedValue, statusName) => {
+    const bonus = Math.max(1, Math.floor(Math.abs(parsedValue) / 5));
+    return [
+      { status: statusName, property: 'bab', modifierType: 'Generic', value: bonus },
+      { status: statusName, property: 'damageBonus', modifierType: 'Generic', value: bonus }
+    ];
+  },
   'Combat Expertise': (parsedValue, statusName) => {
     const acBonus = Math.abs(parsedValue);
     return [
@@ -156,7 +163,7 @@ export function GetEffects(container: Record<string, any>, identifier: string): 
 
   // If container is StatusesEffects, try dynamic extraction (e.g., getting +3 out of "Inspire Courage +3")
   if (container === StatusesEffects) {
-    const dynamicMatch = identifier.match(/^(.+?)\s+([+-]\d+)$/);
+    const dynamicMatch = identifier.match(/^(.+?)\s+([+-]?\d+)$/);
     if (dynamicMatch) {
       const baseName = dynamicMatch[1];
       const numericValue = parseInt(dynamicMatch[2], 10);

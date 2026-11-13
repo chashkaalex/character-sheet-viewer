@@ -171,4 +171,54 @@ describe('Actions Integration Tests', () => {
         // Verify AC increased by +2 (dodge bonus active because moved >= 10 feet)
         expect(move10Result.ac.bonus).toBe(25);
     });
+
+    it('should roll 4d8+7 via Rolz, heal HP, and add status when Cure Critical Wounds (Helm of Glorious Recovery) is triggered', () => {
+        const sourceNaethanPath = path.join(__dirname, 'test_character_sheets', 'naethan_test.txt');
+        const tempNaethanPath = path.join(__dirname, 'test_character_sheets', 'temp', 'temp_actions_naethan.txt');
+        fs.copyFileSync(sourceNaethanPath, tempNaethanPath);
+
+        const { adapter } = require('../../server/character/adapter_selector');
+        const rolzSpy = jest.spyOn(adapter, 'PostRollToRolz').mockReturnValue(JSON.stringify({
+            message: {
+                content: {
+                    items: [{ type: 'dicemsg', result: '25', details: '([4, 6, 5, 3] + 7)' }]
+                }
+            }
+        }));
+
+        try {
+            // Damage Naethan first from 101 to 60 HP
+            const { UpdateHp } = require('../../server/character/character_manipulation');
+            UpdateHp(tempNaethanPath, 41, 'inflict');
+
+            const charBefore = GetCharacterByDocId(tempNaethanPath);
+            expect(charBefore instanceof CharacterError).toBe(false);
+            if (charBefore instanceof CharacterError) return;
+            expect(charBefore.hp.current).toBe(60);
+            expect(charBefore.actions).toContain('Cure Critical Wounds (Helm of Glorious Recovery)');
+
+            // Trigger the Helm action
+            const result = OnUseAction(tempNaethanPath, 'Cure Critical Wounds (Helm of Glorious Recovery)');
+            expect(result instanceof CharacterError).toBe(false);
+            if (result instanceof CharacterError) return;
+
+            expect(rolzSpy).toHaveBeenCalledWith(
+                '1jgtoswkc0',
+                'Cure Critical Wounds (Helm of Glorious Recovery) [4d8+7]',
+                'Naethan'
+            );
+            expect(result.hp.current).toBe(85); // 60 + 25 = 85
+            expect(result.statuses.some(s => s.name === 'Helm of Glorious Recovery (Used)')).toBe(true);
+            expect(result.mutationMessage).toContain('Healed for 25 HP');
+
+            // Triggering a second time while status is present should return CharacterError
+            const secondResult = OnUseAction(tempNaethanPath, 'Cure Critical Wounds (Helm of Glorious Recovery)');
+            expect(secondResult instanceof CharacterError).toBe(true);
+        } finally {
+            rolzSpy.mockRestore();
+            if (fs.existsSync(tempNaethanPath)) {
+                fs.unlinkSync(tempNaethanPath);
+            }
+        }
+    });
 });

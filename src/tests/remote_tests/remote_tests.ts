@@ -3,6 +3,8 @@ import { CharacterRep } from '../../server/character/character_rep';
 
 const THRORS_TEST_ID = '1_Is4lS5xB7Wz14-SKDw7NpWKI17FO6hFN6TzZjgbIaU';
 const BESS_TEST_ID = '1NOnQwIPqsf3ZwlILiAUDKofC7zJ-LscSOtQK6AbanFU';
+const MORTY_TEST_ID = '16BzGkqc1L2QHkkCmzky6dWKuOnzyneCqxx5IZI2kLu4';
+const NAETHAN_TEST_ID = '1tJX7ybJxkz-Uob02sh7JCSKp5pYiVMDaTZCRnzDjHB0';
 
 /**
  * Expectations dictionary using Partial<CharacterRep>.
@@ -19,6 +21,16 @@ const expectations: Record<string, Partial<CharacterRep>> = {
         docId: BESS_TEST_ID,
         name: 'Bess Mockston',
         race: 'Half-Elf'
+    },
+    [MORTY_TEST_ID]: {
+        docId: MORTY_TEST_ID,
+        name: 'Mortfinn aep Dessantein (Morty)',
+        race: 'Elf'
+    },
+    [NAETHAN_TEST_ID]: {
+        docId: NAETHAN_TEST_ID,
+        name: 'Naethan',
+        race: 'Human'
     }
 };
 

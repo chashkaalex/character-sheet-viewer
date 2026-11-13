@@ -19,9 +19,6 @@ Action Points: 2
 
 Statuses:
 
-Absolute Steel Stance: 1 rounds/10 rounds
-Moved 5 feet: 1 rounds/1 rounds
-Moved 10 feet: 1 rounds/1 rounds
 Feats:
 Heavy Armor Optimization, 
 Deflective Armor (Heavy, Armor AC to Touch), 

@@ -33,6 +33,7 @@ export const SkillsAbilities: Record<string, AbilityName | 'None'> = {
   'Knowledge (religion)': 'Int',
   'Knowledge (the planes)': 'Int',
   'Listen': 'Wis',
+  'Martial Lore': 'Int',
   'Move Silently': 'Dex',
   'Open Lock': 'Dex',
   'Perform': 'Cha',
@@ -139,48 +140,54 @@ export class Skill extends ModifiableProperty {
  * @returns Array of Skill objects.
  */
 export function ParseSkills(skillsLines: string[], abilities: AbilitiesMap, acp?: ModifiableProperty): Skill[] {
-    const skills: Skill[] = [];
+  const skills: Skill[] = [];
 
-    skillsLines.forEach(line => {
-        const basicSkillname = GetSkillNameFromLine(line);
-        if (!basicSkillname) return; // Skip invalid or empty lines
+  skillsLines.forEach(line => {
+    const basicSkillname = GetSkillNameFromLine(line);
+    if (!basicSkillname) return; // Skip invalid or empty lines
 
-        // Actual name should be the part of the line until '(ABILITY_NAME)'
-        const skillAbilityName = AbilityNames.find(abilityName => line.includes(abilityName));
-        if (!skillAbilityName) return;
+    // Actual name should be the part of the line until '(ABILITY_NAME)'
+    const skillAbilityName =
+      AbilityNames.find(abilityName => line.includes('(' + abilityName)) ||
+      AbilityNames.find(abilityName => line.substring(basicSkillname.length).includes(abilityName));
+    if (!skillAbilityName) return;
 
-        const name = line.substring(0, line.lastIndexOf('(' + skillAbilityName)).trim();
+    const parenIdx = line.lastIndexOf('(' + skillAbilityName);
+    const name = (parenIdx !== -1
+      ? line.substring(0, parenIdx)
+      : line.substring(0, line.lastIndexOf(skillAbilityName))
+    ).trim();
 
-        const rank = GetFirstNumberFromALine(line) || 0;
+    const rank = GetFirstNumberFromALine(line) || 0;
 
-        const existingSkill = skills.find(s => s.name === name);
-        if (existingSkill) {
-            existingSkill.applyPermanentEffect(rank);
-        } else {
-            const thisSkillRelatedAbilityName = SkillsAbilities[basicSkillname];
-            const ability = abilities[thisSkillRelatedAbilityName];
-            if (ability) {
-                skills.push(new Skill(name, rank, ability, acp));
-            }
+    const existingSkill = skills.find(s => s.name === name);
+    if (existingSkill) {
+      existingSkill.applyPermanentEffect(rank);
+    } else {
+      const thisSkillRelatedAbilityName = SkillsAbilities[basicSkillname];
+      const ability = abilities[thisSkillRelatedAbilityName];
+      if (ability) {
+        skills.push(new Skill(name, rank, ability, acp));
+      }
+    }
+  });
+
+  skills.forEach(skill => {
+    const synergyKey = Object.keys(SkillsSynergyReversed).find(
+      k => k.toLowerCase() === skill.name.toLowerCase()
+    );
+    const synergySkillsNames = synergyKey ? SkillsSynergyReversed[synergyKey] : undefined;
+    if (synergySkillsNames) {
+      synergySkillsNames.forEach(synergySkillName => {
+        const synergySkill = skills.find(s => s.name.toLowerCase() === synergySkillName.toLowerCase());
+        if (synergySkill && !skill.synergySkills.some(s => s.name.toLowerCase() === synergySkill.name.toLowerCase())) {
+          skill.synergySkills.push(synergySkill);
         }
-    });
+      });
+    }
+  });
 
-    skills.forEach(skill => {
-        const synergyKey = Object.keys(SkillsSynergyReversed).find(
-            k => k.toLowerCase() === skill.name.toLowerCase()
-        );
-        const synergySkillsNames = synergyKey ? SkillsSynergyReversed[synergyKey] : undefined;
-        if (synergySkillsNames) {
-            synergySkillsNames.forEach(synergySkillName => {
-                const synergySkill = skills.find(s => s.name.toLowerCase() === synergySkillName.toLowerCase());
-                if (synergySkill && !skill.synergySkills.some(s => s.name.toLowerCase() === synergySkill.name.toLowerCase())) {
-                    skill.synergySkills.push(synergySkill);
-                }
-            });
-        }
-    });
-
-    return skills;
+  return skills;
 }
 
 /**
@@ -189,12 +196,12 @@ export function ParseSkills(skillsLines: string[], abilities: AbilitiesMap, acp?
  * @returns The skill name or null.
  */
 export function GetSkillNameFromLine(line: string): string | null {
-    let skillName: string | null = null;
-    for (const key of Object.keys(SkillsAbilities)) {
-        if (line.toLowerCase().startsWith(key.toLowerCase())) {
-            skillName = key;
-            break;
-        }
+  let skillName: string | null = null;
+  for (const key of Object.keys(SkillsAbilities)) {
+    if (line.toLowerCase().startsWith(key.toLowerCase())) {
+      skillName = key;
+      break;
     }
-    return skillName;
+  }
+  return skillName;
 }

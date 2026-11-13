@@ -192,10 +192,69 @@ export const FeatEffects: Record<string, EffectData[]> = {
   'Exotic Weapon Proficiency': [
     {
       status: 'Exotic Weapon Proficiency',
-      property: 'Attack Rolls (specific exotic weapon)',
-      modifierType: 'Generic',
-      value: 0,
       description: 'Removes the -4 nonproficiency penalty when using the selected exotic weapon [11]. This feat can be gained multiple times for different weapons [12].'
+    }
+  ],
+  'Extra Granted Maneuver': [
+    {
+      status: 'Extra Granted Maneuver',
+      description: 'You have one additional granted maneuver at the beginning of an encounter, and when you recover expended maneuvers.'
+    }
+  ],
+  'Faith Unswerving': [
+    {
+      status: 'Faith Unswerving',
+      description: 'When reduced to 0 or fewer hit points by a melee attack (and not killed outright), you can immediately make a single melee attack against the attacker before falling unconscious.'
+    }
+  ],
+  'Devoted Bulwark': [
+    {
+      status: 'Devoted Bulwark',
+      description: 'If an enemy deals damage to you with a melee attack, you gain a +1 morale bonus to your AC until the end of your next turn.',
+      callback: (character: ICharacter) => {
+        if (!character.actions.includes('Devoted Bulwark')) {
+          character.actions.push('Devoted Bulwark');
+        }
+      }
+    }
+  ],
+  'Luck of Heroes': [
+    { status: 'Luck of Heroes', property: 'ac', modifierType: 'Luck', value: 1 },
+    { status: 'Luck of Heroes', property: 'Fort', modifierType: 'Luck', value: 1 },
+    { status: 'Luck of Heroes', property: 'Ref', modifierType: 'Luck', value: 1 },
+    { status: 'Luck of Heroes', property: 'Will', modifierType: 'Luck', value: 1 }
+  ],
+  'Iron Guard\'s Glare (Stance)': [
+    {
+      status: 'Iron Guard\'s Glare (Stance)',
+      description: 'While you are in this stance, any opponent that you threaten takes a -4 penalty on attack rolls against your allies.',
+      callback: (character: ICharacter) => {
+        if (!character.actions.includes('Iron Guard\'s Glare Stance')) {
+          character.actions.push('Iron Guard\'s Glare Stance');
+        }
+      }
+    }
+  ],
+  'Roots of the Mountain (Stance)': [
+    {
+      status: 'Roots of the Mountain (Stance)',
+      description: 'While you are in this stance, you gain a +10 bonus on checks against bull rush, overrun, trip, and tumble, and gain DR 2/-.',
+      callback: (character: ICharacter) => {
+        if (!character.actions.includes('Roots of the Mountain Stance')) {
+          character.actions.push('Roots of the Mountain Stance');
+        }
+      }
+    }
+  ],
+  'Bolstering Voice (Stance)': [
+    {
+      status: 'Bolstering Voice (Stance)',
+      description: 'While you are in this stance, you and allies within 60 ft. gain a +2 morale bonus on Will saves (+4 against fear effects).',
+      callback: (character: ICharacter) => {
+        if (!character.actions.includes('Bolstering Voice Stance')) {
+          character.actions.push('Bolstering Voice Stance');
+        }
+      }
     }
   ],
   'Extra Turning': [

@@ -49,6 +49,9 @@ export const FlawsEffects: Record<string, EffectData[]> = {
         { status: 'Quick', property: 'speed', modifierType: 'Generic', value: 10 },
         { status: 'Quick', property: 'Special', description: '+10 ft. to base land speed; -1 hp per level (subtracted from max HP).' }
     ],
+    'No Time For Book Learning': [
+        { status: 'No Time For Book Learning', property: 'Special', description: 'Illiterate: You cannot read or write any language unless you spend 2 skill points to gain literacy.' }
+    ],
     'Shaky': [
         { status: 'Shaky', property: 'Special', description: 'You take a -2 penalty on ranged attack rolls.' },
         {

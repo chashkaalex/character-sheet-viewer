@@ -42,6 +42,7 @@ import '../classes_data/rogue';
 import '../classes_data/shadowdancer';
 import '../classes_data/beguiler';
 import '../classes_data/unseen_seer';
+import '../classes_data/crusader';
 
 // Ensure data files are loaded (side effects)
 import '../races_data/dwarf';

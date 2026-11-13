@@ -197,6 +197,16 @@ const SpellsData: Record<string, SpellData> = {
       return 1;
     }
   },
+  'Eagle\'s Splendor': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    effects: [
+      { status: 'Eagle\'s Splendor', property: 'Cha', modifierType: 'Enhancement', value: 4 }
+    ],
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
   'Bull\'s Strength': {
     range: 'Touch',
     target: SpellTarget.OneCreature,

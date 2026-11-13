@@ -31,12 +31,12 @@ export interface BodySlotInfo {
 }
 
 export const BodySlots: BodySlotInfo[] = [
-  { slotName: 'Head', names: ['headband', 'hat', 'helmet', 'phylactery'], possibleAmount: 1 },
+  { slotName: 'Head', names: ['headband', 'hat', 'helmet', 'helm', 'phylactery'], possibleAmount: 1 },
   { slotName: 'Eyes', names: ['eye lenses', 'goggles'], possibleAmount: 1 },
   { slotName: 'Neck', names: ['amulet', 'brooch', 'medallion', 'necklace', 'periapt', 'scarab'], possibleAmount: 1 },
   { slotName: 'Torso', names: ['vest', 'vestment', 'shirt'], possibleAmount: 1 },
   { slotName: 'Body', names: ['robe', 'armor', 'plate', 'breastplate', 'mail', 'suit'], possibleAmount: 1 },
-  { slotName: 'Waist', names: ['belt ', 'sash'], possibleAmount: 1 },
+  { slotName: 'Waist', names: ['belt', 'belt ', 'sash'], possibleAmount: 1 },
   { slotName: 'Shoulders', names: ['cloak', 'cape', 'mantle'], possibleAmount: 1 },
   { slotName: 'Arms', names: ['bracers', 'bracelets'], possibleAmount: 1 },
   { slotName: 'Hands', names: ['gloves', 'gauntlets', 'wraps'], possibleAmount: 1 },
@@ -268,6 +268,44 @@ export const ItemEffects: Record<string, EffectData[]> = {
     { status: 'Full Plate +1', property: 'ac', modifierType: 'Armor', value: 8 + 1 }
   ],
 
+  'Restful Full Plate +1': [
+    { status: 'Restful Full Plate +1', property: 'ac', modifierType: 'Armor', value: 8 + 1 },
+    {
+      status: 'Restful Full Plate +1',
+      property: 'speed',
+      modifierType: 'Generic',
+      valueResolver: (character: ICharacter) => character.race === 'Dwarf' ? 0 : -10
+    },
+    { status: 'Restful Full Plate +1', property: 'Special', description: 'Restful Crystal: Sleeping in this armor does not cause fatigue.' }
+  ],
+  'Tower Shield': [
+    { status: 'Tower Shield', property: 'ac', modifierType: 'Shield', value: 4 }
+  ],
+  'Ring of Protection +3': [
+    { status: 'Ring of Protection +3', property: 'ac', modifierType: 'Deflection', value: 3 }
+  ],
+  'Cloak of Resistance +1': [
+    { status: 'Cloak of Resistance +1', property: 'Fort', modifierType: 'Resistance', value: 1 },
+    { status: 'Cloak of Resistance +1', property: 'Ref', modifierType: 'Resistance', value: 1 },
+    { status: 'Cloak of Resistance +1', property: 'Will', modifierType: 'Resistance', value: 1 }
+  ],
+  'Belt of Giant Strength +2': [
+    { status: 'Belt of Giant Strength +2', property: 'Str', modifierType: 'Enhancement', value: 2 }
+  ],
+  'Gloves of Dexterity +1': [
+    { status: 'Gloves of Dexterity +1', property: 'Dex', modifierType: 'Enhancement', value: 1 }
+  ],
+  'Helm of Glorious Recovery': [
+    { status: 'Helm of Glorious Recovery', property: 'Special', description: '1/day Cure Critical Wounds (4d8+7) on self as a swift action (+2 Cha in Cormyr).' },
+    {
+      status: 'Helm of Glorious Recovery',
+      callback: (character: ICharacter) => {
+        if (!character.actions.includes('Cure Critical Wounds (Helm of Glorious Recovery)')) {
+          character.actions.push('Cure Critical Wounds (Helm of Glorious Recovery)');
+        }
+      }
+    }
+  ],
   'Hair Shirt of Suffering': [
     { status: 'Hair Shirt of Suffering', property: 'ac', modifierType: 'Natural Armor', value: 1 },
     { status: 'Hair Shirt of Suffering', property: 'Special', description: 'Once per day: Activate to use cure serious wounds on any creature other than yourself (healing 3d8+9 points of damage).' },
@@ -275,6 +313,9 @@ export const ItemEffects: Record<string, EffectData[]> = {
       status: 'Hair Shirt of Suffering',
       callback: (character: ICharacter) => {
         character.hp.max -= 2;
+        if (!character.actions.includes('Cure Serious Wounds (Hair Shirt of Suffering)')) {
+          character.actions.push('Cure Serious Wounds (Hair Shirt of Suffering)');
+        }
         if (character.hp.current > character.hp.max) {
           character.hp.current = character.hp.max;
         }

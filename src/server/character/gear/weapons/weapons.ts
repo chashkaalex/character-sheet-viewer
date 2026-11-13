@@ -19,6 +19,7 @@ export const WeaponsData = new Map<string, WeaponData>();
 // Simple Melee Weapons
 WeaponsData.set('Gauntlet', { range: 'Melee', encumbrance: 'Light', damage: '1d3', critical: 'x2' });
 WeaponsData.set('Unarmed', { range: 'Melee', encumbrance: 'Light', damage: '1d3', critical: 'x2' });
+WeaponsData.set('Punching Dagger', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x3' });
 WeaponsData.set('Dagger', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: '19-20/x2', rangeIncrement: 10 });
 WeaponsData.set('Mace', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });
 WeaponsData.set('Sickle', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });

@@ -10,6 +10,7 @@ const THRORS_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'thror_te
 const BESS_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'bess_test.txt');
 const MORTY_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'morty_test.txt');
 const DEIN_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'dein_test.txt');
+const NAETHAN_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'naethan_test.txt');
 
 describe('Local Character Parsing', () => {
     test('should parse Thror character sheet correctly and without errors', () => {
@@ -460,6 +461,104 @@ describe('Local Character Parsing', () => {
         if (char.parseWarnings.length > 0) {
             console.warn('Dein Parse Warnings:', char.parseWarnings);
         }
+    });
+
+    test('should parse Naethan character sheet correctly and without errors or warnings', () => {
+        const char = GetCharacterByDocId(NAETHAN_TEST_FILE) as Character;
+
+        expect(char.parseSuccess).toBe(true);
+        expect(char.parseErrors).toEqual([]);
+        expect(char.parseWarnings).toEqual([]);
+
+        // Basic data
+        expect(char.name).toBe('Naethan');
+        expect(char.race).toBe('Human');
+        expect(char.GetClassLevel('Crusader')).toBe(9);
+        expect(char.HD).toBe(9);
+        expect(char.hp.current).toBe(101);
+        expect(char.hp.max).toBe(101);
+        expect(char.speed.currentScore).toBe(20); // 30 base Human - 10 Heavy Armor
+
+        // Abilities (Str 19 + 2 Belt = 21, Dex 11 + 1 Gloves = 12, Con 16, Int 13, Wis 10, Cha 15)
+        expect(char.abilities.Str!.currentScore).toBe(21);
+        expect(char.abilities.Dex!.currentScore).toBe(12);
+        expect(char.abilities.Con!.currentScore).toBe(16);
+        expect(char.abilities.Int!.currentScore).toBe(13);
+        expect(char.abilities.Wis!.currentScore).toBe(10);
+        expect(char.abilities.Cha!.currentScore).toBe(15);
+
+        // Armor Class: 10 + 9 (Restful Full Plate +1) + 4 (Tower Shield) + 3 (Ring of Protection +3) + 1 (Dex) + 1 (Luck of Heroes) = 28
+        expect(char.ac.currentArmorClass).toBe(28);
+        expect(char.ac.touchArmorClass).toBe(15);      // 10 + 3 Deflection + 1 Dex + 1 Luck
+        expect(char.ac.flatFootedArmorClass).toBe(27); // 28 - 1 Dex
+
+        // Saves:
+        // Fort: 6 (Crusader 9) + 3 (Con) + 1 (Cloak of Resistance +1) + 1 (Luck of Heroes) = 11
+        // Ref:  3 (Crusader 9) + 1 (Dex) + 1 (Cloak of Resistance +1) + 1 (Luck of Heroes) = 6
+        // Will: 3 (Crusader 9) + 0 (Wis) + 2 (Indomitable Soul) + 1 (Cloak of Resistance +1) + 1 (Luck of Heroes) = 7
+        expect(char.saves.Fort.bonus).toBe(11);
+        expect(char.saves.Ref.bonus).toBe(6);
+        expect(char.saves.Will.bonus).toBe(7);
+
+        // ACP & Skills (-6 Full Plate - 10 Tower Shield = -16 ACP)
+        expect(char.acp.currentScore).toBe(-16);
+        expect(char.skills.find(s => s.name === 'Balance')!.bonus).toBe(-5);     // 8 ranks + 1 Dex + 2 Tumble synergy - 16 ACP = -5
+        expect(char.skills.find(s => s.name === 'Intimidate')!.bonus).toBe(14);  // 12 ranks + 2 Cha = 14
+        expect(char.skills.find(s => s.name === 'Jump')!.bonus).toBe(3);         // 12 ranks + 5 Str + 2 Tumble synergy - 16 ACP = 3
+        expect(char.skills.find(s => s.name === 'Martial Lore')!.bonus).toBe(13);// 12 ranks + 1 Int = 13
+        expect(char.skills.find(s => s.name === 'Ride')!.bonus).toBe(-7);        // 8 ranks + 1 Dex - 16 ACP = -7
+        expect(char.skills.find(s => s.name === 'Tumble')!.bonus).toBe(-7);      // 6 ranks + 1 Dex + 2 Jump synergy - 16 ACP = -7
+
+        // Body slots occupied
+        expect(char.bodySlots.get('Body')).toBe(0);      // Restful Full Plate +1
+        expect(char.bodySlots.get('Fingers')).toBe(1);   // Ring of Protection +3 (1 of 2 fingers remaining)
+        expect(char.bodySlots.get('Shoulders')).toBe(0); // Cloak of Resistance +1
+        expect(char.bodySlots.get('Waist')).toBe(0);     // Belt of Giant Strength +2
+        expect(char.bodySlots.get('Hands')).toBe(0);     // Gloves of Dexterity +1
+        expect(char.bodySlots.get('Head')).toBe(0);      // Helm of Glorious Recovery
+
+        // Weapons (BAB 9 - 2 Tower Shield = 7; Str mod = +5; Dex mod = +1; Shaky = -2 ranged)
+        const spikedChain = char.weapons.find(w => w.baseName === 'Spiked Chain');
+        expect(spikedChain).toBeDefined();
+        expect(spikedChain!.attackBonus.bonus).toBe(13); // 7 BAB + 5 Str + 1 enhancement
+        expect(spikedChain!.damageBonus.bonus).toBe(6);  // 5 Str + 1 enhancement
+        expect(spikedChain!.statsString).toBe('Attack: 13 Damage: 2d4 + 6 Crit. X2');
+
+        const longsword = char.weapons.find(w => w.baseName === 'Longsword');
+        expect(longsword).toBeDefined();
+        expect(longsword!.attackBonus.bonus).toBe(13);   // 7 BAB + 5 Str + 1 Masterwork
+        expect(longsword!.damageBonus.bonus).toBe(5);    // 5 Str
+        expect(longsword!.statsString).toBe('Attack: 13 Damage: 1d8 + 5 Crit. 19-20X2');
+
+        const punchingDagger = char.weapons.find(w => w.baseName === 'Punching Dagger');
+        expect(punchingDagger).toBeDefined();
+        expect(punchingDagger!.attackBonus.bonus).toBe(13); // 7 BAB + 5 Str + 1 Masterwork
+        expect(punchingDagger!.damageBonus.bonus).toBe(5);  // 5 Str
+        expect(punchingDagger!.statsString).toBe('Attack: 13 Damage: 1d4 + 5 Crit. X3');
+
+        const morningstar = char.weapons.find(w => w.baseName === 'Morningstar');
+        expect(morningstar).toBeDefined();
+        expect(morningstar!.attackBonus.bonus).toBe(13);    // 7 BAB + 5 Str + 1 Masterwork
+        expect(morningstar!.damageBonus.bonus).toBe(5);
+        expect(morningstar!.statsString).toBe('Attack: 13 Damage: 1d8 + 5 Crit. X2');
+
+        const shortbow = char.weapons.find(w => w.baseName === 'Shortbow');
+        expect(shortbow).toBeDefined();
+        expect(shortbow!.attackBonus.bonus).toBe(6);        // 7 BAB + 1 Dex - 2 Shaky = 6
+        expect(shortbow!.statsString).toBe('Attack: 6 Damage: 1d6 + 0 Crit. X3');
+
+        // Actions (Crusader class actions + Feat/Stance actions)
+        expect(char.actions).toEqual(expect.arrayContaining([
+            'Move',
+            'Combat Expertise',
+            'Furious Counterstrike',
+            'Smite',
+            'Devoted Bulwark',
+            'Cure Critical Wounds (Helm of Glorious Recovery)',
+            'Iron Guard\'s Glare Stance',
+            'Roots of the Mountain Stance',
+            'Bolstering Voice Stance'
+        ]));
     });
 
     test('should parse Rolz Room ID from document lines if present', () => {
