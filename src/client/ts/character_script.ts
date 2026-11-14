@@ -6,6 +6,7 @@ import { APP_VERSION as CLIENT_APP_VERSION } from '../../server/character/_versi
 import { renderRoundActionsUI } from './round_actions';
 import { addTooltip, UpdateValueAndTooltip } from './character/tooltip_rolz';
 import { populateInventory } from './character/inventory';
+import { renderSkillsSection } from './character/skills_ui';
 
 export * from './character/tooltip_rolz';
 export * from './character/inventory';
@@ -190,47 +191,7 @@ export function onCharacterRepresentation(response) {
   }
 
   // Populate skills grid
-  const skillsGrid = document.getElementById('skillsGrid');
-  if (skillsGrid) {
-    skillsGrid.innerHTML = '';
-    const filterInput = document.getElementById('skillsFilterInput') as HTMLInputElement | null;
-    const applySkillFilter = () => {
-      const query = (filterInput?.value || '').trim().toLowerCase();
-      skillsGrid.querySelectorAll('.skill-card').forEach((card: Element) => {
-        const name = (card as HTMLElement).dataset.skillName || '';
-        (card as HTMLElement).style.display = !query || name.includes(query) ? '' : 'none';
-      });
-    };
-
-    if (filterInput && !filterInput.dataset.bound) {
-      filterInput.dataset.bound = 'true';
-      filterInput.addEventListener('input', applySkillFilter);
-    }
-
-    if (characterRep.skills) {
-      Object.entries(characterRep.skills)
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .forEach(([skillName, skill]: [string, any]) => {
-          const rankLabel = skill.score === 1 ? '1 rank' : `${skill.score} ranks`;
-          const card = document.createElement('div');
-          card.className = 'skill-card';
-          card.dataset.skillName = skillName.toLowerCase();
-          card.innerHTML = `
-            <div class="skill-card-info">
-              <div class="skill-card-name">${skillName}</div>
-              <div class="skill-card-rank" data-skill="${skillName}">${rankLabel}</div>
-            </div>
-            <div class="skill-card-bonus" data-skill="${skillName}">${formatSigned(skill.bonus)}</div>
-          `;
-          skillsGrid.appendChild(card);
-
-          const bonusElement = card.querySelector('.skill-card-bonus');
-          addTooltip(bonusElement, skill.string, skill.rolzRollMessage);
-        });
-    }
-
-    applySkillFilter();
-  }
+  renderSkillsSection(characterRep);
 
   //populate spells
   PrepareSpellsUI();

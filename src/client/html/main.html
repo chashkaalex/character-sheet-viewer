@@ -239,7 +239,14 @@
               <h3>Skills</h3>
               <button class="collapse-button" id="skillsCollapseBtn" onclick="toggleCollapse('skills')" title="Collapse/Expand">&#9650;</button>
             </div>
-            <input type="text" id="skillsFilterInput" class="skills-filter-input" placeholder="Filter skills..." />
+            <div class="skills-controls-group">
+              <div class="skills-mode-toggle" id="skillsModeToggle" role="group" aria-label="Skill visibility filter">
+                <button type="button" class="skills-mode-btn" data-skill-mode="active" title="Show trained skills or skills with bonus > 0">Active</button>
+                <button type="button" class="skills-mode-btn" data-skill-mode="trained" title="Show only skills with ranks > 0">Trained</button>
+                <button type="button" class="skills-mode-btn" data-skill-mode="all" title="Show all regular and character skills">All</button>
+              </div>
+              <input type="text" id="skillsFilterInput" class="skills-filter-input" placeholder="Filter skills..." />
+            </div>
           </div>
           <div class="spell-slots-container">
             <div id="skillsGrid" class="skills-grid">

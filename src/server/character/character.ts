@@ -295,6 +295,7 @@ export class Character implements ICharacter, IPropertyRegistry {
             // Parsing Skills (Do this BEFORE applying effects so racial/class effects apply to the parsed skills)
             this.skills = ParseSkills(this.sectionLines['Skills'], this.abilities, this.acp);
             this.registerProperty('Skills', {} as any);
+            this.skills.forEach(skill => this.ApplyPendingEffects(skill.name));
 
             // Apply class effects
             ApplyClassesEffects(this);

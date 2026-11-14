@@ -53,6 +53,44 @@ export const SkillsAbilities: Record<string, AbilityName | 'None'> = {
   'Bardic Knowledge': 'Int'
 } as const;
 
+const NonRegularSkills = new Set([
+  'Speak Language',
+  'Bardic Knowledge',
+  'Martial Lore',
+  'Craft',
+  'Perform',
+  'Profession'
+]);
+
+export const RegularSkills: string[] = Object.keys(SkillsAbilities).filter(
+  skillName => !NonRegularSkills.has(skillName)
+);
+
+const TrainedOnlyExact = new Set([
+  'decipher script',
+  'disable device',
+  'handle animal',
+  'open lock',
+  'sleight of hand',
+  'speak language',
+  'spellcraft',
+  'tumble',
+  'use magic device',
+  'martial lore',
+  'bardic knowledge'
+]);
+
+export function isSkillTrainedOnly(skillName: string): boolean {
+  const normalized = skillName.trim().toLowerCase();
+  return (
+    TrainedOnlyExact.has(normalized) ||
+    normalized === 'knowledge' ||
+    normalized.startsWith('knowledge (') ||
+    normalized === 'profession' ||
+    normalized.startsWith('profession (')
+  );
+}
+
 export const SkillsSynergyReversed: Record<string, string[]> = {
   'Bardic Knowledge': ['Knowledge (history)'],
   'Appraise': ['Craft'],
@@ -128,6 +166,7 @@ export class Skill extends ModifiableProperty {
     return {
       ...parentState,
       bonus: this.bonus,
+      trainedOnly: isSkillTrainedOnly(this.name),
       rolzRollMessage: `#d20${sign}${this.bonus} #${this.name} Check`
     };
   }
@@ -168,6 +207,17 @@ export function ParseSkills(skillsLines: string[], abilities: AbilitiesMap, acp?
       const ability = abilities[thisSkillRelatedAbilityName];
       if (ability) {
         skills.push(new Skill(name, rank, ability, acp));
+      }
+    }
+  });
+
+  RegularSkills.forEach(skillName => {
+    const exists = skills.some(s => s.name.toLowerCase() === skillName.toLowerCase());
+    if (!exists) {
+      const abilityName = SkillsAbilities[skillName];
+      const ability = abilities[abilityName];
+      if (ability) {
+        skills.push(new Skill(skillName, 0, ability, acp));
       }
     }
   });
