@@ -33,7 +33,7 @@ interface Window {
   closePartyModal: () => void;
   toggleActionSlot: (slot: 'standard' | 'move' | 'swift' | '5-foot-step') => void;
   resetRoundActions: () => void;
-  onAdjustAoo: (delta: number) => void;
+
   triggerOffTurnImmediate: () => void;
   startCombatMode: () => void;
   endCombatMode: () => void;

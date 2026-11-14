@@ -57,7 +57,7 @@ const globalRegistry: Record<string, any> = {
     closePartyModal: Dashboard.closePartyModal,
     toggleActionSlot: Dashboard.toggleActionSlotHandler,
     resetRoundActions: Dashboard.resetRoundActions,
-    onAdjustAoo: Dashboard.onAdjustAoo,
+
     triggerOffTurnImmediate: Dashboard.triggerOffTurnImmediateHandler,
     startCombatMode: Dashboard.startCombatMode,
     endCombatMode: Dashboard.endCombatMode,

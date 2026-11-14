@@ -1,7 +1,7 @@
 import { characterRep } from '../state';
 import { addTooltip } from '../character_script';
 import {
-  adjustAooUsed,
+
   endCombat,
   enterCombat,
   getRemainingAoo,
@@ -25,19 +25,6 @@ export function updateAttacksOfOpportunityDisplay() {
 
   el.textContent = inCombat ? `${remaining}/${maxAoo}` : `${maxAoo}`;
 
-  const adjustEl = document.getElementById('aooAdjustControls');
-  if (adjustEl) {
-    if (inCombat) {
-      adjustEl.style.display = 'inline-flex';
-      adjustEl.innerHTML = `
-        <button type="button" class="aoo-adjust-btn" onclick="onAdjustAoo(1)" ${remaining <= 0 ? 'disabled' : ''} title="Spend 1 Attack of Opportunity">-</button>
-        <button type="button" class="aoo-adjust-btn" onclick="onAdjustAoo(-1)" ${remaining >= maxAoo ? 'disabled' : ''} title="Refund 1 Attack of Opportunity">+</button>
-      `;
-    } else {
-      adjustEl.style.display = 'none';
-      adjustEl.innerHTML = '';
-    }
-  }
 
   const weaponSelect = document.getElementById('weaponSelect') as HTMLSelectElement | null;
   const mainIdx = weaponSelect ? parseInt(weaponSelect.value, 10) : NaN;
@@ -56,12 +43,6 @@ export function updateAttacksOfOpportunityDisplay() {
   }
 }
 
-export function onAdjustAoo(delta: number) {
-  if (!characterRep?.docId) return;
-  const maxAoo = Math.max(0, Number(characterRep.attacksOfOpportunity?.currentScore ?? characterRep.attacksOfOpportunity?.bonus ?? 1));
-  adjustAooUsed(characterRep.docId, delta, maxAoo);
-  updateAttacksOfOpportunityDisplay();
-}
 
 export function toggleActionSlotHandler(slot: 'standard' | 'move' | 'swift' | '5-foot-step') {
   if (!characterRep?.docId) return;
