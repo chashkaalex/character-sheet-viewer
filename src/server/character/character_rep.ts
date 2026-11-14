@@ -15,6 +15,7 @@ import { APP_VERSION } from './_version';
 export interface CharacterRep {
   appVersion?: string;
   docId: string;
+  pinnedSpecialAttack?: string | null;
   mutationMessage?: string;
   parseWarnings: string[];
   parseErrors: string[];
@@ -133,47 +134,47 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
     dbLink: sanitizeDbLink(GetScriptProperty('DB_LINK'))
   };
 
-    // Add saves
+  // Add saves
   if (character.saves) {
-      for (const saveName in character.saves) {
-        if (character.saves[saveName]) {
-          characterObject.saves[saveName] = character.saves[saveName].state;
-        }
+    for (const saveName in character.saves) {
+      if (character.saves[saveName]) {
+        characterObject.saves[saveName] = character.saves[saveName].state;
       }
-}
-
-// Add abilities
-if (character.abilities) {
-  AbilityNames.forEach(abilityName => {
-    if (character.abilities[abilityName]) {
-      characterObject.abilities[abilityName] = character.abilities[abilityName].state;
     }
-  });
-}
+  }
 
-// Add skills
-if (character.skills) {
-  characterObject.skills = Object.fromEntries(
-    character.skills.map((skill: any) => [skill.name, skill.state])
-  );
-}
+  // Add abilities
+  if (character.abilities) {
+    AbilityNames.forEach(abilityName => {
+      if (character.abilities[abilityName]) {
+        characterObject.abilities[abilityName] = character.abilities[abilityName].state;
+      }
+    });
+  }
 
-// Add statuses
-if (character.statuses) {
-  characterObject.statuses = character.statuses;
-}
+  // Add skills
+  if (character.skills) {
+    characterObject.skills = Object.fromEntries(
+      character.skills.map((skill: any) => [skill.name, skill.state])
+    );
+  }
 
-// Add actions
-if (character.actions) {
-  characterObject.actions = character.actions;
-  const actionsMetadata: Record<string, any> = {};
-  const categorizedActions: Record<ActionCategory, string[]> = {
-    general: [],
-    class: [],
-    feat: [],
-    stance: [],
-    item: []
-  };
+  // Add statuses
+  if (character.statuses) {
+    characterObject.statuses = character.statuses;
+  }
+
+  // Add actions
+  if (character.actions) {
+    characterObject.actions = character.actions;
+    const actionsMetadata: Record<string, any> = {};
+    const categorizedActions: Record<ActionCategory, string[]> = {
+      general: [],
+      class: [],
+      feat: [],
+      stance: [],
+      item: []
+    };
     character.actions.forEach(actionName => {
       const action = ActionsData[actionName];
       if (action) {
@@ -188,9 +189,9 @@ if (character.actions) {
           label: isNumberAction ? (action as any).label : undefined,
           category: cat,
           actionType: action.actionType || 'standard'
-  };
-          categorizedActions[cat].push(actionName);
-        } else {
+        };
+        categorizedActions[cat].push(actionName);
+      } else {
         categorizedActions.general.push(actionName);
       }
     });
@@ -214,128 +215,128 @@ if (character.actions) {
     };
   }
 
-    // Add weapons
-    if (character.weapons && character.weapons.length > 0) {
-      // Map weapons with their original index for TWF index remapping
-      const weaponsWithOrigIndex = character.weapons.map((weapon: any, origIdx: number) => {
-        const normalFull = calculateNormalFullAttack(weapon, character);
-        const baseDice = (weapon.damage || '1d3').split(' ')[0];
-        const baseDmgBonus = weapon.damageBonus ? weapon.damageBonus.bonus : 0;
-        const baseDmgTooltip = weapon.damageBonus ? weapon.damageBonus.state.string : '';
-        const dmgVariants = BuildWeaponDamageVariants(
-          weapon.name,
-          baseDice,
-          baseDmgBonus,
-          baseDmgTooltip,
-          weapon.additionalDamages || [],
-          charSneakDice,
-          charSneakEffectsString
-        );
+  // Add weapons
+  if (character.weapons && character.weapons.length > 0) {
+    // Map weapons with their original index for TWF index remapping
+    const weaponsWithOrigIndex = character.weapons.map((weapon: any, origIdx: number) => {
+      const normalFull = calculateNormalFullAttack(weapon, character);
+      const baseDice = (weapon.damage || '1d3').split(' ')[0];
+      const baseDmgBonus = weapon.damageBonus ? weapon.damageBonus.bonus : 0;
+      const baseDmgTooltip = weapon.damageBonus ? weapon.damageBonus.state.string : '';
+      const dmgVariants = BuildWeaponDamageVariants(
+        weapon.name,
+        baseDice,
+        baseDmgBonus,
+        baseDmgTooltip,
+        weapon.additionalDamages || [],
+        charSneakDice,
+        charSneakEffectsString
+      );
 
-        return {
-          name: weapon.name,
-          isPreferred: Boolean(weapon.isPreferred),
-          attackBonus: weapon.attackBonus ? weapon.attackBonus.state : null,
-          damageBonus: weapon.damageBonus ? weapon.damageBonus.state : null,
-          statsString: weapon.statsString,
-          atkPartString: weapon.atkPartString,
-          dmgPartString: weapon.dmgPartString,
-          atkValue: weapon.atkValue,
-          dmgValue: dmgVariants.dmgValue,
-          sneakDmgValue: dmgVariants.sneakDmgValue,
-          sneakDamageString: dmgVariants.sneakDamageString,
-          critValue: weapon.critValue,
-          rolzAtkRollMessage: `#d20${weapon.attackBonus ? (weapon.attackBonus.bonus >= 0 ? '+' : '') + weapon.attackBonus.bonus : ''} #${weapon.name} Attack`,
-          rolzDmgRollMessage: dmgVariants.rolzDmgRollMessage,
-          sneakRolzDmgRollMessage: dmgVariants.sneakRolzDmgRollMessage,
-          additionalDamages: weapon.additionalDamages || [],
-          additionalDamageFormula: weapon.additionalDamageFormula || '',
-          additionalDamageWarning: weapon.additionalDamageWarning || null,
-          fullAttack: {
-            normal: normalFull,
-            twfMain: {} as Record<number, any>,
-            twfOff: {} as Record<number, any>
-          },
-          _origIndex: origIdx
-  };
-        });
+      return {
+        name: weapon.name,
+        isPreferred: Boolean(weapon.isPreferred),
+        attackBonus: weapon.attackBonus ? weapon.attackBonus.state : null,
+        damageBonus: weapon.damageBonus ? weapon.damageBonus.state : null,
+        statsString: weapon.statsString,
+        atkPartString: weapon.atkPartString,
+        dmgPartString: weapon.dmgPartString,
+        atkValue: weapon.atkValue,
+        dmgValue: dmgVariants.dmgValue,
+        sneakDmgValue: dmgVariants.sneakDmgValue,
+        sneakDamageString: dmgVariants.sneakDamageString,
+        critValue: weapon.critValue,
+        rolzAtkRollMessage: `#d20${weapon.attackBonus ? (weapon.attackBonus.bonus >= 0 ? '+' : '') + weapon.attackBonus.bonus : ''} #${weapon.name} Attack`,
+        rolzDmgRollMessage: dmgVariants.rolzDmgRollMessage,
+        sneakRolzDmgRollMessage: dmgVariants.sneakRolzDmgRollMessage,
+        additionalDamages: weapon.additionalDamages || [],
+        additionalDamageFormula: weapon.additionalDamageFormula || '',
+        additionalDamageWarning: weapon.additionalDamageWarning || null,
+        fullAttack: {
+          normal: normalFull,
+          twfMain: {} as Record<number, any>,
+          twfOff: {} as Record<number, any>
+        },
+        _origIndex: origIdx
+      };
+    });
 
-      // Sort weapons alphabetically by name
-      weaponsWithOrigIndex.sort((a, b) => a.name.localeCompare(b.name));
+    // Sort weapons alphabetically by name
+    weaponsWithOrigIndex.sort((a, b) => a.name.localeCompare(b.name));
 
-      // Build old-index → new-index mapping
-      const indexRemap = new Map<number, number>();
-      weaponsWithOrigIndex.forEach((w, newIdx) => {
-        indexRemap.set(w._origIndex, newIdx);
-      });
+    // Build old-index → new-index mapping
+    const indexRemap = new Map<number, number>();
+    weaponsWithOrigIndex.forEach((w, newIdx) => {
+      indexRemap.set(w._origIndex, newIdx);
+    });
 
-      // Calculate TWF data and remap indices to match sorted order
-      const twfData = calculateTwf(character, character.weapons);
-      const twfFull = calculateTwfFullAttack(character, character.weapons, twfData);
+    // Calculate TWF data and remap indices to match sorted order
+    const twfData = calculateTwf(character, character.weapons);
+    const twfFull = calculateTwfFullAttack(character, character.weapons, twfData);
 
-      if (twfData) {
-        characterObject.twf = {
-          hasTWF: twfData.hasTWF,
-          hasImprovedTWF: twfData.hasImprovedTWF,
-          hasGreaterTWF: twfData.hasGreaterTWF,
-          combinations: twfData.combinations.map(c => ({
-            ...c,
-            mainWeaponIndex: indexRemap.get(c.mainWeaponIndex) ?? c.mainWeaponIndex,
-            offWeaponIndex: indexRemap.get(c.offWeaponIndex) ?? c.offWeaponIndex
-          }))
-  };
-        }
-
-        // Populate TWF full attack maps with remapped indices
-        weaponsWithOrigIndex.forEach(w => {
-          const origIdx = w._origIndex;
-
-          // Main: keyed by offWeaponIndex
-          const mainTwf = twfFull.twfMain[origIdx];
-          if (mainTwf) {
-            Object.entries(mainTwf).forEach(([offOriginalIdxStr, sequence]) => {
-              const offOriginalIdx = parseInt(offOriginalIdxStr);
-              const offNewIdx = indexRemap.get(offOriginalIdx);
-              if (offNewIdx !== undefined) {
-                w.fullAttack.twfMain[offNewIdx] = sequence;
-              }
-            });
-          }
-
-          // Off: keyed by mainWeaponIndex
-          const offTwf = twfFull.twfOff[origIdx];
-          if (offTwf) {
-            Object.entries(offTwf).forEach(([mainOriginalIdxStr, sequence]) => {
-              const mainOriginalIdx = parseInt(mainOriginalIdxStr);
-              const mainNewIdx = indexRemap.get(mainOriginalIdx);
-              if (mainNewIdx !== undefined) {
-                w.fullAttack.twfOff[mainNewIdx] = sequence;
-              }
-            });
-          }
-        });
-
-        // Strip the _origIndex helper before assigning to rep
-        characterObject.weapons = weaponsWithOrigIndex.map(({ _origIndex, ...rest }) => rest);
-      }
-
-      // Add special attacks
-      if (character.specialAttacks) {
-        for (const [attackName, attackBonus] of Object.entries(character.specialAttacks)) {
-          if (attackBonus) {
-            characterObject.specialAttacks[attackName] = (attackBonus as any).state;
-          }
-        }
-      }
-
-      // Add items
-      if (character.battleGear) {
-        characterObject.battleGear = character.battleGear.map((item: any) => item.state);
-      }
-
-      if (character.possessions) {
-        characterObject.possessions = character.possessions.map((item: any) => item.state);
-      }
-
-      return characterObject;
+    if (twfData) {
+      characterObject.twf = {
+        hasTWF: twfData.hasTWF,
+        hasImprovedTWF: twfData.hasImprovedTWF,
+        hasGreaterTWF: twfData.hasGreaterTWF,
+        combinations: twfData.combinations.map(c => ({
+          ...c,
+          mainWeaponIndex: indexRemap.get(c.mainWeaponIndex) ?? c.mainWeaponIndex,
+          offWeaponIndex: indexRemap.get(c.offWeaponIndex) ?? c.offWeaponIndex
+        }))
+      };
     }
+
+    // Populate TWF full attack maps with remapped indices
+    weaponsWithOrigIndex.forEach(w => {
+      const origIdx = w._origIndex;
+
+      // Main: keyed by offWeaponIndex
+      const mainTwf = twfFull.twfMain[origIdx];
+      if (mainTwf) {
+        Object.entries(mainTwf).forEach(([offOriginalIdxStr, sequence]) => {
+          const offOriginalIdx = parseInt(offOriginalIdxStr);
+          const offNewIdx = indexRemap.get(offOriginalIdx);
+          if (offNewIdx !== undefined) {
+            w.fullAttack.twfMain[offNewIdx] = sequence;
+          }
+        });
+      }
+
+      // Off: keyed by mainWeaponIndex
+      const offTwf = twfFull.twfOff[origIdx];
+      if (offTwf) {
+        Object.entries(offTwf).forEach(([mainOriginalIdxStr, sequence]) => {
+          const mainOriginalIdx = parseInt(mainOriginalIdxStr);
+          const mainNewIdx = indexRemap.get(mainOriginalIdx);
+          if (mainNewIdx !== undefined) {
+            w.fullAttack.twfOff[mainNewIdx] = sequence;
+          }
+        });
+      }
+    });
+
+    // Strip the _origIndex helper before assigning to rep
+    characterObject.weapons = weaponsWithOrigIndex.map(({ _origIndex, ...rest }) => rest);
+  }
+
+  // Add special attacks
+  if (character.specialAttacks) {
+    for (const [attackName, attackBonus] of Object.entries(character.specialAttacks)) {
+      if (attackBonus) {
+        characterObject.specialAttacks[attackName] = (attackBonus as any).state;
+      }
+    }
+  }
+
+  // Add items
+  if (character.battleGear) {
+    characterObject.battleGear = character.battleGear.map((item: any) => item.state);
+  }
+
+  if (character.possessions) {
+    characterObject.possessions = character.possessions.map((item: any) => item.state);
+  }
+
+  return characterObject;
+}

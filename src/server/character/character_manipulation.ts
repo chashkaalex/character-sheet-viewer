@@ -1,6 +1,7 @@
 import { Character, CharacterError } from './character';
 import { SpellSlotData } from './common_types';
 import { CharacterRep, getCharacterRep } from './character_rep';
+import { getPinnedSpecialAttack } from './character_preferences';
 import { adapter } from './adapter_selector';
 
 declare let require: any;
@@ -52,7 +53,9 @@ export function GetCharacterRepByDocId(docId: string): CharacterRep | CharacterE
     return currentCharacter;
   }
 
-  return getCharacterRep(currentCharacter);
+  const rep = getCharacterRep(currentCharacter);
+  rep.pinnedSpecialAttack = getPinnedSpecialAttack(docId);
+  return rep;
 }
 
 /**

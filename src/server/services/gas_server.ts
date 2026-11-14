@@ -1,3 +1,4 @@
+import { SetPinnedSpecialAttack } from '../character/character_preferences';
 import { CharacterError } from '../character/character';
 import { recordUserLog } from './gsheet_logger';
 import { CharacterRep } from '../character/character_rep';
@@ -175,6 +176,7 @@ export {
     OnUseNumberAction,
     PostRollToRolz,
     MoveInventoryItem,
-    UsePotion
+    UsePotion,
+    SetPinnedSpecialAttack
 };
 

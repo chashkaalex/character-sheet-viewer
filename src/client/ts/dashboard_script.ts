@@ -41,6 +41,9 @@ export function selectDefaultWeaponIndex(weapons: Array<{ name?: string; isPrefe
 
 export function getFavoriteSpecialAttack(docId: string): string | null {
   if (!docId) return null;
+  if (characterRep?.docId === docId && characterRep.pinnedSpecialAttack !== undefined) {
+    return characterRep.pinnedSpecialAttack;
+  }
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
       return window.localStorage.getItem(FAV_SPECIAL_ATTACK_PREFIX + docId);
@@ -876,6 +879,9 @@ export function populateSpecialAttackDropdown() {
     selectedSpecialDocId = characterRep?.docId || null;
     activeSpecialAttackName = null;
   }
+  if (characterRep?.docId && characterRep.pinnedSpecialAttack !== undefined) {
+    setFavoriteSpecialAttack(characterRep.docId, characterRep.pinnedSpecialAttack ?? null);
+  }
 
   // Select preserved, pinned favorite, or first special attack
   if (attackNames.length > 0) {
@@ -912,8 +918,15 @@ export function toggleFavoriteSpecialAttack() {
 
   const currentPinned = getFavoriteSpecialAttack(characterRep.docId);
   const nextPinned = currentPinned === selectedAttack ? null : selectedAttack;
+  characterRep.pinnedSpecialAttack = nextPinned;
   setFavoriteSpecialAttack(characterRep.docId, nextPinned);
   updateSpecialAttackPinButton(selectedAttack);
+
+  if (typeof google !== 'undefined' && google?.script?.run) {
+    google.script.run
+      .withFailureHandler((err: any) => console.error('Failed to persist favorite special attack:', err))
+      .SetPinnedSpecialAttack(characterRep.docId, nextPinned);
+  }
 }
 
 export function onSpecialAttackChange() {

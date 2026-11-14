@@ -1,6 +1,10 @@
 import { Character } from '../../server/character/character';
 import { getCharacterRep } from '../../server/character/character_rep';
 import {
+  getPinnedSpecialAttack,
+  SetPinnedSpecialAttack
+} from '../../server/character/character_preferences';
+import {
   getFavoriteSpecialAttack,
   selectDefaultWeaponIndex,
   setFavoriteSpecialAttack
@@ -100,5 +104,34 @@ describe('Preferred Weapons ([*]) and Pinned Special Attacks', () => {
 
     setFavoriteSpecialAttack('doc_a', null);
     expect(getFavoriteSpecialAttack('doc_a')).toBeNull();
+  });
+
+  test('persists and clears pinned special attack in GAS UserProperties per docId', () => {
+    const props = new Map<string, string>();
+    (global as any).PropertiesService = {
+      getUserProperties: () => ({
+        getProperty: (k: string) => props.get(k) ?? null,
+        setProperty: (k: string, v: string) => props.set(k, v)
+      })
+    };
+
+    try {
+      expect(getPinnedSpecialAttack('thror_doc')).toBeNull();
+      const setRes = SetPinnedSpecialAttack('thror_doc', 'Trip');
+      expect(setRes).toEqual({ success: true, pinnedSpecialAttack: 'Trip' });
+      expect(getPinnedSpecialAttack('thror_doc')).toBe('Trip');
+      expect(getPinnedSpecialAttack('bess_doc')).toBeNull();
+
+      SetPinnedSpecialAttack('bess_doc', 'Disarm');
+      expect(getPinnedSpecialAttack('thror_doc')).toBe('Trip');
+      expect(getPinnedSpecialAttack('bess_doc')).toBe('Disarm');
+
+      const clearRes = SetPinnedSpecialAttack('thror_doc', null);
+      expect(clearRes).toEqual({ success: true, pinnedSpecialAttack: null });
+      expect(getPinnedSpecialAttack('thror_doc')).toBeNull();
+      expect(getPinnedSpecialAttack('bess_doc')).toBe('Disarm');
+    } finally {
+      delete (global as any).PropertiesService;
+    }
   });
 });
