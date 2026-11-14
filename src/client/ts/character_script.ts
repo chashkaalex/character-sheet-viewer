@@ -148,54 +148,88 @@ export function onCharacterRepresentation(response) {
   // Update attacks of opportunity
   updateAttacksOfOpportunityDisplay();
 
-  //populate abilities table
-  const abilitiesTableBody = document.querySelector('#abilitiesTable tbody');
-  abilitiesTableBody.innerHTML = '';
+  const formatSigned = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);
 
-  if (characterRep.abilities) {
-    const abilityOrder = ['Str', 'Dex', 'Con', 'Int', 'Wis', 'Cha'];
-    abilityOrder.forEach(abilityName => {
-      const ability = characterRep.abilities[abilityName];
-      if (ability) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class="row-style">${abilityName}</td>
-          <td class="row-style ability-score" data-ability="${abilityName}" data-field="score">${ability.score}</td>
-          <td class="row-style ability-current" data-ability="${abilityName}" data-field="currentScore">${ability.currentScore}</td>
-          <td class="row-style ability-modifier" data-ability="${abilityName}" data-field="modifier">${ability.modifier}</td>
+  // Populate abilities stat cards
+  const abilitiesGrid = document.getElementById('abilitiesGrid');
+  if (abilitiesGrid) {
+    abilitiesGrid.innerHTML = '';
+
+    if (characterRep.abilities) {
+      const abilityOrder = ['Str', 'Dex', 'Con', 'Int', 'Wis', 'Cha'];
+      abilityOrder.forEach(abilityName => {
+        const ability = characterRep.abilities[abilityName];
+        if (!ability) return;
+
+        const isBuffed = ability.currentScore > ability.score;
+        const isPenalized = ability.currentScore < ability.score;
+        const scoreStateClass = isBuffed ? ' buffed' : isPenalized ? ' penalized' : '';
+        const baseScoreHtml = ability.currentScore !== ability.score
+          ? `<span class="ability-base-score">(base ${ability.score})</span>`
+          : '';
+
+        const card = document.createElement('div');
+        card.className = 'ability-card';
+        card.innerHTML = `
+          <div class="ability-card-name">${abilityName.toUpperCase()}</div>
+          <div class="ability-card-mod" data-ability="${abilityName}" data-field="modifier">${formatSigned(ability.modifier)}</div>
+          <div class="ability-card-scores">
+            <span class="ability-card-current${scoreStateClass}" data-ability="${abilityName}" data-field="currentScore">${ability.currentScore}</span>
+            ${baseScoreHtml}
+          </div>
         `;
-        abilitiesTableBody.appendChild(row);
+        abilitiesGrid.appendChild(card);
 
-        // Add tooltips to ability properties
-        const currentScoreElement = row.querySelector('.ability-current');
+        const currentScoreElement = card.querySelector('.ability-card-current');
         addTooltip(currentScoreElement, ability.string, ability.rolzRollMessage);
 
-        const modifierElement = row.querySelector('.ability-modifier');
+        const modifierElement = card.querySelector('.ability-card-mod');
         addTooltip(modifierElement, ability.string, ability.rolzRollMessage);
-      }
-    });
+      });
+    }
   }
 
-  //populate skills table
-  const skillsTableBody = document.querySelector('#skillsTable tbody');
-  // Clear previous rows before repopulating to avoid duplicates
-  skillsTableBody.innerHTML = '';
-  if (characterRep.skills) {
-    Object.entries(characterRep.skills)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .forEach(([skillName, skill]: [string, any]) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-              <td class="row-style">${skillName}</td>
-              <td class="row-style skill-rank" data-skill="${skillName}">${skill.score}</td>
-              <td class="row-style skill-bonus" data-skill="${skillName}">${skill.bonus}</td>
-          `;
-        skillsTableBody.appendChild(row);
-
-        // Add tooltips to skill properties
-        const bonusElement = row.querySelector('.skill-bonus');
-        addTooltip(bonusElement, skill.string, skill.rolzRollMessage);
+  // Populate skills grid
+  const skillsGrid = document.getElementById('skillsGrid');
+  if (skillsGrid) {
+    skillsGrid.innerHTML = '';
+    const filterInput = document.getElementById('skillsFilterInput') as HTMLInputElement | null;
+    const applySkillFilter = () => {
+      const query = (filterInput?.value || '').trim().toLowerCase();
+      skillsGrid.querySelectorAll('.skill-card').forEach((card: Element) => {
+        const name = (card as HTMLElement).dataset.skillName || '';
+        (card as HTMLElement).style.display = !query || name.includes(query) ? '' : 'none';
       });
+    };
+
+    if (filterInput && !filterInput.dataset.bound) {
+      filterInput.dataset.bound = 'true';
+      filterInput.addEventListener('input', applySkillFilter);
+    }
+
+    if (characterRep.skills) {
+      Object.entries(characterRep.skills)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .forEach(([skillName, skill]: [string, any]) => {
+          const rankLabel = skill.score === 1 ? '1 rank' : `${skill.score} ranks`;
+          const card = document.createElement('div');
+          card.className = 'skill-card';
+          card.dataset.skillName = skillName.toLowerCase();
+          card.innerHTML = `
+            <div class="skill-card-info">
+              <div class="skill-card-name">${skillName}</div>
+              <div class="skill-card-rank" data-skill="${skillName}">${rankLabel}</div>
+            </div>
+            <div class="skill-card-bonus" data-skill="${skillName}">${formatSigned(skill.bonus)}</div>
+          `;
+          skillsGrid.appendChild(card);
+
+          const bonusElement = card.querySelector('.skill-card-bonus');
+          addTooltip(bonusElement, skill.string, skill.rolzRollMessage);
+        });
+    }
+
+    applySkillFilter();
   }
 
   //populate spells

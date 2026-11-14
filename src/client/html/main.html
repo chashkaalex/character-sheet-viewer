@@ -220,33 +220,32 @@
           </div>
         </div>
       </div>
-      <div class="section" id="section2">
-        <div class="tables-container">
-          <table id="abilitiesTable" class="character-table">
-            <thead>
-              <tr>
-                <th class="row-style">Ability</th>
-                <th class="row-style">Permanent Score</th>
-                <th class="row-style">Current Score</th>
-                <th class="row-style">Modifier</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Rows populated by the script -->
-            </tbody>
-          </table>
-          <table id="skillsTable" class="character-table">
-            <thead>
-              <tr>
-                <th class="row-style">Skill</th>
-                <th class="row-style">Rank</th>
-                <th class="row-style">Bonus</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Rows populated by the script -->
-            </tbody>
-          </table>
+      <div class="section" id="section2" style="flex-direction: column; align-items: stretch; gap: 20px;">
+        <div class="spellcasting-class" id="abilitiesSection">
+          <div class="spellcasting-class-header section-card-header">
+            <h3>Abilities</h3>
+            <button class="collapse-button" id="abilitiesCollapseBtn" onclick="toggleCollapse('abilities')" title="Collapse/Expand">?</button>
+          </div>
+          <div class="spell-slots-container">
+            <div id="abilitiesGrid" class="abilities-grid">
+              <!-- Populated by the script -->
+            </div>
+          </div>
+        </div>
+
+        <div class="spellcasting-class" id="skillsSection">
+          <div class="spellcasting-class-header section-card-header section-card-header-between">
+            <div class="section-card-title-group">
+              <h3>Skills</h3>
+              <button class="collapse-button" id="skillsCollapseBtn" onclick="toggleCollapse('skills')" title="Collapse/Expand">?</button>
+            </div>
+            <input type="text" id="skillsFilterInput" class="skills-filter-input" placeholder="Filter skills..." />
+          </div>
+          <div class="spell-slots-container">
+            <div id="skillsGrid" class="skills-grid">
+              <!-- Populated by the script -->
+            </div>
+          </div>
         </div>
       </div>
       <div class="section" id="section3" style="flex-direction: column; align-items: stretch; gap: 20px;">

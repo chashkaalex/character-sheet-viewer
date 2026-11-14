@@ -736,6 +736,194 @@
         }
     }
 
+    /* Collapsible Abilities & Skills sections */
+    .section-card-header {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 8px;
+        margin-bottom: 15px;
+    }
+
+    .section-card-header h3 {
+        margin: 0;
+        border: none;
+        padding: 0;
+        font-size: 1.3em;
+        color: var(--primary-color);
+    }
+
+    .section-card-header-between {
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .section-card-title-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .skills-filter-input {
+        padding: 5px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background-color: #fff;
+        color: var(--text-color);
+        font-family: inherit;
+        font-size: 0.9em;
+        min-width: 180px;
+    }
+
+    .spellcasting-class.collapsed .skills-filter-input {
+        display: none;
+    }
+
+    /* Abilities 6-card Stat Block grid */
+    .abilities-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+        gap: 12px;
+    }
+
+    .ability-card {
+        background-color: var(--background-primary);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 10px 8px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .ability-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .ability-card-name {
+        font-size: 0.85em;
+        font-weight: bold;
+        letter-spacing: 0.08em;
+        color: var(--primary-color);
+        border-bottom: 1px solid rgba(139, 107, 62, 0.35);
+        width: 100%;
+        padding-bottom: 4px;
+    }
+
+    .ability-card-mod {
+        font-size: 1.75em;
+        font-weight: bold;
+        color: var(--accent-color);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+        padding: 2px 10px;
+        border-radius: 6px;
+        background-color: var(--background-secondary);
+        border: 1px solid rgba(139, 107, 62, 0.4);
+    }
+
+    .ability-card-mod:hover {
+        border-color: var(--accent-color);
+    }
+
+    .ability-card-scores {
+        font-size: 0.92em;
+        color: var(--text-color);
+        font-variant-numeric: tabular-nums;
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+    }
+
+    .ability-card-current {
+        font-weight: bold;
+    }
+
+    .ability-card-current.buffed {
+        color: #1f7a3d;
+    }
+
+    .ability-card-current.penalized {
+        color: #b52b27;
+    }
+
+    .ability-base-score {
+        font-size: 0.82em;
+        color: #6b5b45;
+    }
+
+    /* Skills multi-column card grid */
+    .skills-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+        gap: 10px;
+    }
+
+    .skill-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        background-color: var(--background-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .skill-card:hover {
+        background-color: #efe0b4;
+        border-color: var(--accent-color);
+    }
+
+    .skill-card-info {
+        min-width: 0;
+        text-align: left;
+    }
+
+    .skill-card-name {
+        font-weight: bold;
+        color: var(--primary-color);
+        font-size: 0.96em;
+        line-height: 1.25;
+    }
+
+    .skill-card-rank {
+        font-size: 0.8em;
+        color: #6b5b45;
+        margin-top: 2px;
+    }
+
+    .skill-card-bonus {
+        font-size: 1.15em;
+        font-weight: bold;
+        font-variant-numeric: tabular-nums;
+        color: var(--accent-color);
+        background-color: var(--background-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 4px 10px;
+        min-width: 42px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .skill-card-bonus:hover {
+        border-color: var(--accent-color);
+    }
+
+    [data-tooltip].ability-card-mod,
+    [data-tooltip].ability-card-current,
+    [data-tooltip].skill-card-bonus {
+        border-bottom-style: solid;
+    }
+
     /* HP and statuses styles */
     .hp-container {
         border: 2px solid var(--border-color);
