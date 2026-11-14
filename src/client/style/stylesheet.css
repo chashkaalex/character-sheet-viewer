@@ -924,6 +924,10 @@
         border-bottom-style: solid;
     }
 
+    [data-tooltip].ability-card-current {
+        border-bottom: none;
+    }
+
     /* HP and statuses styles */
     .hp-container {
         border: 2px solid var(--border-color);
