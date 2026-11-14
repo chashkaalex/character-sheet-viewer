@@ -197,6 +197,7 @@ export class Weapon {
   public encumbrance: 'Light' | 'One-Handed' | 'Two-Handed' | 'ranged' = 'Light';
   public enhancement: number = 0;
   public isMasterwork: boolean = false;
+  public isPreferred: boolean = false;
   public baseDamage: string = '1d3';
   public damage: string = '1d3';
   public damageBonusFromWeapon: number = 0;
@@ -361,7 +362,7 @@ export class Weapon {
   public matchesPattern(pattern: string): boolean {
     const patternLower = pattern.toLowerCase();
     return this.name.toLowerCase().includes(patternLower) ||
-           (this.baseName !== null && this.baseName.toLowerCase().includes(patternLower));
+      (this.baseName !== null && this.baseName.toLowerCase().includes(patternLower));
   }
 
   parseDescription(description: string): void {
@@ -446,6 +447,7 @@ export class ItemWeapon extends Weapon {
   constructor(item: Item, character: ICharacter) {
     const displayName = item.material && !item.name.includes(item.material) ? `${item.material} ${item.name}` : item.name;
     super(displayName, item.description, item.weight, character);
+    this.isPreferred = Boolean(item.isPreferred);
   }
 }
 
@@ -514,12 +516,12 @@ export class UnarmedWeapon extends Weapon {
       // Regular progression
       this.baseDamage = bestDamage;
       if (hasINA) {
-          // Improve damage by one step if they have INA
-          const regularProgression = ['1d2', '1d3', '1d4', '1d6', '1d8', '2d6'];
-          const index = regularProgression.indexOf(this.baseDamage);
-          if (index !== -1 && index < regularProgression.length - 1) {
-              this.baseDamage = regularProgression[index + 1];
-          }
+        // Improve damage by one step if they have INA
+        const regularProgression = ['1d2', '1d3', '1d4', '1d6', '1d8', '2d6'];
+        const index = regularProgression.indexOf(this.baseDamage);
+        if (index !== -1 && index < regularProgression.length - 1) {
+          this.baseDamage = regularProgression[index + 1];
+        }
       }
     }
 

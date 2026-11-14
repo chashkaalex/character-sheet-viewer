@@ -28,6 +28,7 @@ interface Window {
   onWeaponChange: () => void;
   onTwfToggle: (checkbox: HTMLInputElement) => void;
   onSpecialAttackChange: () => void;
+  toggleFavoriteSpecialAttack: () => void;
   showPartyModal: () => void;
   closePartyModal: () => void;
   toggleActionSlot: (slot: 'standard' | 'move' | 'swift' | '5-foot-step') => void;

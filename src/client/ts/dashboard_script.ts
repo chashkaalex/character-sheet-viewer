@@ -18,6 +18,53 @@ let showFullAttack = false;
 let showSneakAttack = false;
 let showTwf: boolean | null = null;
 let lastTwfDocId: string | null = null;
+let selectedWeaponName: string | null = null;
+let selectedWeaponDocId: string | null = null;
+let activeSpecialAttackName: string | null = null;
+let selectedSpecialDocId: string | null = null;
+
+const FAV_SPECIAL_ATTACK_PREFIX = 'csv_fav_special_attack_';
+
+export function selectDefaultWeaponIndex(weapons: Array<{ name?: string; isPreferred?: boolean }>, isMonk = false): number {
+  if (!weapons || weapons.length === 0) return -1;
+  const preferredIdx = weapons.findIndex(w => Boolean(w && w.isPreferred));
+  if (preferredIdx >= 0) return preferredIdx;
+  if (isMonk) {
+    const unarmedIdx = weapons.findIndex(w => w && w.name === 'Unarmed');
+    if (unarmedIdx >= 0) return unarmedIdx;
+  }
+  if (weapons[0]?.name === 'Unarmed' && weapons.length > 1) {
+    return 1;
+  }
+  return 0;
+}
+
+export function getFavoriteSpecialAttack(docId: string): string | null {
+  if (!docId) return null;
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem(FAV_SPECIAL_ATTACK_PREFIX + docId);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return null;
+}
+
+export function setFavoriteSpecialAttack(docId: string, attackName: string | null): void {
+  if (!docId) return;
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (attackName) {
+        window.localStorage.setItem(FAV_SPECIAL_ATTACK_PREFIX + docId, attackName);
+      } else {
+        window.localStorage.removeItem(FAV_SPECIAL_ATTACK_PREFIX + docId);
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 /**
  * Converts duration from various time units to rounds
@@ -354,24 +401,31 @@ export function populateWeaponDropdown() {
   defaultOption.textContent = 'Select a weapon...';
   weaponSelect.appendChild(defaultOption);
 
+  if (characterRep?.docId !== selectedWeaponDocId) {
+    selectedWeaponDocId = characterRep?.docId || null;
+    selectedWeaponName = null;
+  }
+
   // Add weapon options
   weapons.forEach((weapon, index) => {
     if (weapon && weapon.name) {
       const option = document.createElement('option');
       option.value = index;
-      option.textContent = weapon.name;
+      option.textContent = weapon.isPreferred ? `\u2605 ${weapon.name}` : weapon.name;
       weaponSelect.appendChild(option);
     }
   });
 
-  // Select first weapon by default if available
+  // Select preserved or default weapon
   if (weapons.length > 0) {
-    // If the first weapon is "Unarmed" and there are other weapons, select the first regular weapon
-    if (weapons[0].name === 'Unarmed' && weapons.length > 1) {
-      (weaponSelect as HTMLSelectElement).value = '1';
-    } else {
-      (weaponSelect as HTMLSelectElement).value = '0';
+    let targetIdx = -1;
+    if (selectedWeaponName) {
+      targetIdx = weapons.findIndex((w: any) => w && w.name === selectedWeaponName);
     }
+    if (targetIdx < 0) {
+      targetIdx = selectDefaultWeaponIndex(weapons, Boolean(characterRep.isMonk));
+    }
+    (weaponSelect as HTMLSelectElement).value = String(targetIdx >= 0 ? targetIdx : 0);
     onWeaponChange();
   }
 }
@@ -758,6 +812,11 @@ export function onWeaponChange() {
   const mainSelect = document.getElementById('weaponSelect') as HTMLSelectElement;
   if (!mainSelect) return;
 
+  const idx = parseInt(mainSelect.value, 10);
+  if (!isNaN(idx) && characterRep?.weapons?.[idx]?.name) {
+    selectedWeaponName = characterRep.weapons[idx].name;
+  }
+
   // Update off-hand dropdown choices
   if (hasTwfCombinations()) {
     populateOffHandDropdown();
@@ -805,10 +864,21 @@ export function populateSpecialAttackDropdown() {
     specialAttackSelect.appendChild(option);
   });
 
-  // Select first special attack by default if available
+  if (characterRep?.docId !== selectedSpecialDocId) {
+    selectedSpecialDocId = characterRep?.docId || null;
+    activeSpecialAttackName = null;
+  }
+
+  // Select preserved, pinned favorite, or first special attack
   if (attackNames.length > 0) {
-    (specialAttackSelect as HTMLSelectElement).value = attackNames[0];
-    onWeaponChange(); // should this be onSpecialAttackChange? keeping original logic
+    const pinned = characterRep?.docId ? getFavoriteSpecialAttack(characterRep.docId) : null;
+    let targetAttack = attackNames[0];
+    if (activeSpecialAttackName && attackNames.includes(activeSpecialAttackName)) {
+      targetAttack = activeSpecialAttackName;
+    } else if (pinned && attackNames.includes(pinned)) {
+      targetAttack = pinned;
+    }
+    (specialAttackSelect as HTMLSelectElement).value = targetAttack;
     onSpecialAttackChange();
   }
 }
@@ -816,9 +886,33 @@ export function populateSpecialAttackDropdown() {
 /**
  * Handles special attack selection change and updates the displayed bonus
  */
+function updateSpecialAttackPinButton(selectedAttack: string) {
+  const pinBtn = document.getElementById('pinSpecialAttackBtn');
+  if (!pinBtn) return;
+  const pinned = characterRep?.docId ? getFavoriteSpecialAttack(characterRep.docId) : null;
+  const isPinned = Boolean(selectedAttack && pinned === selectedAttack);
+  pinBtn.textContent = isPinned ? '\u2605' : '\u2606';
+  pinBtn.classList.toggle('pinned', isPinned);
+  pinBtn.title = isPinned ? 'Unpin default Special Attack' : 'Pin as default Special Attack';
+}
+
+export function toggleFavoriteSpecialAttack() {
+  if (!characterRep?.docId) return;
+  const specialAttackSelect = document.getElementById('specialAttackSelect') as HTMLSelectElement | null;
+  const selectedAttack = specialAttackSelect ? specialAttackSelect.value : '';
+  if (!selectedAttack) return;
+
+  const currentPinned = getFavoriteSpecialAttack(characterRep.docId);
+  const nextPinned = currentPinned === selectedAttack ? null : selectedAttack;
+  setFavoriteSpecialAttack(characterRep.docId, nextPinned);
+  updateSpecialAttackPinButton(selectedAttack);
+}
+
 export function onSpecialAttackChange() {
   const specialAttackSelect = document.getElementById('specialAttackSelect');
   const selectedAttack = (specialAttackSelect as HTMLSelectElement).value;
+  activeSpecialAttackName = selectedAttack || null;
+  updateSpecialAttackPinButton(selectedAttack);
 
   console.log('Special attack changed to:', selectedAttack);
 

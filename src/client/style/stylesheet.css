@@ -64,11 +64,13 @@
             border-bottom-color: var(--border-color);
             box-shadow: 0 0 0 rgba(193, 127, 36, 0);
         }
+
         25% {
             background-color: #3d5166;
             border-bottom-color: var(--accent-color);
             box-shadow: inset 0 -8px 20px rgba(193, 127, 36, 0.45), 0 4px 20px rgba(193, 127, 36, 0.4);
         }
+
         100% {
             background-color: var(--header-bg);
             border-bottom-color: var(--border-color);
@@ -82,11 +84,13 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
             transform: scale(1);
         }
+
         25% {
             color: #ffffff;
             text-shadow: 0 0 8px rgba(255, 255, 255, 0.6), 0 0 15px var(--accent-color);
             transform: scale(1.02);
         }
+
         100% {
             color: var(--header-text);
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
@@ -98,6 +102,7 @@
         0% {
             left: -150%;
         }
+
         100% {
             left: 150%;
         }
@@ -110,14 +115,12 @@
         left: -150%;
         width: 150%;
         height: 100%;
-        background: linear-gradient(
-            to right,
-            rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.05) 25%,
-            rgba(193, 127, 36, 0.35) 50%,
-            rgba(255, 255, 255, 0.05) 75%,
-            rgba(255, 255, 255, 0) 100%
-        );
+        background: linear-gradient(to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.05) 25%,
+                rgba(193, 127, 36, 0.35) 50%,
+                rgba(255, 255, 255, 0.05) 75%,
+                rgba(255, 255, 255, 0) 100%);
         transform: skewX(-25deg);
         pointer-events: none;
     }
@@ -288,6 +291,7 @@
         background-color: #24788f;
         border-color: #185566;
     }
+
     .spellcasting-class {
         background-color: var(--background-secondary);
         border: 2px solid var(--border-color);
@@ -1498,6 +1502,7 @@
     .inventory-item.selected span {
         color: #e0e0e0;
     }
+
     .collapse-button {
         width: 32px;
         height: 32px;
@@ -1610,6 +1615,7 @@
         .inventory-layout {
             flex-direction: column;
         }
+
         .slots-section {
             width: 100%;
         }
@@ -1999,95 +2005,119 @@
 
 
 
-/* Round Action Economy & Combat State */
-.round-actions-bar {
-  margin-top: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
+    /* Round Action Economy & Combat State */
+    .round-actions-bar {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
 
-.round-actions-inactive,
-.round-actions-active {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
+    .round-actions-inactive,
+    .round-actions-active {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
 
-.combat-badge {
-  font-size: 0.8em;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
+    .combat-badge {
+        font-size: 0.8em;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
 
-.combat-badge.out-of-combat {
-  background: rgba(148, 163, 184, 0.2);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-}
+    .combat-badge.out-of-combat {
+        background: rgba(148, 163, 184, 0.2);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+    }
 
-.combat-badge.in-combat {
-  background: rgba(220, 38, 38, 0.15);
-  color: #dc2626;
-  border: 1px solid rgba(220, 38, 38, 0.4);
-}
+    .combat-badge.in-combat {
+        background: rgba(220, 38, 38, 0.15);
+        color: #dc2626;
+        border: 1px solid rgba(220, 38, 38, 0.4);
+    }
 
-.round-slots-group,
-.round-controls-group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
+    .round-slots-group,
+    .round-controls-group {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+    }
 
-.round-slot-pill,
-.round-btn-small,
-.roll-all-attacks-btn {
-  font-size: 0.8em;
-  padding: 3px 9px;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  background: var(--bg-card);
-  color: var(--text-color);
-  transition: opacity 0.15s ease, background-color 0.15s ease;
-}
+    .round-slot-pill,
+    .round-btn-small,
+    .roll-all-attacks-btn {
+        font-size: 0.8em;
+        padding: 3px 9px;
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        background: var(--bg-card);
+        color: var(--text-color);
+        transition: opacity 0.15s ease, background-color 0.15s ease;
+    }
 
-.round-slot-pill.available {
-  border-color: var(--primary-color);
-  font-weight: 600;
-}
+    .round-slot-pill.available {
+        border-color: var(--primary-color);
+        font-weight: 600;
+    }
 
-.round-slot-pill.spent,
-.round-btn-small.spent {
-  opacity: 0.5;
-  text-decoration: line-through;
-  background: rgba(148, 163, 184, 0.15);
-}
+    .round-slot-pill.spent,
+    .round-btn-small.spent {
+        opacity: 0.5;
+        text-decoration: line-through;
+        background: rgba(148, 163, 184, 0.15);
+    }
 
-.round-btn-small.end-combat {
-  border-color: rgba(220, 38, 38, 0.5);
-  color: #dc2626;
-}
+    .round-btn-small.end-combat {
+        border-color: rgba(220, 38, 38, 0.5);
+        color: #dc2626;
+    }
 
-.roll-all-attacks-btn {
-  margin-left: 6px;
-  border-color: var(--primary-color);
-  font-weight: 600;
-}
+    .roll-all-attacks-btn {
+        margin-left: 6px;
+        border-color: var(--primary-color);
+        font-weight: 600;
+    }
 
-.multi-atk-span.attack-rolled {
-  opacity: 0.55;
-  text-decoration: line-through;
-}
+    .multi-atk-span.attack-rolled {
+        opacity: 0.55;
+        text-decoration: line-through;
+    }
 
-#currentInit.in-combat {
-  color: #dc2626;
-  font-weight: 700;
-}
+    #currentInit.in-combat {
+        color: #dc2626;
+        font-weight: 700;
+    }
+
+    .pin-fav-btn {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        color: var(--text-color);
+        cursor: pointer;
+        font-size: 1em;
+        line-height: 1;
+        padding: 2px 6px;
+        margin-left: 4px;
+        opacity: 0.7;
+        transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .pin-fav-btn:hover {
+        opacity: 1;
+    }
+
+    .pin-fav-btn.pinned {
+        opacity: 1;
+        color: #eab308;
+        border-color: #eab308;
+    }

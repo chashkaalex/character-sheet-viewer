@@ -52,6 +52,7 @@ const globalRegistry: Record<string, any> = {
     onSneakAttackToggle: Dashboard.onSneakAttackToggle,
     onTwfToggle: Dashboard.onTwfToggle,
     onSpecialAttackChange: Dashboard.onSpecialAttackChange,
+    toggleFavoriteSpecialAttack: Dashboard.toggleFavoriteSpecialAttack,
     showPartyModal: Dashboard.showPartyModal,
     closePartyModal: Dashboard.closePartyModal,
     toggleActionSlot: Dashboard.toggleActionSlotHandler,

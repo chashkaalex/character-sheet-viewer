@@ -364,6 +364,7 @@ export class Item {
   public bodySlot: string | null;
   public effects: EffectData[];
   public isWeapon: boolean;
+  public isPreferred: boolean;
   public isPotion: boolean;
   public isScroll: boolean;
   public weight: number;
@@ -373,9 +374,14 @@ export class Item {
     this.amount = amount;
     this.description = description;
 
+    // Parse optional [*] preferred prefix
+    const preferredMatch = name.match(/^\[\*\]\s*/);
+    this.isPreferred = Boolean(preferredMatch);
+    const cleanName = preferredMatch ? name.slice(preferredMatch[0].length) : name;
+
     // Parse the item name to extract material and clean name
-    const nameAndMaterial = GetSpecialWeaponMaterial(name);
-    this.name = name.startsWith(nameAndMaterial.material) ? nameAndMaterial.name : name;
+    const nameAndMaterial = GetSpecialWeaponMaterial(cleanName);
+    this.name = cleanName.startsWith(nameAndMaterial.material) ? nameAndMaterial.name : cleanName;
     this.material = nameAndMaterial.material;
 
     // Set other properties
