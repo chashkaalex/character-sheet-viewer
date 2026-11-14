@@ -513,23 +513,12 @@ export function onTwfToggle(checkbox: HTMLInputElement) {
 function renderWeaponTogglesHtml(): string {
   const hasSneak = Boolean(characterRep && characterRep.sneakAttack && characterRep.sneakAttack.dice > 0);
   const sneakTitle = hasSneak ? ` title="Sneak Attack: ${characterRep.sneakAttack.string}"` : '';
-  const canTwf = hasTwfCombinations();
-  const twfChecked = isTwfEnabled();
-  const twfTitle = characterRep?.twf?.hasTWF
-    ? 'Two-Weapon Fighting feat'
-    : 'Two-Weapon Fighting without feat (-4/-8 light off-hand, -6/-10 one-handed off-hand)';
   return `
     <label class="full-attack-toggle">
       <input type="checkbox" id="fullAttackToggle" onchange="onFullAttackToggle(this)" ${showFullAttack ? 'checked' : ''}>
       show full
     </label>
     ${showFullAttack ? '<button type="button" class="roll-all-attacks-btn" onclick="rollAllFullAttacks()" title="Roll all remaining attacks in this Full Attack sequence">🎲 Roll All</button>' : ''}
-    ${canTwf ? `
-      <label class="full-attack-toggle" title="${twfTitle}">
-        <input type="checkbox" id="twfToggle" onchange="onTwfToggle(this)" ${twfChecked ? 'checked' : ''}>
-        two-weapon fighting
-      </label>
-    ` : ''}
     ${hasSneak ? `
       <label class="full-attack-toggle"${sneakTitle}>
         <input type="checkbox" id="sneakAttackToggle" onchange="onSneakAttackToggle(this)" ${showSneakAttack ? 'checked' : ''}>
@@ -608,6 +597,25 @@ function updateWeaponStatsDisplay() {
   const mainDmgValue = (showSneakAttack && mainWeapon.sneakDmgValue) ? mainWeapon.sneakDmgValue : mainWeapon.dmgValue;
   const mainDmgTooltip = (showSneakAttack && mainWeapon.sneakDamageString) ? mainWeapon.sneakDamageString : mainWeapon.damageBonus.string;
   const mainDmgRolz = (showSneakAttack && mainWeapon.sneakRolzDmgRollMessage) ? mainWeapon.sneakRolzDmgRollMessage : mainWeapon.rolzDmgRollMessage;
+
+  const twfToggleRow = document.getElementById('twfToggleRow');
+  if (twfToggleRow) {
+    if (hasTwfCombinations()) {
+      const twfTitle = characterRep?.twf?.hasTWF
+        ? 'Two-Weapon Fighting feat'
+        : 'Two-Weapon Fighting without feat (-4/-8 light off-hand, -6/-10 one-handed off-hand)';
+      twfToggleRow.style.display = '';
+      twfToggleRow.innerHTML = `
+        <label class="full-attack-toggle" title="${twfTitle}">
+          <input type="checkbox" id="twfToggle" onchange="onTwfToggle(this)" ${twfEnabled ? 'checked' : ''}>
+          use second
+        </label>
+      `;
+    } else {
+      twfToggleRow.style.display = 'none';
+      twfToggleRow.innerHTML = '';
+    }
+  }
 
   // 1. Show/hide off-hand row based on TWF and full attack settings
   if (offHandRow) {

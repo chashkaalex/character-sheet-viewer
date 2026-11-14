@@ -826,6 +826,20 @@
         margin-bottom: 15px;
     }
 
+    .stat-group-header .passed-button {
+        color: var(--primary-color);
+    }
+
+    .stat-group-header .passed-button:hover {
+        color: white;
+    }
+
+    .twf-toggle-row {
+        display: flex;
+        align-items: center;
+        margin: 4px 0 6px 0;
+    }
+
     .stat-group-header h3 {
         margin: 0;
         color: var(--primary-color);
