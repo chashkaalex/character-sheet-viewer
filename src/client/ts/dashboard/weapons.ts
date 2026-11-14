@@ -270,16 +270,15 @@ function updateWeaponStatsDisplay() {
       const offDmgTooltip = (showSneakAttack && offWeapon.sneakDamageString) ? offWeapon.sneakDamageString : offWeapon.damageBonus.string;
       const offDmgRolz = (showSneakAttack && offWeapon.sneakRolzDmgRollMessage) ? offWeapon.sneakRolzDmgRollMessage : offWeapon.rolzDmgRollMessage;
 
-      const combo = characterRep.twf.combinations.find(
-        c => c.mainWeaponIndex === mainIdx && c.offWeaponIndex === offHandIdx
-      );
+      const mainFullAttacks = mainWeapon.fullAttack?.twfMain?.[offHandIdx]?.attacks;
+      const offFullAttacks = offWeapon.fullAttack?.twfOff?.[mainIdx]?.attacks;
 
-      if (combo && combo.fullAttack) {
-        const mainAttacksHtml = combo.fullAttack.mainAttacks.map((atk, i) =>
+      if (mainFullAttacks && mainFullAttacks.length > 0 && offFullAttacks && offFullAttacks.length > 0) {
+        const mainAttacksHtml = mainFullAttacks.map((atk, i) =>
           `<span id="twfMainAtk${i}" class="multi-atk-span" title="Click to roll">${atk.atkValue}</span>`
         ).join(' / ');
 
-        const offAttacksHtml = combo.fullAttack.offAttacks.map((atk, i) =>
+        const offAttacksHtml = offFullAttacks.map((atk, i) =>
           `<span id="twfOffAtk${i}" class="multi-atk-span" title="Click to roll">${atk.atkValue}</span>`
         ).join(' / ');
 
@@ -304,7 +303,7 @@ function updateWeaponStatsDisplay() {
           ${renderWeaponTogglesHtml()}
         `;
 
-        combo.fullAttack.mainAttacks.forEach((atk, i) => {
+        mainFullAttacks.forEach((atk, i) => {
           const el = document.getElementById(`twfMainAtk${i}`);
           if (el) {
             el.dataset.attackMode = 'full-round';
@@ -313,9 +312,9 @@ function updateWeaponStatsDisplay() {
               el.classList.add('attack-rolled');
             }
           }
-          addTooltip(el, atk.atkString, atk.rolzAtkRollMessage);
+          addTooltip(el, atk.tooltip || atk.atkString, atk.rolzAtkRollMessage);
         });
-        combo.fullAttack.offAttacks.forEach((atk, i) => {
+        offFullAttacks.forEach((atk, i) => {
           const el = document.getElementById(`twfOffAtk${i}`);
           if (el) {
             el.dataset.attackMode = 'full-round';
@@ -324,7 +323,7 @@ function updateWeaponStatsDisplay() {
               el.classList.add('attack-rolled');
             }
           }
-          addTooltip(el, atk.atkString, atk.rolzAtkRollMessage);
+          addTooltip(el, atk.tooltip || atk.atkString, atk.rolzAtkRollMessage);
         });
         addTooltip(document.getElementById('twfFullMainDmg'), mainDmgTooltip, mainDmgRolz);
         addTooltip(document.getElementById('twfFullOffDmg'), offDmgTooltip, offDmgRolz);
@@ -338,8 +337,9 @@ function updateWeaponStatsDisplay() {
       }
     }
 
-    if (mainWeapon.fullAttack && mainWeapon.fullAttack.attacks && mainWeapon.fullAttack.attacks.length > 0) {
-      const attacksHtml = mainWeapon.fullAttack.attacks.map((atk, i) =>
+    const normalAttacks = mainWeapon.fullAttack?.normal?.attacks;
+    if (normalAttacks && normalAttacks.length > 0) {
+      const attacksHtml = normalAttacks.map((atk, i) =>
         `<span id="weaponFullAtk${i}" class="multi-atk-span" title="Click to roll">${atk.atkValue}</span>`
       ).join(' / ');
 
@@ -360,7 +360,7 @@ function updateWeaponStatsDisplay() {
         ${renderWeaponTogglesHtml()}
       `;
 
-      mainWeapon.fullAttack.attacks.forEach((atk, i) => {
+      normalAttacks.forEach((atk, i) => {
         const el = document.getElementById(`weaponFullAtk${i}`);
         if (el) {
           el.dataset.attackMode = 'full-round';
@@ -369,7 +369,7 @@ function updateWeaponStatsDisplay() {
             el.classList.add('attack-rolled');
           }
         }
-        addTooltip(el, atk.atkString, atk.rolzAtkRollMessage);
+        addTooltip(el, atk.tooltip || atk.atkString, atk.rolzAtkRollMessage);
       });
       addTooltip(document.getElementById('weaponDmgValue'), mainDmgTooltip, mainDmgRolz);
       if (mainWeapon.additionalDamageWarning) {
