@@ -133,7 +133,7 @@ export const FeatEffects: Record<string, EffectData[]> = {
       status: 'Combat Reflexes',
       property: 'attacksOfOpportunity',
       modifierType: 'Generic',
-      valueResolver: (character: ICharacter) => character.abilities.Dex!.modifier
+      valueResolver: (character: ICharacter) => Math.max(0, character.abilities.Dex!.modifier)
     }
   ],
   'Deflective Armor': [

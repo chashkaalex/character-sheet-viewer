@@ -18,7 +18,7 @@ export function updateAttacksOfOpportunityDisplay() {
   if (!el || !characterRep?.attacksOfOpportunity) return;
 
   const aooProp = characterRep.attacksOfOpportunity;
-  const maxAoo = Math.max(0, Number(aooProp.bonus ?? 1));
+  const maxAoo = Math.max(0, Number(aooProp.currentScore ?? aooProp.bonus ?? 1));
   const docId = characterRep.docId;
   const inCombat = Boolean(docId && getRoundState(docId).inCombat);
   const remaining = docId ? getRemainingAoo(docId, maxAoo) : maxAoo;
@@ -58,7 +58,7 @@ export function updateAttacksOfOpportunityDisplay() {
 
 export function onAdjustAoo(delta: number) {
   if (!characterRep?.docId) return;
-  const maxAoo = Math.max(0, Number(characterRep.attacksOfOpportunity?.bonus ?? 1));
+  const maxAoo = Math.max(0, Number(characterRep.attacksOfOpportunity?.currentScore ?? characterRep.attacksOfOpportunity?.bonus ?? 1));
   adjustAooUsed(characterRep.docId, delta, maxAoo);
   updateAttacksOfOpportunityDisplay();
 }

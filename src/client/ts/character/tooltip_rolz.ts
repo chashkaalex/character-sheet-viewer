@@ -109,7 +109,7 @@ export function showTooltip(element) {
         e.stopPropagation();
 
         if (element.id === 'attacksOfOpportunity' && characterRep?.docId) {
-          const maxAoo = Math.max(0, Number(characterRep.attacksOfOpportunity?.bonus ?? 1));
+          const maxAoo = Math.max(0, Number(characterRep.attacksOfOpportunity?.currentScore ?? characterRep.attacksOfOpportunity?.bonus ?? 1));
           if (!canUseAooWithPrompt(characterRep.docId, maxAoo)) {
             return;
           }
