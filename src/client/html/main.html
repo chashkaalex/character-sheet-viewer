@@ -92,7 +92,11 @@
 
           <div class="stats-container">
             <div class="stat-group">
-              <h3>Combat Properties</h3>
+              <div class="stat-group-header">
+                <h3>Combat Properties</h3>
+                <button type="button" id="combatToggleButton" class="passed-button" onclick="toggleCombatMode()">Start Combat</button>
+              </div>
+              <div id="roundActionsBar" class="round-actions-bar" style="display: none;"></div>
               <div class="saves-grid">
                 <div class="save-item">
                   <label>Armor Class:</label>
@@ -184,7 +188,6 @@
               </select>
               <button id="partyButton" class="passed-button" style="display: none;"
                 onclick="showPartyModal()">Party</button>
-              <div id="roundActionsBar" class="round-actions-bar"></div>
             </div>
           </div>
 

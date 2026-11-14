@@ -1032,6 +1032,16 @@ export function endCombatMode() {
   endCombat(characterRep.docId);
 }
 
+export function toggleCombatMode() {
+  if (!characterRep?.docId) return;
+  const state = getRoundState(characterRep.docId);
+  if (state.inCombat) {
+    endCombat(characterRep.docId);
+  } else {
+    startCombatMode();
+  }
+}
+
 export function onCurrentInitClick() {
   if (!characterRep?.docId) return;
   const state = getRoundState(characterRep.docId);

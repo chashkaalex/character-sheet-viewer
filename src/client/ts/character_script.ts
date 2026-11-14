@@ -31,11 +31,11 @@ export function checkAppVersion(serverVersion?: string) {
 
 export function reloadAppForUpdate() {
   try {
-    const scriptUrl = (window as any).SCRIPT_URL;
-    const charId = (window as any).CHARACTER_ID || (characterRep && characterRep.docId);
+    const scriptUrl = typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (window as any).SCRIPT_URL;
+    const charId = (typeof CHARACTER_ID !== 'undefined' ? CHARACTER_ID : (window as any).CHARACTER_ID) || (characterRep && characterRep.docId);
     if (scriptUrl && !scriptUrl.includes('scriptUrl')) {
       const targetUrl = charId ? `${scriptUrl}?id=${encodeURIComponent(charId)}` : scriptUrl;
-      window.top!.location.href = targetUrl;
+      window.open(targetUrl, '_top');
       return;
     }
   } catch (_) {

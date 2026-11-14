@@ -351,18 +351,25 @@ export function renderRoundActionsUI(docId: string): void {
     }
   }
 
+  const combatBtn = document.getElementById('combatToggleButton');
+  if (combatBtn) {
+    combatBtn.textContent = state.inCombat ? 'End Combat' : 'Start Combat';
+    combatBtn.classList.toggle('in-combat', state.inCombat);
+    combatBtn.title = state.inCombat
+      ? 'Exit Combat and clear round restrictions'
+      : 'Enter Combat and enable round action tracking';
+  }
+
   const bar = document.getElementById('roundActionsBar');
   if (!bar) return;
 
   if (!state.inCombat) {
-    bar.innerHTML = `
-      <div class="round-actions-inactive">
-        <span class="combat-badge out-of-combat">Out of Combat</span>
-        <button type="button" class="round-btn-small" onclick="startCombatMode()">Enter Combat</button>
-      </div>
-    `;
+    bar.style.display = 'none';
+    bar.innerHTML = '';
     return;
   }
+
+  bar.style.display = 'flex';
 
   const slotBtn = (
     label: string,
@@ -377,7 +384,6 @@ export function renderRoundActionsUI(docId: string): void {
 
   bar.innerHTML = `
     <div class="round-actions-active" title="${historyTitle}">
-      <span class="combat-badge in-combat">In Combat${state.currentInitiative !== null ? ` (Init ${state.currentInitiative})` : ''}</span>
       <div class="round-slots-group">
         ${slotBtn('Standard', 'standard', state.standardUsed)}
         ${slotBtn('Move', 'move', state.moveUsed)}
@@ -387,7 +393,6 @@ export function renderRoundActionsUI(docId: string): void {
       <div class="round-controls-group">
         <button type="button" class="round-btn-small ${state.nextRoundSwiftUsed ? 'spent' : ''}" onclick="triggerOffTurnImmediate()" title="Mark next round's Swift action as spent by an off-turn Immediate action">Immediate (Next)</button>
         <button type="button" class="round-btn-small" onclick="resetRoundActions()" title="Reset this round's action slots">Reset Turn</button>
-        <button type="button" class="round-btn-small end-combat" onclick="endCombatMode()" title="Exit Combat and clear round restrictions">End Combat</button>
       </div>
     </div>
   `;
@@ -400,4 +405,3 @@ export function renderRoundActionsUI(docId: string): void {
     }
   });
 }
-

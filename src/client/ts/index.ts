@@ -60,6 +60,7 @@ const globalRegistry: Record<string, any> = {
     triggerOffTurnImmediate: Dashboard.triggerOffTurnImmediateHandler,
     startCombatMode: Dashboard.startCombatMode,
     endCombatMode: Dashboard.endCombatMode,
+    toggleCombatMode: Dashboard.toggleCombatMode,
     onCurrentInitClick: Dashboard.onCurrentInitClick,
     rollAllFullAttacks: Dashboard.rollAllFullAttacks,
 

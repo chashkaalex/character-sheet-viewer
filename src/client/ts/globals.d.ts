@@ -36,6 +36,7 @@ interface Window {
   triggerOffTurnImmediate: () => void;
   startCombatMode: () => void;
   endCombatMode: () => void;
+  toggleCombatMode: () => void;
   onCurrentInitClick: () => void;
   rollAllFullAttacks: () => void;
   PrepareSpellsUI: () => void;
