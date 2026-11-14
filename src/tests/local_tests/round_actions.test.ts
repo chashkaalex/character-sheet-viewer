@@ -1,7 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {
+  adjustAooUsed,
   advanceRound,
+  canUseAooWithPrompt,
+  consumeAoo,
+  getRemainingAoo,
   consumeActionCost,
   endCombat,
   enterCombat,
@@ -146,6 +150,35 @@ describe('Round Action Economy & Soft Enforcement', () => {
     expect(rep.actionsMetadata?.['Total Defense']?.actionType).toBe('standard');
     expect(rep.actionsMetadata?.['Charge']?.actionType).toBe('full-round');
     expect(rep.actionsMetadata?.['Fighting Defensively']?.actionType).toBe('free');
+    expect(rep.actionsMetadata?.['Fighting Defensively']?.actionType).toBe('free');
     expect(rep.actionsMetadata?.['Delay']?.actionType).toBe('none');
+  });
+
+  it('tracks Attacks of Opportunity per round, resets on advanceRound, and prompts at 0', () => {
+    expect(getRemainingAoo(docId, 5)).toBe(5);
+    enterCombat(docId, 16);
+    expect(getRemainingAoo(docId, 5)).toBe(5);
+
+    consumeAoo(docId, 'Attack of Opportunity');
+    expect(getRemainingAoo(docId, 5)).toBe(4);
+
+    // Manual adjustment clamps to [0, max]
+    adjustAooUsed(docId, 10, 5);
+    expect(getRemainingAoo(docId, 5)).toBe(0);
+
+    const confirmSpy = jest.fn().mockReturnValue(false);
+    (global as any).window = { confirm: confirmSpy };
+    try {
+      expect(canUseAooWithPrompt(docId, 5)).toBe(false);
+      expect(confirmSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      delete (global as any).window;
+    }
+
+    adjustAooUsed(docId, -2, 5);
+    expect(getRemainingAoo(docId, 5)).toBe(2);
+
+    advanceRound(docId, 1);
+    expect(getRemainingAoo(docId, 5)).toBe(5);
   });
 });

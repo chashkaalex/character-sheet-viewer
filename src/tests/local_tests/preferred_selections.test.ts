@@ -53,6 +53,8 @@ describe('Preferred Weapons ([*]) and Pinned Special Attacks', () => {
     const dagger = rep.weapons.find((w: any) => w.name === 'Dagger');
 
     expect(longsword).toBeDefined();
+    expect(longsword).toBeDefined();
+    expect(longsword.rangeType).toBe('Melee');
     expect(longsword.isPreferred).toBe(true);
     expect(longsword.rolzAtkRollMessage).not.toContain('[*]');
     expect(dagger).toBeDefined();

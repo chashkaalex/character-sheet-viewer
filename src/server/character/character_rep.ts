@@ -235,6 +235,7 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
 
       return {
         name: weapon.name,
+        rangeType: weapon.rangeType,
         isPreferred: Boolean(weapon.isPreferred),
         attackBonus: weapon.attackBonus ? weapon.attackBonus.state : null,
         damageBonus: weapon.damageBonus ? weapon.damageBonus.state : null,

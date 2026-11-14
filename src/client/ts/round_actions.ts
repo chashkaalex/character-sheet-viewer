@@ -26,6 +26,7 @@ export interface RoundActionState {
   swiftUsed: boolean;
   nextRoundSwiftUsed: boolean;
   fiveFootStepUsed: boolean;
+  aooUsed: number;
   movedThisRound: boolean;
   fullAttackInProgress: boolean;
   rolledAttackIds: string[];
@@ -56,6 +57,7 @@ export function createDefaultRoundState(inCombat = false, currentInitiative: num
     swiftUsed: false,
     nextRoundSwiftUsed: false,
     fiveFootStepUsed: false,
+    aooUsed: 0,
     movedThisRound: false,
     fullAttackInProgress: false,
     rolledAttackIds: [],
@@ -117,6 +119,7 @@ function clearTurnSlots(state: RoundActionState, roundsElapsed = 1): RoundAction
     swiftUsed: carrySwift,
     nextRoundSwiftUsed: false,
     fiveFootStepUsed: false,
+    aooUsed: 0,
     movedThisRound: false,
     fullAttackInProgress: false,
     rolledAttackIds: [],
@@ -276,6 +279,55 @@ export function consumeActionCost(
     next.history.push({ label, cost });
   }
 
+  saveRoundState(docId, next);
+  renderRoundActionsUI(docId);
+  return next;
+}
+
+export function getRemainingAoo(docId: string, maxAoo: number): number {
+  const safeMax = Math.max(0, maxAoo);
+  const state = getRoundState(docId);
+  if (!state.inCombat) return safeMax;
+  return Math.max(0, safeMax - (state.aooUsed || 0));
+}
+
+export function canUseAooWithPrompt(docId: string, maxAoo: number): boolean {
+  const state = getRoundState(docId);
+  if (!state.inCombat) return true;
+  const remaining = getRemainingAoo(docId, maxAoo);
+  if (remaining > 0) return true;
+
+  const msg = `No Attacks of Opportunity remaining this round (0/${maxAoo}). Roll anyway?`;
+  if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+    return window.confirm(msg);
+  }
+  return true;
+}
+
+export function consumeAoo(docId: string, label = 'Attack of Opportunity'): RoundActionState {
+  const state = getRoundState(docId);
+  if (!state.inCombat) return state;
+
+  const next: RoundActionState = {
+    ...state,
+    aooUsed: (state.aooUsed || 0) + 1,
+    history: [...state.history, { label, cost: 'none' }]
+  };
+  saveRoundState(docId, next);
+  renderRoundActionsUI(docId);
+  return next;
+}
+
+export function adjustAooUsed(docId: string, delta: number, maxAoo: number): RoundActionState {
+  const state = getRoundState(docId);
+  if (!state.inCombat) return state;
+
+  const safeMax = Math.max(0, maxAoo);
+  const nextUsed = Math.min(safeMax, Math.max(0, (state.aooUsed || 0) + delta));
+  const next: RoundActionState = {
+    ...state,
+    aooUsed: nextUsed
+  };
   saveRoundState(docId, next);
   renderRoundActionsUI(docId);
   return next;
