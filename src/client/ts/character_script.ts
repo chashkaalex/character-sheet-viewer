@@ -29,20 +29,6 @@ export function checkAppVersion(serverVersion?: string) {
   }
 }
 
-export function reloadAppForUpdate() {
-  try {
-    const scriptUrl = typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (window as any).SCRIPT_URL;
-    const charId = (typeof CHARACTER_ID !== 'undefined' ? CHARACTER_ID : (window as any).CHARACTER_ID) || (characterRep && characterRep.docId);
-    if (scriptUrl && !scriptUrl.includes('scriptUrl')) {
-      const targetUrl = charId ? `${scriptUrl}?id=${encodeURIComponent(charId)}` : scriptUrl;
-      window.open(targetUrl, '_top');
-      return;
-    }
-  } catch (_) {
-    // Fallback to standard reload
-  }
-  window.location.reload();
-}
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
