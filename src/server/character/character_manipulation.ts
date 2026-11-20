@@ -2,6 +2,7 @@ import { Character, CharacterError } from './character';
 import { SpellSlotData } from './common_types';
 import { CharacterRep, getCharacterRep } from './character_rep';
 import { getPinnedSpecialAttack, getSkillFilterPreference } from './character_preferences';
+import { getStatusesRemovedBy } from './state/conditions';
 import { adapter } from './adapter_selector';
 
 declare let require: any;
@@ -93,6 +94,10 @@ export function UpdateHp(docId: string, amount: number, actionType: 'inflict' | 
  * Adds a status to the character (internal, does not produce a character representation)
  */
 function _addStatusToCharacter(docId: string, statusName: string, duration: number, elapsed: number = 1): void {
+  // Remove any conflicting/cured statuses (e.g. Remove Fear removes Shaken/Frightened/Panicked)
+  getStatusesRemovedBy(statusName).forEach(targetStatus => {
+    _removeStatusFromCharacter(docId, targetStatus, true);
+  });
   // Refresh status: remove any existing instance of this status (or its base name) first
   _removeStatusFromCharacter(docId, statusName, true);
   const newStatusLine = `${statusName}: ${elapsed} rounds/${duration} rounds`;

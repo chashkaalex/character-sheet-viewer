@@ -11,12 +11,12 @@ import * as path from 'path';
 };
 (global as any).document = (global as any).window.document;
 
-import { OnCastSpell, OnRoundsElapsed, AddStatusToCharacter } from '../../server/character/character_manipulation';
+import { OnCastSpell, OnRoundsElapsed, AddStatusToCharacter, GetCharacterRepByDocId } from '../../server/character/character_manipulation';
 import { adapter } from '../../server/character/adapter_selector';
 import { CharacterError } from '../../server/character/character';
 import { CharacterRep } from '../../server/character/character_rep';
 import { renderSpellSlots } from '../../client/ts/spells_script';
-import { ExtractAndValidateSpell } from '../../server/character/spells';
+import { ExtractAndValidateSpell, SpellsData } from '../../server/character/spells';
 
 describe('Spell Casting - Prepared and Spontaneous Integration Tests', () => {
     const TEMP_THROR_FILE_PATH = path.join(__dirname, 'test_character_sheets', 'temp', 'temp_thror_spell_casting.txt');
@@ -277,6 +277,43 @@ describe('Spell Casting - Prepared and Spontaneous Integration Tests', () => {
         });
     });
 
+    it('should apply Owl\'s Wisdom (+4 Enhancement to Wis, 1 min/level duration)', () => {
+        const before = GetCharacterRepByDocId(TEMP_BESS_FILE_PATH) as CharacterRep;
+        const initialWis = before.abilities.Wis.currentScore;
+
+        const result = AddStatusToCharacter(TEMP_BESS_FILE_PATH, 'Owl\'s Wisdom', 10);
+        expect(result instanceof CharacterError).toBe(false);
+        const after = result as CharacterRep;
+
+        const owlsStatus = after.statuses.find(s => s.name === 'Owl\'s Wisdom');
+        expect(owlsStatus).toBeDefined();
+        expect(owlsStatus!.duration).toBe(10);
+        expect(after.abilities.Wis.currentScore).toBe(initialWis + 4);
+        expect(SpellsData['Owl\'s Wisdom'].calculateDuration({ level: { currentScore: 5 } } as any)).toBe(50);
+    });
+
+    it('should define Remove Fear (10 min fixed duration, +4 morale vs fear description) and Spiritual Weapon (1 round/level)', () => {
+        expect(SpellsData['Remove Fear']).toBeDefined();
+        expect(SpellsData['Remove Fear'].calculateDuration({ level: { currentScore: 7 } } as any)).toBe(100);
+
+        const rfResult = AddStatusToCharacter(TEMP_THROR_FILE_PATH, 'Remove Fear', 100);
+        expect(rfResult instanceof CharacterError).toBe(false);
+        const rfRep = rfResult as CharacterRep;
+        expect(rfRep.statuses.some(s => s.name === 'Remove Fear')).toBe(true);
+
+        expect(SpellsData['Spiritual Weapon']).toBeDefined();
+        expect(SpellsData['Spiritual Weapon'].calculateDuration({ level: { currentScore: 7 } } as any)).toBe(7);
+
+        const swResult = OnCastSpell(TEMP_THROR_FILE_PATH, {
+            casterClassName: 'Cleric',
+            spellLevel: '2',
+            spellName: 'Spiritual Weapon',
+            slotIndex: 0,
+            isUsed: false,
+            isEmpty: false
+        });
+        expect(swResult instanceof CharacterError).toBe(false);
+    });
     describe('Spontaneous Spells (Bard - Bess)', () => {
         it('should successfully cast Mislead and apply Invisible status with attack bonus', () => {
             const slotData = {

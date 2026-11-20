@@ -217,6 +217,16 @@ const SpellsData: Record<string, SpellData> = {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
   },
+  'Owl\'s Wisdom': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    effects: [
+      { status: 'Owl\'s Wisdom', property: 'Wis', modifierType: 'Enhancement', value: 4 }
+    ],
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
+    }
+  },
   'Mage Armor': {
     range: 'Touch',
     target: SpellTarget.OneCreature,
@@ -855,6 +865,26 @@ const SpellsData: Record<string, SpellData> = {
     target: SpellTarget.Self,
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 60 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Remove Fear': {
+    range: 'Close',
+    target: SpellTarget.MultipleCreatures,
+    effects: [
+      {
+        status: 'Remove Fear',
+        description: '+4 morale bonus on saving throws against fear effects; suppresses active fear effects for the duration.'
+      }
+    ],
+    calculateDuration: function (_spellCasterClassData) {
+      return 10 * ROUNDS_PER_MINUTE;
+    }
+  },
+  'Spiritual Weapon': {
+    range: 'Medium',
+    target: SpellTarget.Area,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * ROUNDS;
     }
   },
   'Greater Invisibility': {

@@ -4,6 +4,7 @@ import { AbilityNames } from './properties/abilities/ability_types';
 import type { EffectData } from './state/effects';
 import type { Status } from './state/state';
 import type { ICharacter } from './icharacter';
+import { registerConditions } from './state/conditions';
 
 export type DynamicEffectGenerator = (parsedValue: number, statusName: string) => EffectData[];
 
@@ -55,44 +56,8 @@ export function initializeGeneralEffects(): void {
 
   StatusesEffects['Keeping Grudge'] = keepingGrudgeEffects;
 
-  // Shaken status effects
-  const shakenEffects: EffectData[] = [
-    {
-      status: 'Shaken',
-      property: 'bab',
-      modifierType: 'Generic',
-      value: -2
-    }
-  ];
-
-  SaveNames.forEach(saveName => {
-    shakenEffects.push({
-      status: 'Shaken',
-      property: saveName,
-      modifierType: 'Generic',
-      value: -2
-    });
-  });
-
-  Object.keys(SkillsAbilities).forEach(skillName => {
-    shakenEffects.push({
-      status: 'Shaken',
-      property: skillName as any,
-      modifierType: 'Generic',
-      value: -2
-    });
-  });
-
-  AbilityNames.forEach(abilityName => {
-    shakenEffects.push({
-      status: 'Shaken',
-      property: abilityName,
-      modifierType: 'Generic',
-      value: -2
-    });
-  });
-
-  StatusesEffects['Shaken'] = shakenEffects;
+  // Register standard conditions (Shaken, Frightened, Panicked)
+  registerConditions(StatusesEffects);
 
   // Invisible status effects
   StatusesEffects['Invisible'] = [
