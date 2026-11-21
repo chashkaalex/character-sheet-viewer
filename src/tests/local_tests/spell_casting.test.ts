@@ -470,6 +470,18 @@ describe('Spell Casting - Prepared and Spontaneous Integration Tests', () => {
             // The HTML should contain class "used" for the fifth slot and data-used="true"
             expect(html).toContain('class="spell-slot filled used "');
             expect(html).toContain('data-used="true"');
+
+            // When knownSpells are provided, renders Level (x/y) tabs and known spell cards
+            const knownSpells = {
+                '1': [
+                    { spellName: 'Grease', isValid: true },
+                    { spellName: 'Inspirational Boost', isValid: true }
+                ]
+            };
+            const tabbedHtml = renderSpellSlots(spellSlots, preparedSpells, 'Bard', 'Spontaneous', knownSpells);
+            expect(tabbedHtml).toContain('Level 1 (4/5)');
+            expect(tabbedHtml).toContain('data-spell="Grease"');
+            expect(tabbedHtml).toContain('data-spell="Inspirational Boost"');
         });
     });
 });

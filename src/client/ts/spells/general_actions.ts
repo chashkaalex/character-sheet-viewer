@@ -110,13 +110,8 @@ export function renderGeneralActionsUI() {
     tabsHtml += `<span class="action-tab${isActive ? ' active' : ''}" data-action-tab="${section.category}" onclick="selectActionCategoryTab('${section.category}')">${section.title}${resourceTag}</span>`;
 
     const hasUses = !catResource || catResource.remaining > 0;
-    const resourceBannerHtml = catResource
-      ? `<div class="action-category-resource" style="margin-bottom: 10px; font-weight: bold; color: var(--primary-color);">${catResource.label || 'Uses'}: <span style="color: ${hasUses ? 'var(--accent-color)' : '#dc3545'};">${catResource.remaining} / ${catResource.max}</span></div>`
-      : '';
-
     panelsHtml += `
       <div class="action-tab-panel${isActive ? ' active' : ''}" data-action-category="${section.category}">
-        ${resourceBannerHtml}
         <div class="spell-slot-grid">
     `;
 

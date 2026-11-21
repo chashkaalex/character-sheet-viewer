@@ -4,6 +4,25 @@ import { SpellSlotData } from '../../../server/character/common_types';
 import { showSpellPopup, hideSpellPopup } from './spell_popup';
 import { renderGeneralActionsUI, showNumberActionPopup, showMovePopup, hideMovePopup } from './general_actions';
 
+const activeSpontaneousLevelTabs: Record<string, string> = {};
+
+export function selectSpontaneousLevelTab(className: string, level: string) {
+  activeSpontaneousLevelTabs[className] = String(level);
+  const safeClassKey = `spellClass_${String(className).replace(/\s+/g, '_')}`;
+  const section = document.getElementById(`${safeClassKey}Section`);
+  if (!section || typeof section.querySelectorAll !== 'function') return;
+
+  section.querySelectorAll('.action-tab[data-spont-level]').forEach((tab: any) => {
+    const isMatch = tab.getAttribute('data-spont-level') === String(level);
+    tab.classList?.toggle('active', isMatch);
+  });
+
+  section.querySelectorAll('.action-tab-panel[data-spont-level]').forEach((panel: any) => {
+    const isMatch = panel.getAttribute('data-spont-level') === String(level);
+    panel.classList?.toggle('active', isMatch);
+  });
+}
+
 export function renderSpellsUI() {
   const container = document.getElementById('spellsDynamicContainer');
   if (!container) return;
@@ -47,7 +66,7 @@ export function renderSpellsUI() {
                 </div>
             </div>
             <div class="spell-slots-container">
-                ${renderSpellSlots(casterClassData.spellSlots, casterClassData.preparedSpells, casterClassData.className, casterClassData.preparation)}
+                ${renderSpellSlots(casterClassData.spellSlots, casterClassData.preparedSpells, casterClassData.className, casterClassData.preparation, casterClassData.knownSpells)}
             </div>
         `;
 
@@ -55,10 +74,79 @@ export function renderSpellsUI() {
   });
 }
 
-export function renderSpellSlots(spellSlots, preparedSpells = {}, className = '', preparation = 'Prepared') {
+export function renderSpellSlots(spellSlots, preparedSpells = {}, className = '', preparation = 'Prepared', knownSpells: Record<string, any[]> = {}) {
   let html = '';
 
   const levelsToRender: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+  const resolvedKnownSpells: Record<string, any[]> = (
+    knownSpells && Object.keys(knownSpells).length > 0
+      ? knownSpells
+      : (characterRep?.spellCasting?.classSpellCastingData?.find((c: any) => c.className === className)?.knownSpells || {})
+  );
+
+  if (preparation === 'Spontaneous' && Object.keys(resolvedKnownSpells).length > 0) {
+    const activeLevels: Array<{ level: number; remaining: number; total: number; expected: number; parsedCount: number; spells: any[] }> = [];
+    for (const level of levelsToRender) {
+      const expectedSlots = spellSlots[level] || 0;
+      const levelPrepared = preparedSpells[level] || [];
+      const parsedCount = levelPrepared.length;
+      const levelKnown = resolvedKnownSpells[level] || [];
+      if (parsedCount > 0 || expectedSlots > 0 || levelKnown.length > 0) {
+        const remaining = levelPrepared.filter((s: any) => !(s && (s.used || s.isUsed))).length;
+        const total = parsedCount || expectedSlots;
+        activeLevels.push({ level, remaining, total, expected: expectedSlots, parsedCount, spells: levelKnown });
+      }
+    }
+
+    if (activeLevels.length === 0) {
+      return '<div>No spell slots available at all.</div>';
+    }
+
+    const currentTab = activeSpontaneousLevelTabs[className];
+    if (!currentTab || !activeLevels.some(l => String(l.level) === currentTab)) {
+      activeSpontaneousLevelTabs[className] = String(activeLevels[0].level);
+    }
+    const activeLevelStr = activeSpontaneousLevelTabs[className];
+
+    let tabsHtml = '<div class="action-tabs">';
+    let panelsHtml = '';
+
+    activeLevels.forEach(entry => {
+      const isActive = String(entry.level) === activeLevelStr;
+      tabsHtml += `<span class="action-tab${isActive ? ' active' : ''}" data-spont-class="${className}" data-spont-level="${entry.level}" onclick="selectSpontaneousLevelTab('${className}', '${entry.level}')">Level ${entry.level} (${entry.remaining}/${entry.total})</span>`;
+
+      let discrepancyHtml = '';
+      if ((entry.expected > 0 || entry.parsedCount > 0) && entry.parsedCount !== entry.expected) {
+        discrepancyHtml = `<div class="discrepancy-alert" style="color: darkorange; font-size: 0.9em; margin-bottom: 8px; font-weight: bold;">⚠ Discrepancy! Level ${entry.level}: ${entry.parsedCount} parsed spontaneous slots vs ${entry.expected} calculated slots!</div>`;
+      }
+
+      const noSlotsLeft = entry.remaining <= 0;
+      const sortedSpells = [...entry.spells].sort((a, b) => {
+        const nameA = typeof a === 'string' ? a : (a.spellName || '');
+        const nameB = typeof b === 'string' ? b : (b.spellName || '');
+        return nameA.localeCompare(nameB);
+      });
+
+      const cardsHtml = sortedSpells.map((sp, idx) => {
+        const spellName = typeof sp === 'string' ? sp : (sp.spellName || '');
+        const isValid = typeof sp === 'string' ? true : (sp.isValid !== false);
+        const usedClass = noSlotsLeft ? 'used' : '';
+        const invalidClass = !isValid ? 'invalid' : '';
+        return `<div class="spell-slot filled ${usedClass} ${invalidClass}" data-level="${entry.level}" data-slot="${idx}" data-spell="${spellName}" data-used="${noSlotsLeft}" data-valid="${isValid}" data-class="${className}" data-preparation="Spontaneous" title="${spellName}">${spellName}</div>`;
+      }).join('');
+
+      panelsHtml += `
+        <div class="action-tab-panel${isActive ? ' active' : ''}" data-spont-level="${entry.level}">
+          ${discrepancyHtml}
+          <div class="spell-slot-grid">${cardsHtml}</div>
+        </div>
+      `;
+    });
+
+    tabsHtml += '</div>';
+    return tabsHtml + panelsHtml;
+  }
 
   for (const level of levelsToRender) {
     const expectedSlots = spellSlots[level] || 0;
@@ -234,8 +322,8 @@ export function initializeSpellSlotHandlers() {
   // Add click handlers to all spell slots
   document.addEventListener('click', function (event) {
     if (!(event.target instanceof HTMLElement)) return;
-    const target = event.target;
-    if (target.classList.contains('spell-slot')) {
+    const target = event.target.closest('.spell-slot') as HTMLElement | null;
+    if (target) {
       event.preventDefault();
       event.stopPropagation();
 

@@ -333,7 +333,8 @@ export function createCastMenu(slotData) {
 
   let statusText = '';
   if (isUsed) {
-    statusText = '<br><strong>Status:</strong> <span style="color: var(--text-muted); text-decoration: line-through;">Used</span>';
+    const usedLabel = slotData.preparation === 'Spontaneous' ? 'No slots remaining' : 'Used';
+    statusText = `<br><strong>Status:</strong> <span style="color: var(--text-muted); text-decoration: line-through;">${usedLabel}</span>`;
   } else if (!isValid) {
     statusText = '<br><strong>Status:</strong> <span style="color: #dc3545; font-weight: bold;">Invalid</span>';
   }
@@ -345,13 +346,14 @@ export function createCastMenu(slotData) {
 
   const castButtonDisabled = (isUsed || !isValid || !targetInitiallyValid) ? 'disabled' : '';
   const castButtonClass = (isUsed || !isValid || !targetInitiallyValid) ? 'spell-button cast disabled' : 'spell-button cast';
+  const slotLineHtml = slotData.preparation === 'Spontaneous' ? '' : `<br><strong>Slot:</strong> ${slotData.slot}`;
 
   return `
         <h3>Cast Spell</h3>
         <div class="spell-info">
             <strong>Spell:</strong> ${slotData.spell}
             <br><strong>Level:</strong> ${slotData.level}${slotData.isDomain ? ' Domain' : ''}
-            <br><strong>Slot:</strong> ${slotData.slot}
+            ${slotLineHtml}
             <br><strong>Range:</strong> ${range}
             <br><strong>Target:</strong> ${target}
             ${statusText}

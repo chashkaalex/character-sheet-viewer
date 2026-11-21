@@ -42,6 +42,7 @@ interface Window {
   rollAllFullAttacks: () => void;
   PrepareSpellsUI: () => void;
   selectActionCategoryTab: (category: string) => void;
+  selectSpontaneousLevelTab: (className: string, level: string) => void;
   hideSpellPopup: () => void;
   prepareSpell: (casterClassName: string, spellLevel: string, slotIndex: number, spellName: string) => void;
   castSpell: (casterClassName: string, spellLevel: string, slotIndex: number) => void;
