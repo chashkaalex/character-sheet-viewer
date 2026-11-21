@@ -65,17 +65,13 @@ export const SpellcasterClasses = [
 export const SpecialAttackNames = [
   'Aid another',
   'Bull rush',
-  'Charge',
   'Disarm',
   'Feint',
   'Grapple',
-  'Mounted Combat',
   'Overrun',
   'Sunder',
   'Throw splash weapon',
-  'Trip',
-  'Turn (rebuke) undead',
-  'Two-weapon fighting'
+  'Trip'
 ] as const;
 
 export interface ModifierTypeInfo {

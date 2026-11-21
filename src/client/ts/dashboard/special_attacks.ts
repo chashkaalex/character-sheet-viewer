@@ -56,7 +56,7 @@ export function populateSpecialAttackDropdown() {
 
   const defaultOption = document.createElement('option');
   defaultOption.value = '';
-  defaultOption.textContent = 'Select a special attack...';
+  defaultOption.textContent = 'Select...';
   specialAttackSelect.appendChild(defaultOption);
 
   attackNames.forEach(attackName => {
@@ -116,14 +116,43 @@ export function toggleFavoriteSpecialAttack() {
   }
 }
 
+function syncSpecialAttackSelectWidth(select: HTMLSelectElement | null): void {
+  if (!select || typeof document === 'undefined' || !document.body) return;
+  const selectedOption = select.options?.[select.selectedIndex];
+  const label = selectedOption?.textContent || '';
+  if (!label) {
+    select.style.width = '';
+    return;
+  }
+
+  const probe = document.createElement('span');
+  probe.style.visibility = 'hidden';
+  probe.style.position = 'absolute';
+  probe.style.whiteSpace = 'pre';
+  if (typeof getComputedStyle === 'function') {
+    const cs = getComputedStyle(select);
+    probe.style.font = cs.font || `${cs.fontSize} ${cs.fontFamily}`;
+  }
+  probe.textContent = label;
+  document.body.appendChild(probe);
+  const textWidth = probe.getBoundingClientRect ? probe.getBoundingClientRect().width : probe.offsetWidth;
+  document.body.removeChild(probe);
+
+  if (textWidth > 0) {
+    select.style.width = `${Math.ceil(textWidth + 40)}px`;
+  }
+}
+
 /**
  * Handles special attack selection change and updates the displayed bonus.
  */
 export function onSpecialAttackChange() {
-  const specialAttackSelect = document.getElementById('specialAttackSelect');
-  const selectedAttack = (specialAttackSelect as HTMLSelectElement).value;
+  const specialAttackSelect = document.getElementById('specialAttackSelect') as HTMLSelectElement | null;
+  if (!specialAttackSelect) return;
+  const selectedAttack = specialAttackSelect.value;
   activeSpecialAttackName = selectedAttack || null;
   updateSpecialAttackPinButton(selectedAttack);
+  syncSpecialAttackSelectWidth(specialAttackSelect);
 
   console.log('Special attack changed to:', selectedAttack);
 

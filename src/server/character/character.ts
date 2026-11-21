@@ -273,7 +273,7 @@ export class Character implements ICharacter, IPropertyRegistry {
 
             // Parsing Special Attacks
             for (const attackName of SpecialAttackNames) {
-                if (attackName === 'Trip') {
+                if (attackName === 'Trip' || attackName === 'Bull rush' || attackName === 'Overrun') {
                     this.specialAttacks[attackName] = new SpecialAttackBonus(this.abilities.Str!, this.size, attackName);
                 } else if (attackName === 'Grapple') {
                     this.specialAttacks[attackName] = new SpecialAttackBonus(this.abilities.Str!, this.size, attackName, this.bab);

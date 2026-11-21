@@ -1526,7 +1526,9 @@
     }
 
     .special-attack-row select {
-        min-width: 150px;
+        min-width: 0;
+        width: auto;
+        max-width: 100%;
         padding: 8px 12px;
         border: 1px solid var(--border-color);
         border-radius: 4px;
@@ -1542,7 +1544,8 @@
         background-color: var(--background-primary);
         border: 1px solid var(--border-color);
         border-radius: 4px;
-        min-width: 120px;
+        min-width: 0;
+        gap: 8px;
     }
 
     .special-attack-bonus label {
@@ -1554,7 +1557,7 @@
         font-size: 1.1em;
         font-weight: bold;
         color: var(--accent-color);
-        min-width: 40px;
+        min-width: 0;
         text-align: center;
     }
 
