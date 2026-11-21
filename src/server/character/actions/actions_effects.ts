@@ -107,15 +107,18 @@ export const ActionsData: Record<string, ActionData> = {
     statusName: 'Expeditious Retreat',
     category: 'item',
     actionType: 'standard',
-    calculateDuration: (_character) => 10
+    calculateDuration: (_character) => 10,
+    effects: [
+      { status: 'Expeditious Retreat', property: 'speed', modifierType: 'Enhancement', value: 30 }
+    ]
   },
   'Absolute Steel Stance': {
     statusName: 'Absolute Steel Stance',
     category: 'stance',
     actionType: 'swift',
-    calculateDuration: (_character) => 10,
+    calculateDuration: (_character) => -1,
     effects: [
-      { status: 'Absolute Steel Stance', property: 'speed', modifierType: 'Competence', value: 10 },
+      { status: 'Absolute Steel Stance', property: 'speed', modifierType: 'Enhancement', value: 10 },
       {
         status: 'Absolute Steel Stance',
         property: 'ac',
@@ -205,7 +208,8 @@ export const ActionsData: Record<string, ActionData> = {
     statusName: 'Protective Ward',
     category: 'class',
     actionType: 'standard',
-    calculateDuration: (_character) => 600,
+    target: 'OneCreature',
+    calculateDuration: (_character) => 1,
     effects: [
       {
         status: 'Protective Ward',
@@ -261,7 +265,7 @@ export const ActionsData: Record<string, ActionData> = {
   'Sacred Flames': {
     statusName: 'Sacred Flames',
     category: 'class',
-    actionType: 'swift',
+    actionType: 'standard',
     calculateDuration: (_character) => 10,
     effects: [
       {
@@ -293,8 +297,8 @@ export const ActionsData: Record<string, ActionData> = {
   'Chameleon Power (Hide +10)': {
     statusName: 'Chameleon Power',
     category: 'item',
-    actionType: 'standard',
-    calculateDuration: (_character) => -1,
+    actionType: 'free',
+    calculateDuration: (_character) => 1,
     effects: [
       { status: 'Chameleon Power', property: 'Hide', modifierType: 'Competence', value: 10 }
     ]
