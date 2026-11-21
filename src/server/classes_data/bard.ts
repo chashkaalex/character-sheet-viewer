@@ -124,7 +124,11 @@ export const Bard: ClassData = createClassData({
     getBardicSpecials(level: number) {
       return resolveBardicSpecials(level);
     },
-    ParsePreparedSpellsMethod: ParsePreparedSlotsSpontaneous,
+    ParsePreparedSpellsMethod: (casterClassName: string, preparedSpellsLines: string[]) => {
+      const parsed = ParsePreparedSlotsSpontaneous(casterClassName, preparedSpellsLines);
+      delete parsed['songs'];
+      return parsed;
+    },
     ConsumeSpellSlot: (docId: string, slotData: any, adapter: any) => {
       return adapter.DecrementSpontaneousSlots(docId, slotData.casterClassName, slotData.spellLevel);
     },
@@ -143,16 +147,17 @@ export const Bard: ClassData = createClassData({
         }
       });
 
-      // Move Bardic Music daily uses ('songs') from spell slots to actionCategoryResources
-      const songSlots = runtimeData.preparedSpells?.['songs'];
+      // Move Bardic Music daily uses ('songs') from Prepared Spells lines to actionCategoryResources
+      const preparedLines = character.sectionLines?.['Prepared Spells'] || [];
+      const parsedSlots = ParsePreparedSlotsSpontaneous('Bard', preparedLines);
+      const songSlots = parsedSlots['songs'];
       if (Array.isArray(songSlots)) {
-        const remaining = songSlots.filter((s: any) => !s.used).length;
+        const remaining = songSlots.filter((s: any) => !s.isUsed).length;
         const max = songSlots.length;
         if (!character.actionCategoryResources) {
           character.actionCategoryResources = {};
         }
         character.actionCategoryResources['songs'] = { remaining, max, label: 'Uses' };
-        delete runtimeData.preparedSpells['songs'];
       }
 
       // Add Bardic Knowledge skill

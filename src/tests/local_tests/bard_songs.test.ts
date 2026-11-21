@@ -45,6 +45,13 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
 
         const inspireGreatness = bardCasterData.bardicSpecials!.find(s => s.name === 'Inspire Greatness')!;
         expect(inspireGreatness.value!.currentScore).toBe(3); // base 2 + 1 from Song of the Heart
+
+        const rep = GetCharacterRepByDocId(TEMP_BESS_FILE_PATH) as CharacterRep;
+        expect(rep.actionCategories?.some(cat => cat.category === 'songs' && cat.title === 'Songs')).toBe(true);
+        expect(rep.categorizedActions?.songs).toContain('Inspire Courage');
+        expect(rep.actionCategoryResources?.songs).toEqual({ remaining: 11, max: 13, label: 'Uses' });
+        expect(rep.actionsMetadata?.['Inspire Courage']?.modifier?.value).toBe(3);
+        expect(rep.actionsMetadata?.['Inspire Courage']?.modifier?.string).toContain('Song of the Heart');
     });
 
     it('should apply Inspire Competence +3 status and boost skills', () => {

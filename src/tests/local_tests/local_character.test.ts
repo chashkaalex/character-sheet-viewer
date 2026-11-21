@@ -160,9 +160,8 @@ describe('Local Character Parsing', () => {
         const bardSpec = bess.spellCasting.classSpellCastingData.get('Bard');
         expect(bardSpec).toBeDefined();
         if (bardSpec) {
-            expect(bardSpec.preparedSpells['songs']).toBeDefined();
-            const songsSlots = bardSpec.preparedSpells['songs'];
-            expect(songsSlots).toHaveLength(13);
+            expect(bardSpec.preparedSpells['songs']).toBeUndefined();
+            expect(bess.actionCategoryResources['songs']).toEqual({ remaining: 11, max: 13, label: 'Uses' });
 
             // Verify that standard levels are also parsed with numeric keys
             expect(bardSpec.preparedSpells['0']).toBeDefined();
