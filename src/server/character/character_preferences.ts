@@ -1,8 +1,11 @@
 const PINNED_SPECIAL_ATTACKS_PROP = 'pinnedSpecialAttacks';
 const SKILL_FILTERS_PROP = 'skillFilters';
+const SPELL_LAYOUTS_PROP = 'spellLayouts';
 
 export type SkillFilterMode = 'all' | 'trained' | 'active';
+export type SpellLayoutMode = 'tabs' | 'list';
 const VALID_SKILL_FILTERS = new Set<SkillFilterMode>(['all', 'trained', 'active']);
+const VALID_SPELL_LAYOUTS = new Set<SpellLayoutMode>(['tabs', 'list']);
 
 function readPreferenceMap(propKey: string): Record<string, string> {
   if (typeof PropertiesService === 'undefined') {
@@ -82,4 +85,36 @@ export function SetSkillFilterPreference(
   delete map[docId];
   writePreferenceMap(SKILL_FILTERS_PROP, map);
   return { success: true, skillFilter: null };
+}
+
+/**
+ * Retrieves the preferred spell layout mode ('tabs' | 'list') for a character from GAS UserProperties.
+ */
+export function getSpellLayoutPreference(docId: string): SpellLayoutMode | null {
+  if (!docId) return null;
+  const map = readPreferenceMap(SPELL_LAYOUTS_PROP);
+  const val = map[docId] as SpellLayoutMode | undefined;
+  return val && VALID_SPELL_LAYOUTS.has(val) ? val : null;
+}
+
+/**
+ * Persists the preferred spell layout mode ('tabs' | 'list') for a character in GAS UserProperties.
+ */
+export function SetSpellLayoutPreference(
+  docId: string,
+  mode: SpellLayoutMode | string | null
+): { success: boolean; spellLayout: SpellLayoutMode | null } {
+  if (!docId || typeof PropertiesService === 'undefined') {
+    return { success: false, spellLayout: null };
+  }
+  const map = readPreferenceMap(SPELL_LAYOUTS_PROP);
+  const normalized = mode ? String(mode).trim().toLowerCase() as SpellLayoutMode : null;
+  if (normalized && VALID_SPELL_LAYOUTS.has(normalized)) {
+    map[docId] = normalized;
+    writePreferenceMap(SPELL_LAYOUTS_PROP, map);
+    return { success: true, spellLayout: normalized };
+  }
+  delete map[docId];
+  writePreferenceMap(SPELL_LAYOUTS_PROP, map);
+  return { success: true, spellLayout: null };
 }

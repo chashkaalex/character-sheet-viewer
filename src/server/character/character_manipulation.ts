@@ -1,7 +1,7 @@
 import { Character, CharacterError } from './character';
 import { SpellSlotData } from './common_types';
 import { CharacterRep, getCharacterRep } from './character_rep';
-import { getPinnedSpecialAttack, getSkillFilterPreference } from './character_preferences';
+import { getPinnedSpecialAttack, getSkillFilterPreference, getSpellLayoutPreference } from './character_preferences';
 import { getStatusesRemovedBy } from './state/conditions';
 import { adapter } from './adapter_selector';
 
@@ -57,6 +57,7 @@ export function GetCharacterRepByDocId(docId: string): CharacterRep | CharacterE
   const rep = getCharacterRep(currentCharacter);
   rep.pinnedSpecialAttack = getPinnedSpecialAttack(docId);
   rep.skillFilter = getSkillFilterPreference(docId);
+  rep.spellLayout = getSpellLayoutPreference(docId);
   return rep;
 }
 

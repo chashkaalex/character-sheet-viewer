@@ -17,6 +17,7 @@ export interface CharacterRep {
   docId: string;
   pinnedSpecialAttack?: string | null;
   skillFilter?: 'all' | 'trained' | 'active' | null;
+  spellLayout?: 'tabs' | 'list' | null;
   mutationMessage?: string;
   parseWarnings: string[];
   parseErrors: string[];

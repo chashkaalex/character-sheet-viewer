@@ -333,6 +333,21 @@
         margin-bottom: 15px;
     }
 
+    .spell-level-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .spell-level-header h4 {
+        margin: 0 !important;
+    }
+
+    .spell-level-slots.collapsed .spell-level-body {
+        display: none;
+    }
+
     .spell-level-slots h4 {
         margin: 0 0 8px 0;
         color: var(--primary-color);

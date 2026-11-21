@@ -4,7 +4,51 @@ import { SpellSlotData } from '../../../server/character/common_types';
 import { showSpellPopup, hideSpellPopup } from './spell_popup';
 import { renderGeneralActionsUI, showNumberActionPopup, showMovePopup, hideMovePopup } from './general_actions';
 
+export type SpellLayoutMode = 'tabs' | 'list';
+const VALID_SPELL_LAYOUTS = new Set<SpellLayoutMode>(['tabs', 'list']);
 const activeSpontaneousLevelTabs: Record<string, string> = {};
+
+export function resolveSpellLayoutMode(explicitMode?: SpellLayoutMode): SpellLayoutMode {
+  if (explicitMode && VALID_SPELL_LAYOUTS.has(explicitMode)) {
+    return explicitMode;
+  }
+  if (characterRep?.spellLayout && VALID_SPELL_LAYOUTS.has(characterRep.spellLayout)) {
+    return characterRep.spellLayout;
+  }
+  const docId = characterRep?.docId || '';
+  const storageKey = docId ? `spellLayout:${docId}` : 'spellLayout';
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem(storageKey) as SpellLayoutMode | null;
+      if (stored && VALID_SPELL_LAYOUTS.has(stored)) {
+        return stored;
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return 'tabs';
+}
+
+export function setSpellLayoutMode(mode: SpellLayoutMode): void {
+  if (!VALID_SPELL_LAYOUTS.has(mode)) return;
+  if (characterRep) {
+    characterRep.spellLayout = mode;
+  }
+  const docId = characterRep?.docId || '';
+  const storageKey = docId ? `spellLayout:${docId}` : 'spellLayout';
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(storageKey, mode);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  renderSpellsUI();
+  if (docId && typeof google !== 'undefined' && google.script?.run) {
+    google.script.run.SetSpellLayoutPreference(docId, mode);
+  }
+}
 
 export function selectSpontaneousLevelTab(className: string, level: string) {
   activeSpontaneousLevelTabs[className] = String(level);
@@ -29,7 +73,7 @@ export function renderSpellsUI() {
 
   const collapsedIds = new Set<string>();
   if (typeof container.querySelectorAll === 'function') {
-    container.querySelectorAll('.spellcasting-class.collapsed').forEach((el: any) => {
+    container.querySelectorAll('.spellcasting-class.collapsed, .spell-level-slots.collapsed').forEach((el: any) => {
       if (el.id) collapsedIds.add(el.id);
     });
   }
@@ -41,9 +85,9 @@ export function renderSpellsUI() {
     return;
   }
 
+  const currentLayout = resolveSpellLayoutMode();
   const spellCastingData = characterRep.spellCasting.classSpellCastingData;
 
-  // Display each spellcasting class
   spellCastingData.forEach(casterClassData => {
     const safeClassKey = `spellClass_${String(casterClassData.className).replace(/\s+/g, '_')}`;
     const sectionId = `${safeClassKey}Section`;
@@ -58,15 +102,19 @@ export function renderSpellsUI() {
     }
 
     classDiv.innerHTML = `
-            <div class="spellcasting-class-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+            <div class="spellcasting-class-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px; flex-wrap: wrap;">
                 <h3 style="margin: 0; border: none; padding: 0; font-size: 1.3em; color: var(--primary-color);">${classTitle}</h3>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div class="skills-mode-toggle" role="group" aria-label="Spell level layout">
+                        <button type="button" class="skills-mode-btn${currentLayout === 'tabs' ? ' active' : ''}" onclick="setSpellLayoutMode('tabs')" title="Display spell levels as selectable tabs">Tabs</button>
+                        <button type="button" class="skills-mode-btn${currentLayout === 'list' ? ' active' : ''}" onclick="setSpellLayoutMode('list')" title="Display spell levels as collapsible sections">Levels</button>
+                    </div>
                     <button class="replenish-button" style="margin: 0; padding: 6px 12px; font-size: 0.9em;" onclick="replenishClassSpellSlots(this, '${casterClassData.className}')">Replenish Slots</button>
                     <button class="collapse-button" id="${safeClassKey}CollapseBtn" onclick="toggleCollapse('${safeClassKey}')" title="Collapse/Expand">${isCollapsed ? '▼' : '▲'}</button>
                 </div>
             </div>
             <div class="spell-slots-container">
-                ${renderSpellSlots(casterClassData.spellSlots, casterClassData.preparedSpells, casterClassData.className, casterClassData.preparation, casterClassData.knownSpells)}
+                ${renderSpellSlots(casterClassData.spellSlots, casterClassData.preparedSpells, casterClassData.className, casterClassData.preparation, casterClassData.knownSpells, currentLayout, collapsedIds)}
             </div>
         `;
 
@@ -74,9 +122,15 @@ export function renderSpellsUI() {
   });
 }
 
-export function renderSpellSlots(spellSlots, preparedSpells = {}, className = '', preparation = 'Prepared', knownSpells: Record<string, any[]> = {}) {
-  let html = '';
-
+export function renderSpellSlots(
+  spellSlots,
+  preparedSpells = {},
+  className = '',
+  preparation = 'Prepared',
+  knownSpells: Record<string, any[]> = {},
+  layoutMode?: SpellLayoutMode,
+  collapsedIds: Set<string> = new Set()
+) {
   const levelsToRender: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
   const resolvedKnownSpells: Record<string, any[]> = (
@@ -84,169 +138,121 @@ export function renderSpellSlots(spellSlots, preparedSpells = {}, className = ''
       ? knownSpells
       : (characterRep?.spellCasting?.classSpellCastingData?.find((c: any) => c.className === className)?.knownSpells || {})
   );
+  const hasKnownCards = preparation === 'Spontaneous' && Object.keys(resolvedKnownSpells).length > 0;
+  const effectiveLayout: SpellLayoutMode = layoutMode || (hasKnownCards ? resolveSpellLayoutMode() : 'list');
 
-  if (preparation === 'Spontaneous' && Object.keys(resolvedKnownSpells).length > 0) {
-    const activeLevels: Array<{ level: number; remaining: number; total: number; expected: number; parsedCount: number; spells: any[] }> = [];
-    for (const level of levelsToRender) {
-      const expectedSlots = spellSlots[level] || 0;
-      const levelPrepared = preparedSpells[level] || [];
-      const parsedCount = levelPrepared.length;
-      const levelKnown = resolvedKnownSpells[level] || [];
-      if (parsedCount > 0 || expectedSlots > 0 || levelKnown.length > 0) {
-        const remaining = levelPrepared.filter((s: any) => !(s && (s.used || s.isUsed))).length;
-        const total = parsedCount || expectedSlots;
-        activeLevels.push({ level, remaining, total, expected: expectedSlots, parsedCount, spells: levelKnown });
-      }
-    }
-
-    if (activeLevels.length === 0) {
-      return '<div>No spell slots available at all.</div>';
-    }
-
-    const currentTab = activeSpontaneousLevelTabs[className];
-    if (!currentTab || !activeLevels.some(l => String(l.level) === currentTab)) {
-      activeSpontaneousLevelTabs[className] = String(activeLevels[0].level);
-    }
-    const activeLevelStr = activeSpontaneousLevelTabs[className];
-
-    let tabsHtml = '<div class="action-tabs">';
-    let panelsHtml = '';
-
-    activeLevels.forEach(entry => {
-      const isActive = String(entry.level) === activeLevelStr;
-      tabsHtml += `<span class="action-tab${isActive ? ' active' : ''}" data-spont-class="${className}" data-spont-level="${entry.level}" onclick="selectSpontaneousLevelTab('${className}', '${entry.level}')">Level ${entry.level} (${entry.remaining}/${entry.total})</span>`;
-
-      let discrepancyHtml = '';
-      if ((entry.expected > 0 || entry.parsedCount > 0) && entry.parsedCount !== entry.expected) {
-        discrepancyHtml = `<div class="discrepancy-alert" style="color: darkorange; font-size: 0.9em; margin-bottom: 8px; font-weight: bold;">⚠ Discrepancy! Level ${entry.level}: ${entry.parsedCount} parsed spontaneous slots vs ${entry.expected} calculated slots!</div>`;
-      }
-
-      const noSlotsLeft = entry.remaining <= 0;
-      const sortedSpells = [...entry.spells].sort((a, b) => {
-        const nameA = typeof a === 'string' ? a : (a.spellName || '');
-        const nameB = typeof b === 'string' ? b : (b.spellName || '');
-        return nameA.localeCompare(nameB);
-      });
-
-      const cardsHtml = sortedSpells.map((sp, idx) => {
-        const spellName = typeof sp === 'string' ? sp : (sp.spellName || '');
-        const isValid = typeof sp === 'string' ? true : (sp.isValid !== false);
-        const usedClass = noSlotsLeft ? 'used' : '';
-        const invalidClass = !isValid ? 'invalid' : '';
-        return `<div class="spell-slot filled ${usedClass} ${invalidClass}" data-level="${entry.level}" data-slot="${idx}" data-spell="${spellName}" data-used="${noSlotsLeft}" data-valid="${isValid}" data-class="${className}" data-preparation="Spontaneous" title="${spellName}">${spellName}</div>`;
-      }).join('');
-
-      panelsHtml += `
-        <div class="action-tab-panel${isActive ? ' active' : ''}" data-spont-level="${entry.level}">
-          ${discrepancyHtml}
-          <div class="spell-slot-grid">${cardsHtml}</div>
-        </div>
-      `;
-    });
-
-    tabsHtml += '</div>';
-    return tabsHtml + panelsHtml;
-  }
+  const renderedLevels: Array<{
+    level: number;
+    tabTitle: string;
+    listHeaderTitle: string;
+    discrepancyHtml: string;
+    gridHtml: string;
+  }> = [];
 
   for (const level of levelsToRender) {
     const expectedSlots = spellSlots[level] || 0;
     const levelPreparedSpells = preparedSpells[level] || [];
     const preparedSpellsCount = levelPreparedSpells.length;
-
-    // Check for domain spells (only for clerics and levels > 0)
     const domainKey = `${level} - domain`;
     const isNumericLevel = typeof level === 'number';
     const domainSpells = (className === 'Cleric' && isNumericLevel && level > 0) ? (preparedSpells[domainKey] || []) : [];
     const hasDomainSlot = className === 'Cleric' && isNumericLevel && level > 0;
     const expectedDomainSlots = hasDomainSlot ? 1 : 0;
     const preparedDomainSpellsCount = domainSpells.length;
-
+    const levelKnown = resolvedKnownSpells[level] || [];
     const slotsToRender = preparedSpellsCount;
+
     let showDiscrepancyAlert = false;
     let discrepancyMsg = '';
-
-    // Discrepancy logic for normal slots
     if ((expectedSlots > 0 || slotsToRender > 0) && slotsToRender !== expectedSlots) {
       showDiscrepancyAlert = true;
       const slotType = preparation === 'Spontaneous' ? 'spontaneous slots' : 'prepared spells';
       discrepancyMsg = `⚠ Discrepancy! Level ${level}: ${slotsToRender} parsed ${slotType} vs ${expectedSlots} calculated slots!`;
     }
-
-    // Domain discrepancy logic
     if (hasDomainSlot && preparedDomainSpellsCount !== expectedDomainSlots) {
       showDiscrepancyAlert = true;
       discrepancyMsg += discrepancyMsg ? '<br>' : '';
       discrepancyMsg += `⚠ Discrepancy! Level ${level} has ${preparedDomainSpellsCount} prepared domain spells, but 1 was expected!`;
     }
+    const discrepancyHtml = showDiscrepancyAlert
+      ? `<div class="discrepancy-alert" style="color: darkorange; font-size: 0.9em; margin-bottom: 5px; font-weight: bold;">${discrepancyMsg}</div>`
+      : '';
 
-    const shouldRenderLevel = slotsToRender > 0 || expectedSlots > 0 || preparedDomainSpellsCount > 0;
+    if (hasKnownCards) {
+      if (slotsToRender > 0 || expectedSlots > 0 || levelKnown.length > 0) {
+        const remaining = levelPreparedSpells.filter((s: any) => !(s && (s.used || s.isUsed))).length;
+        const total = slotsToRender || expectedSlots;
+        const noSlotsLeft = remaining <= 0;
+        const sortedSpells = [...levelKnown].sort((a, b) => {
+          const nameA = typeof a === 'string' ? a : (a.spellName || '');
+          const nameB = typeof b === 'string' ? b : (b.spellName || '');
+          return nameA.localeCompare(nameB);
+        });
+        const cardsHtml = sortedSpells.map((sp, idx) => {
+          const spellName = typeof sp === 'string' ? sp : (sp.spellName || '');
+          const isValid = typeof sp === 'string' ? true : (sp.isValid !== false);
+          const usedClass = noSlotsLeft ? 'used' : '';
+          const invalidClass = !isValid ? 'invalid' : '';
+          return `<div class="spell-slot filled ${usedClass} ${invalidClass}" data-level="${level}" data-slot="${idx}" data-spell="${spellName}" data-used="${noSlotsLeft}" data-valid="${isValid}" data-class="${className}" data-preparation="Spontaneous" title="${spellName}">${spellName}</div>`;
+        }).join('');
 
-    if (shouldRenderLevel) {
-      const levelHeader = `Level ${level} Spells (${expectedSlots} slot${expectedSlots !== 1 ? 's' : ''}${hasDomainSlot ? ' + 1 domain' : ''})`;
-
-      html += `
-                <div class="spell-level-slots">
-                    <h4>${levelHeader}</h4>`;
-
-      if (showDiscrepancyAlert) {
-        html += `
-                    <div class="discrepancy-alert" style="color: darkorange; font-size: 0.9em; margin-bottom: 5px; font-weight: bold;">
-                        ${discrepancyMsg}
-                    </div>`;
+        renderedLevels.push({
+          level,
+          tabTitle: `Level ${level} (${remaining}/${total})`,
+          listHeaderTitle: `Level ${level} Spells (${remaining}/${total})`,
+          discrepancyHtml,
+          gridHtml: `<div class="spell-slot-grid">${cardsHtml}</div>`
+        });
       }
+    } else {
+      const shouldRenderLevel = slotsToRender > 0 || expectedSlots > 0 || preparedDomainSpellsCount > 0;
+      if (shouldRenderLevel) {
+        const remainingNormal = levelPreparedSpells.filter((s: any) => !(s && (s.used || s.isUsed))).length;
+        const remainingDomain = domainSpells.filter((s: any) => !(s && (s.used || s.isUsed))).length;
+        const totalPrepared = (slotsToRender || expectedSlots) + (hasDomainSlot ? Math.max(1, preparedDomainSpellsCount) : 0);
+        const remainingTotal = remainingNormal + remainingDomain;
+        const listHeaderTitle = `Level ${level} Spells (${expectedSlots} slot${expectedSlots !== 1 ? 's' : ''}${hasDomainSlot ? ' + 1 domain' : ''})`;
+        const tabTitle = `Level ${level} (${remainingTotal}/${totalPrepared})`;
 
-      html += `
-                    <div class="spell-slot-grid">
-                        ${Array(slotsToRender).fill(0).map((_, index) => {
-        const spellData = levelPreparedSpells[index];
-        const isEmpty = !spellData || spellData.isEmpty;
-
-        // Handle both old format (string) and new format (object with spell and used properties)
-        let spellName = '';
-        let isUsed = false;
-        let isValid = true;
-
-        if (spellData) {
-          if (typeof spellData === 'string') {
-            spellName = spellData;
-          } else if (typeof spellData === 'object') {
-            spellName = spellData.spell || '';
-            isUsed = spellData.used || false;
-            if (spellData.isValid === false) {
-              isValid = false;
+        const normalSlotsHtml = Array(slotsToRender).fill(0).map((_, index) => {
+          const spellData = levelPreparedSpells[index];
+          const isEmpty = !spellData || spellData.isEmpty;
+          let spellName = '';
+          let isUsed = false;
+          let isValid = true;
+          if (spellData) {
+            if (typeof spellData === 'string') {
+              spellName = spellData;
+            } else if (typeof spellData === 'object') {
+              spellName = spellData.spell || '';
+              isUsed = spellData.used || false;
+              if (spellData.isValid === false) {
+                isValid = false;
+              }
             }
           }
-        }
-
-        let isSpontaneousEmpty = false;
-        if (preparation === 'Spontaneous' && typeof spellName === 'string') {
-          if (spellName.toLowerCase().startsWith('spontaneous')) {
-            if (!isUsed) {
+          let isSpontaneousEmpty = false;
+          if (preparation === 'Spontaneous' && typeof spellName === 'string') {
+            if (spellName.toLowerCase().startsWith('spontaneous') && !isUsed) {
               isSpontaneousEmpty = true;
             }
           }
-        }
+          const invalidClass = (!isEmpty && !isSpontaneousEmpty && !isValid) ? 'invalid' : '';
+          const slotClass = (isEmpty || isSpontaneousEmpty) ? 'empty' : 'filled';
+          const usedClass = isUsed ? 'used' : '';
+          const displayText = (isEmpty || isSpontaneousEmpty) ? '' : spellName;
+          return `<div class="spell-slot ${slotClass} ${usedClass} ${invalidClass}" data-level="${level}" data-slot="${index}" data-spell="${spellName}" data-used="${isUsed}" data-valid="${isValid}" data-class="${className}" data-preparation="${preparation}" title="${spellName || 'Empty slot'}">${displayText}</div>`;
+        }).join('');
 
-        const invalidClass = (!isEmpty && !isSpontaneousEmpty && !isValid) ? 'invalid' : '';
-        const slotClass = (isEmpty || isSpontaneousEmpty) ? 'empty' : 'filled';
-        const usedClass = isUsed ? 'used' : '';
-        const displayText = (isEmpty || isSpontaneousEmpty) ? '' : spellName;
-
-        return `<div class="spell-slot ${slotClass} ${usedClass} ${invalidClass}" data-level="${level}" data-slot="${index}" data-spell="${spellName}" data-used="${isUsed}" data-valid="${isValid}" data-class="${className}" data-preparation="${preparation}" title="${spellName || 'Empty slot'}">${displayText}</div>`;
-      }).join('')}
-                        ${hasDomainSlot ? (() => {
+        const domainSlotsHtml = hasDomainSlot ? (() => {
           let domainHtml = '';
           const domainSlotsToRender = Math.max(1, preparedDomainSpellsCount);
-
           for (let d = 0; d < domainSlotsToRender; d++) {
             const domainSpellData = domainSpells[d];
             const isEmpty = !domainSpellData || domainSpellData.isEmpty;
-
-            // Handle both old format (string) and new format (object with spell and used properties)
             let domainSpellName = '';
             let domainIsUsed = false;
             let domainIsValid = true;
-
             if (domainSpellData) {
               if (typeof domainSpellData === 'string') {
                 domainSpellName = domainSpellData;
@@ -258,26 +264,72 @@ export function renderSpellSlots(spellSlots, preparedSpells = {}, className = ''
                 }
               }
             }
-
             const domainInvalidClass = (!isEmpty && !domainIsValid) ? 'invalid' : '';
             const domainSlotClass = isEmpty ? 'empty' : 'filled';
             const domainUsedClass = domainIsUsed ? 'used' : '';
             const domainDisplayText = isEmpty ? '' : domainSpellName;
-
             domainHtml += `
-                               <div class="spell-slot-separator"></div>
-                               <div class="spell-slot domain-slot ${domainSlotClass} ${domainUsedClass} ${domainInvalidClass}" data-level="${level}" data-slot="${d}" data-spell="${domainSpellName}" data-used="${domainIsUsed}" data-valid="${domainIsValid}" data-class="${className}" data-preparation="${preparation}" title="${domainSpellName || 'Empty domain slot'}">${domainDisplayText}</div>
-                           `;
+              <div class="spell-slot-separator"></div>
+              <div class="spell-slot domain-slot ${domainSlotClass} ${domainUsedClass} ${domainInvalidClass}" data-level="${level}" data-slot="${d}" data-spell="${domainSpellName}" data-used="${domainIsUsed}" data-valid="${domainIsValid}" data-class="${className}" data-preparation="${preparation}" title="${domainSpellName || 'Empty domain slot'}">${domainDisplayText}</div>
+            `;
           }
           return domainHtml;
-        })() : ''}
-                    </div>
-                </div>
-            `;
+        })() : '';
+
+        renderedLevels.push({
+          level,
+          tabTitle,
+          listHeaderTitle,
+          discrepancyHtml,
+          gridHtml: `<div class="spell-slot-grid">${normalSlotsHtml}${domainSlotsHtml}</div>`
+        });
+      }
     }
   }
 
-  return html || '<div>No spell slots available at all.</div>';
+  if (renderedLevels.length === 0) {
+    return '<div>No spell slots available at all.</div>';
+  }
+
+  if (effectiveLayout === 'tabs') {
+    const currentTab = activeSpontaneousLevelTabs[className];
+    if (!currentTab || !renderedLevels.some(l => String(l.level) === currentTab)) {
+      activeSpontaneousLevelTabs[className] = String(renderedLevels[0].level);
+    }
+    const activeLevelStr = activeSpontaneousLevelTabs[className];
+    let tabsHtml = '<div class="action-tabs">';
+    let panelsHtml = '';
+    renderedLevels.forEach(entry => {
+      const isActive = String(entry.level) === activeLevelStr;
+      tabsHtml += `<span class="action-tab${isActive ? ' active' : ''}" data-spont-class="${className}" data-spont-level="${entry.level}" onclick="selectSpontaneousLevelTab('${className}', '${entry.level}')">${entry.tabTitle}</span>`;
+      panelsHtml += `
+        <div class="action-tab-panel${isActive ? ' active' : ''}" data-spont-level="${entry.level}">
+          ${entry.discrepancyHtml}
+          ${entry.gridHtml}
+        </div>
+      `;
+    });
+    tabsHtml += '</div>';
+    return tabsHtml + panelsHtml;
+  }
+
+  return renderedLevels.map(entry => {
+    const safeLevelKey = `spellLevel_${String(className).replace(/\s+/g, '_')}_${entry.level}`;
+    const levelSectionId = `${safeLevelKey}Section`;
+    const isLevelCollapsed = collapsedIds.has(levelSectionId);
+    return `
+      <div class="spell-level-slots${isLevelCollapsed ? ' collapsed' : ''}" id="${levelSectionId}">
+        <div class="spell-level-header">
+          <h4>${entry.listHeaderTitle}</h4>
+          <button class="collapse-button" id="${safeLevelKey}CollapseBtn" onclick="toggleCollapse('${safeLevelKey}')" title="Collapse/Expand">${isLevelCollapsed ? '▼' : '▲'}</button>
+        </div>
+        <div class="spell-level-body">
+          ${entry.discrepancyHtml}
+          ${entry.gridHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 export function PrepareSpellsUI() {

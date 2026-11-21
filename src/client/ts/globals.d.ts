@@ -43,6 +43,7 @@ interface Window {
   PrepareSpellsUI: () => void;
   selectActionCategoryTab: (category: string) => void;
   selectSpontaneousLevelTab: (className: string, level: string) => void;
+  setSpellLayoutMode: (mode: 'tabs' | 'list') => void;
   hideSpellPopup: () => void;
   prepareSpell: (casterClassName: string, spellLevel: string, slotIndex: number, spellName: string) => void;
   castSpell: (casterClassName: string, spellLevel: string, slotIndex: number) => void;

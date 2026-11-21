@@ -74,6 +74,7 @@ const globalRegistry: Record<string, any> = {
     useAction: Spells.useAction,
     selectActionCategoryTab: Spells.selectActionCategoryTab,
     selectSpontaneousLevelTab: Spells.selectSpontaneousLevelTab,
+    setSpellLayoutMode: Spells.setSpellLayoutMode,
     hideMovePopup: Spells.hideMovePopup,
     moveAction: Spells.moveAction,
     hideNumberActionPopup: Spells.hideNumberActionPopup,

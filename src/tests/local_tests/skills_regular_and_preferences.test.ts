@@ -2,7 +2,7 @@ import { ParseSkills, RegularSkills, isSkillTrainedOnly } from '../../server/cha
 import { Ability } from '../../server/character/properties/abilities/ability';
 import { AbilitiesMap } from '../../server/character/properties/abilities/ability_types';
 import { ModifiableProperty } from '../../server/character/00_property';
-import { getSkillFilterPreference, SetSkillFilterPreference } from '../../server/character/character_preferences';
+import { getSkillFilterPreference, SetSkillFilterPreference, getSpellLayoutPreference, SetSpellLayoutPreference } from '../../server/character/character_preferences';
 
 function makeAbilities(): AbilitiesMap {
   return {
@@ -90,6 +90,12 @@ describe('Regular D&D 3.5 Skills & Filter Preferences', () => {
       const res3 = SetSkillFilterPreference('doc-1', 'active');
       expect(res3).toEqual({ success: true, skillFilter: 'active' });
       expect(getSkillFilterPreference('doc-1')).toBe('active');
+
+      expect(getSpellLayoutPreference('doc-1')).toBeNull();
+      expect(SetSpellLayoutPreference('doc-1', 'tabs')).toEqual({ success: true, spellLayout: 'tabs' });
+      expect(getSpellLayoutPreference('doc-1')).toBe('tabs');
+      expect(SetSpellLayoutPreference('doc-1', 'list')).toEqual({ success: true, spellLayout: 'list' });
+      expect(getSpellLayoutPreference('doc-1')).toBe('list');
     } finally {
       delete (global as any).PropertiesService;
     }

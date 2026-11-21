@@ -478,10 +478,15 @@ describe('Spell Casting - Prepared and Spontaneous Integration Tests', () => {
                     { spellName: 'Inspirational Boost', isValid: true }
                 ]
             };
-            const tabbedHtml = renderSpellSlots(spellSlots, preparedSpells, 'Bard', 'Spontaneous', knownSpells);
+            const tabbedHtml = renderSpellSlots(spellSlots, preparedSpells, 'Bard', 'Spontaneous', knownSpells, 'tabs');
             expect(tabbedHtml).toContain('Level 1 (4/5)');
             expect(tabbedHtml).toContain('data-spell="Grease"');
             expect(tabbedHtml).toContain('data-spell="Inspirational Boost"');
+
+            const listHtml = renderSpellSlots(spellSlots, preparedSpells, 'Bard', 'Spontaneous', knownSpells, 'list');
+            expect(listHtml).toContain('Level 1 Spells (4/5)');
+            expect(listHtml).toContain('toggleCollapse(\'spellLevel_Bard_1\')');
+            expect(listHtml).toContain('data-spell="Grease"');
         });
     });
 });
