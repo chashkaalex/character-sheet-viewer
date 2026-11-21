@@ -118,6 +118,8 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
         // Verify Inspire Courage special score is now 4 (base 2 + 1 Song of the Heart + 1 Inspirational Boost)
         const inspireCourage = bardCasterData.bardicSpecials!.find(s => s.name === 'Inspire Courage')!;
         expect(inspireCourage.value!.currentScore).toBe(4);
+        expect(charRep.actionsMetadata?.['Inspire Courage']?.modifier?.value).toBe(4);
+        expect(charRep.actionsMetadata?.['Inspire Courage']?.modifier?.string).toContain('Inspirational Boost');
     });
 
     it('should consume Inspirational Boost status when casting Inspire Courage and apply Inspire Courage +4 status', () => {

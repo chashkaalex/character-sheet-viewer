@@ -265,6 +265,17 @@ function createBardSongAction(songName: string): ActionData {
     category: 'songs',
     actionType: 'standard',
     target: spellMeta?.target || 'Self',
+    getModifier: (character: ICharacter) => {
+      const bardCasterData = character.spellCasting.GetSpellCasterClassData('Bard');
+      const matchedSpecial = bardCasterData?.bardicSpecials?.find((s: any) => s.name === songName);
+      if (matchedSpecial?.value) {
+        return {
+          value: matchedSpecial.value.currentScore,
+          string: matchedSpecial.value.string
+        };
+      }
+      return null;
+    },
     calculateDuration: (character: ICharacter) => {
       const bardData = character.spellCasting.GetSpellCasterClassData('Bard');
       if (spellMeta && bardData) {

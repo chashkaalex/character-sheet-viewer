@@ -287,6 +287,22 @@
         border-color: #1f5a40;
     }
 
+    .action-slot-mod {
+        display: inline-block;
+        margin-left: 4px;
+        padding: 0 5px;
+        border-radius: 4px;
+        background-color: rgba(44, 62, 80, 0.14);
+        font-weight: bold;
+        border-bottom: 1px dotted currentColor;
+    }
+
+    .spell-slot.filled:not(.used)[data-category="songs"] {
+        background-color: #d4a017;
+        border-color: #9e740b;
+        color: #1f1a12;
+    }
+
     .spell-slot.filled:not(.used)[data-category="item"] {
         background-color: #24788f;
         border-color: #185566;

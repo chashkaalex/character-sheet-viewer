@@ -60,6 +60,7 @@ export interface CharacterRep {
     category?: ActionCategory;
     actionType?: ActionCostType;
     target?: string;
+    modifier?: { value: number; string: string };
   }>;
   categorizedActions?: Record<string, string[]>;
   actionCategories?: ActionCategoryDefinition[];
@@ -191,7 +192,8 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
           label: isNumberAction ? (action as any).label : undefined,
           category: cat,
           actionType: action.actionType || 'standard',
-          target: action.target
+          target: action.target,
+          modifier: action.getModifier ? (action.getModifier(character) ?? undefined) : undefined
         };
         if (!categorizedActions[cat]) {
           categorizedActions[cat] = [];

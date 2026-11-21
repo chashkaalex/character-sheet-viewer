@@ -1,5 +1,5 @@
 import { characterRep } from '../state';
-import { onCharacterRepresentation } from '../character_script';
+import { onCharacterRepresentation, addTooltip } from '../character_script';
 import { checkActionCostWithPrompt, consumeActionCost, ActionCostType } from '../round_actions';
 import { positionPopup, hideSpellPopup, getCurrentSlotData } from './spell_popup';
 
@@ -105,9 +105,10 @@ export function renderGeneralActionsUI() {
     const sectionActions = categorized[section.category] || [];
     const isActive = section.category === activeActionCategoryTab;
 
-    tabsHtml += `<span class="action-tab${isActive ? ' active' : ''}" data-action-tab="${section.category}" onclick="selectActionCategoryTab('${section.category}')">${section.title}</span>`;
-
     const catResource = (characterRep as any).actionCategoryResources?.[section.category];
+    const resourceTag = catResource ? ` (${catResource.remaining}/${catResource.max})` : '';
+    tabsHtml += `<span class="action-tab${isActive ? ' active' : ''}" data-action-tab="${section.category}" onclick="selectActionCategoryTab('${section.category}')">${section.title}${resourceTag}</span>`;
+
     const hasUses = !catResource || catResource.remaining > 0;
     const resourceBannerHtml = catResource
       ? `<div class="action-category-resource" style="margin-bottom: 10px; font-weight: bold; color: var(--primary-color);">${catResource.label || 'Uses'}: <span style="color: ${hasUses ? 'var(--accent-color)' : '#dc3545'};">${catResource.remaining} / ${catResource.max}</span></div>`
@@ -130,7 +131,12 @@ export function renderGeneralActionsUI() {
       const isSlotValid = hasUses;
       const invalidClass = isSlotValid ? '' : ' invalid';
 
-      panelsHtml += `<div class="spell-slot ${slotClass} ${usedClass}${invalidClass}" data-level="actions" data-slot="${globalSlotIndex++}" data-spell="${actionName}" data-used="${isActionActive}" data-valid="${isSlotValid}" data-class="Actions" data-preparation="Actions" data-category="${section.category}" title="${actionName}">${actionName}</div>`;
+      const modInfo = metadata && metadata.modifier;
+      const modHtml = modInfo
+        ? ` <span class="action-slot-mod" data-action-mod="${actionName}">${modInfo.value >= 0 ? '+' : ''}${modInfo.value}</span>`
+        : '';
+
+      panelsHtml += `<div class="spell-slot ${slotClass} ${usedClass}${invalidClass}" data-level="actions" data-slot="${globalSlotIndex++}" data-spell="${actionName}" data-used="${isActionActive}" data-valid="${isSlotValid}" data-class="Actions" data-preparation="Actions" data-category="${section.category}" title="${actionName}">${actionName}${modHtml}</div>`;
     });
 
     panelsHtml += `
@@ -153,6 +159,14 @@ export function renderGeneralActionsUI() {
   `;
 
   container.appendChild(actionsDiv);
+
+  actionsDiv.querySelectorAll('.action-slot-mod').forEach((modEl: Element) => {
+    const actionName = (modEl as HTMLElement).dataset.actionMod;
+    const modInfo = actionName && (characterRep as any).actionsMetadata?.[actionName]?.modifier;
+    if (modInfo && modInfo.string) {
+      addTooltip(modEl, modInfo.string);
+    }
+  });
 }
 
 /**

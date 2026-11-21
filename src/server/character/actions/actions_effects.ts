@@ -57,6 +57,11 @@ export type ActionCostType =
   | 'free'
   | 'none';
 
+export interface ActionModifierInfo {
+  value: number;
+  string: string;
+}
+
 export interface ActionData {
   statusName: string;
   calculateDuration: (character: ICharacter) => number;
@@ -66,6 +71,7 @@ export interface ActionData {
   healFormula?: string;
   target?: string;
   onUse?: ActionOnUseHook;
+  getModifier?: (character: ICharacter) => ActionModifierInfo | null;
 }
 
 export class NumberAction implements ActionData {
