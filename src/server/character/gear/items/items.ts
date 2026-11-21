@@ -226,7 +226,7 @@ export const ItemEffects: Record<string, EffectData[]> = {
   'Explorer\'s Outfit Masterwork': [],
 
   'Elven Cloak': [
-    { status: 'Elven Cloak', property: 'Hide', modifierType: 'Generic', value: 5 }
+    { status: 'Elven Cloak', property: 'Hide', modifierType: 'Competence', value: 5 }
   ],
 
   'Headband of Intellect +2': [
