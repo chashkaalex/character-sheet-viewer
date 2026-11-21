@@ -132,6 +132,10 @@ function syncSpecialAttackSelectWidth(select: HTMLSelectElement | null): void {
   if (typeof getComputedStyle === 'function') {
     const cs = getComputedStyle(select);
     probe.style.font = cs.font || `${cs.fontSize} ${cs.fontFamily}`;
+    probe.style.fontSize = cs.fontSize;
+    probe.style.fontFamily = cs.fontFamily;
+    probe.style.fontWeight = cs.fontWeight;
+    probe.style.letterSpacing = cs.letterSpacing;
   }
   probe.textContent = label;
   document.body.appendChild(probe);
@@ -139,7 +143,7 @@ function syncSpecialAttackSelectWidth(select: HTMLSelectElement | null): void {
   document.body.removeChild(probe);
 
   if (textWidth > 0) {
-    select.style.width = `${Math.ceil(textWidth + 40)}px`;
+    select.style.width = `${Math.ceil(textWidth + 68)}px`;
   }
 }
 
