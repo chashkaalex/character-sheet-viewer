@@ -5,7 +5,7 @@ Throrgorlun Eiertrager
 (Dwarf Monk 6/Cleric of Moradin 3/Sacred Fist 3)                                                        
 
 Init: +4; Senses: Listen +15, Spot +15; Darkvision 60’; 
-BAb: +9/+4; Grapple: +10; Hp: 85/85; Speed: 50 ft.
+BAb: +9/+4; Grapple: +10; Hp: 40/85; Speed: 50 ft.
 Attack: +12 Unarmed (2d10 + 3/X2).
 Enlarged: +12 Unarmed (4d8 + 3/X2)
 Full Attack: +11/+11/+6 Unarmed (2d10 + 3/X2).
@@ -22,6 +22,7 @@ Action Points: 1.
 
 Statuses:
 
+Keeping Grudge: 1 rounds/-1 rounds
 Feats:
 Combat Casting, 
 Combat Reflexes, 

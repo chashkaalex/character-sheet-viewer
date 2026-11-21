@@ -78,25 +78,56 @@ export function toggleAdditionalDamageTypes() {
  * Submits the inflicted damage (physical only for now).
  */
 export function submitInflictDamage() {
-  const physicalInput = document.getElementById('damagePhysical') as HTMLInputElement;
-  const rawValue = physicalInput ? physicalInput.value.trim() : '';
+  const physicalInput = document.getElementById('damagePhysical') as HTMLInputElement | null;
+  const energyFields: Array<{ id: string; key: string; label: string }> = [
+    { id: 'damageAcid', key: 'acid', label: 'Acid' },
+    { id: 'damageCold', key: 'cold', label: 'Cold' },
+    { id: 'damageElectricity', key: 'electricity', label: 'Electricity' },
+    { id: 'damageFire', key: 'fire', label: 'Fire' },
+    { id: 'damageSonic', key: 'sonic', label: 'Sonic' }
+  ];
 
-  if (!rawValue) {
-    alert('Please enter a valid positive integer for physical damage.');
+  const parseField = (input: HTMLInputElement | null): { valid: boolean; value: number } => {
+    const raw = input ? input.value.trim() : '';
+    if (!raw) return { valid: true, value: 0 };
+    if (!/^\d+$/.test(raw)) return { valid: false, value: 0 };
+    const parsed = parseInt(raw, 10);
+    return { valid: !isNaN(parsed) && parsed >= 0, value: parsed };
+  };
+
+  const physParsed = parseField(physicalInput);
+  if (!physParsed.valid) {
+    alert('Please enter a valid non-negative integer for physical damage.');
     if (physicalInput) physicalInput.focus();
     return;
   }
 
-  const damageAmount = parseInt(rawValue, 10);
-  if (isNaN(damageAmount) || damageAmount <= 0) {
-    alert('Please enter a valid positive integer for physical damage.');
+  const energyDamage: Record<string, number> = {};
+  let totalEntered = physParsed.value;
+
+  for (const field of energyFields) {
+    const el = document.getElementById(field.id) as HTMLInputElement | null;
+    const parsed = parseField(el);
+    if (!parsed.valid) {
+      alert(`Please enter a valid non-negative integer for ${field.label} damage.`);
+      if (el) el.focus();
+      return;
+    }
+    if (parsed.value > 0) {
+      energyDamage[field.key] = parsed.value;
+      totalEntered += parsed.value;
+    }
+  }
+
+  if (totalEntered <= 0) {
+    alert('Please enter a positive integer for at least one damage type (physical or energy).');
     if (physicalInput) physicalInput.focus();
     return;
   }
 
   closeInflictModal();
 
-  console.log(`Inflicting ${damageAmount} physical damage to ${characterRep?.name}`);
+  console.log(`Inflicting ${physParsed.value} physical and`, energyDamage, `energy damage to ${characterRep?.name}`);
 
   google.script.run
     .withSuccessHandler(onCharacterRepresentation)
@@ -104,7 +135,7 @@ export function submitInflictDamage() {
       console.error('Error calling server function:', error);
       alert('Error inflicting damage: ' + error.message);
     })
-    .UpdateHp(characterRep.docId, damageAmount, 'inflict');
+    .UpdateHp(characterRep.docId, physParsed.value, 'inflict', energyDamage);
 }
 
 /**

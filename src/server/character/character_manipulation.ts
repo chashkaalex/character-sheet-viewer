@@ -68,14 +68,20 @@ export function GetCharacterRepByDocId(docId: string): CharacterRep | CharacterE
  * @param actionType The type of action (inflict or cure).
  * @returns The character representation or error.
  */
-export function UpdateHp(docId: string, amount: number, actionType: 'inflict' | 'cure'): CharacterRep | CharacterError {
+export function UpdateHp(
+  docId: string,
+  amount: number,
+  actionType: 'inflict' | 'cure',
+  energyDamage?: Record<string, number>
+): CharacterRep | CharacterError {
   const character = GetCharacterByDocId(docId);
   if (character instanceof CharacterError) {
     return character;
   }
 
+  let effectiveAmount = amount;
   if (actionType === 'inflict') {
-    character.InflictDamage(amount);
+    effectiveAmount = character.InflictDamage(amount, energyDamage);
   } else if (actionType === 'cure') {
     character.CureDamage(amount);
   }
@@ -85,7 +91,7 @@ export function UpdateHp(docId: string, amount: number, actionType: 'inflict' | 
     addStatus: (statusName: string, duration: number) => _addStatusToCharacter(docId, statusName, duration),
     removeStatus: (statusName: string) => _removeStatusFromCharacter(docId, statusName)
   };
-  character.manipulationCallbacks.UpdateHp.forEach(cb => cb(character, amount, actionType, helpers));
+  character.manipulationCallbacks.UpdateHp.forEach(cb => cb(character, effectiveAmount, actionType, helpers));
 
   adapter.UpdateHp(docId, character.hp.current);
   return GetCharacterRepByDocId(docId);

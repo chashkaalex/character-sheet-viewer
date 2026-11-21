@@ -73,7 +73,7 @@ export interface ICharacter {
     HasClass(className: string): boolean;
     GetClassLevel(className: string): number;
     HasFlaw(flawName: string): boolean;
-    InflictDamage(amount: number): void;
+    InflictDamage(amount: number, energyDamage?: Record<string, number>): number;
     CureDamage(amount: number): void;
     OnRoundsElapsed(amount: number): Status[];
     LogParseError(errorMessage: string): void;

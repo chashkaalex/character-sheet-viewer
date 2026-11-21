@@ -294,4 +294,20 @@ describe('Character Manipulation & Status Integration Tests', () => {
         fileContent = fs.readFileSync(TEMP_BESS_FILE_PATH, 'utf8');
         expect(fileContent).not.toContain('Potion of Cure Light Wounds');
     });
+
+    it('should reduce fire damage by Thror\'s 10 fire resistance (20 physical + 20 fire => -30 HP) and allow energy-only damage', () => {
+        const before = GetCharacterRepByDocId(TEMP_FILE_PATH) as CharacterRep;
+        const initialHp = before.hp.current;
+
+        const afterMixed = UpdateHp(TEMP_FILE_PATH, 20, 'inflict', { fire: 20 });
+        expect(afterMixed instanceof CharacterError).toBe(false);
+        const mixedRep = afterMixed as CharacterRep;
+        expect(mixedRep.hp.current).toBe(initialHp - 30);
+
+        // Energy-only damage: 0 physical + 25 fire (with 10 fire resistance => -15 HP)
+        const afterEnergyOnly = UpdateHp(TEMP_FILE_PATH, 0, 'inflict', { fire: 25 });
+        expect(afterEnergyOnly instanceof CharacterError).toBe(false);
+        const energyOnlyRep = afterEnergyOnly as CharacterRep;
+        expect(energyOnlyRep.hp.current).toBe(initialHp - 45);
+    });
 });

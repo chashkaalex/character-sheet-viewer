@@ -427,17 +427,63 @@ export class Character implements ICharacter, IPropertyRegistry {
 
 
 
-    public InflictDamage(amount: number): void {
+    private normalizeEnergyType(rawType: string): string | null {
+        const lower = rawType.trim().toLowerCase();
+        if (lower === 'acid') return 'acid';
+        if (['cold', 'frost', 'ice'].includes(lower)) return 'cold';
+        if (['electricity', 'electric', 'lightning', 'shock'].includes(lower)) return 'electricity';
+        if (['fire', 'flame'].includes(lower)) return 'fire';
+        if (['sonic', 'sound'].includes(lower)) return 'sonic';
+        return null;
+    }
+
+    public getEnergyResistance(energyType: string): number {
+        const canonical = this.normalizeEnergyType(energyType);
+        if (!canonical || !this.resistances) return 0;
+
+        let maxRes = 0;
+        const numFirstRegex = /(\d+)\s*(acid|cold|frost|ice|electricity|electric|lightning|shock|fire|flame|sonic|sound)\b/gi;
+        let match: RegExpExecArray | null;
+        while ((match = numFirstRegex.exec(this.resistances)) !== null) {
+            if (this.normalizeEnergyType(match[2]) === canonical) {
+                maxRes = Math.max(maxRes, parseInt(match[1], 10));
+            }
+        }
+
+        const typeFirstRegex = /\b(acid|cold|frost|ice|electricity|electric|lightning|shock|fire|flame|sonic|sound)(?:\s+resistance)?\s*(\d+)/gi;
+        while ((match = typeFirstRegex.exec(this.resistances)) !== null) {
+            if (this.normalizeEnergyType(match[1]) === canonical) {
+                maxRes = Math.max(maxRes, parseInt(match[2], 10));
+            }
+        }
+
+        return maxRes;
+    }
+
+    public InflictDamage(amount: number, energyDamage?: Record<string, number>): number {
+        let totalDamage = Math.max(0, Math.floor(Number(amount) || 0));
+        if (energyDamage && typeof energyDamage === 'object') {
+            Object.entries(energyDamage).forEach(([type, rawVal]) => {
+                const val = Math.max(0, Math.floor(Number(rawVal) || 0));
+                if (val > 0) {
+                    const resistance = this.getEnergyResistance(type);
+                    totalDamage += Math.max(0, val - resistance);
+                }
+            });
+        }
+
+        let remainingDamage = totalDamage;
         if (this.temporaryHp > 0) {
-            if (this.temporaryHp >= amount) {
-                this.temporaryHp -= amount;
-                return;
+            if (this.temporaryHp >= remainingDamage) {
+                this.temporaryHp -= remainingDamage;
+                return totalDamage;
             } else {
-                amount -= this.temporaryHp;
+                remainingDamage -= this.temporaryHp;
                 this.temporaryHp = 0;
             }
         }
-        this.hp.current = Math.max(0, this.hp.current - amount);
+        this.hp.current = Math.max(0, this.hp.current - remainingDamage);
+        return totalDamage;
     }
 
     public CureDamage(amount: number): void {
