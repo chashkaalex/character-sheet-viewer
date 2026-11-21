@@ -1,7 +1,7 @@
 import { ICharacter } from './icharacter';
 import { AbilityNames } from './properties/abilities/ability_types';
 import { CharacterClass } from './properties/race_and_classes';
-import { ActionCategory, ActionCostType, ActionsData, NumberAction } from './actions/actions_effects';
+import { ActionCategory, ActionCategoryDefinition, ActionCostType, ActionsData, getRegisteredActionCategories, NumberAction } from './actions/actions_effects';
 import { calculateTwf, TwfData } from './gear/weapons/twf';
 import { calculateNormalFullAttack, calculateTwfFullAttack } from './gear/weapons/full_attack';
 import { BuildWeaponDamageVariants } from './gear/weapons/weapon_extra_damage';
@@ -59,8 +59,11 @@ export interface CharacterRep {
     label?: string;
     category?: ActionCategory;
     actionType?: ActionCostType;
+    target?: string;
   }>;
-  categorizedActions?: Record<ActionCategory, string[]>;
+  categorizedActions?: Record<string, string[]>;
+  actionCategories?: ActionCategoryDefinition[];
+  actionCategoryResources?: Record<string, { remaining: number; max: number; label?: string }>;
   twf?: {
     hasTWF: boolean;
     hasImprovedTWF: boolean;
@@ -169,13 +172,11 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
   if (character.actions) {
     characterObject.actions = character.actions;
     const actionsMetadata: Record<string, any> = {};
-    const categorizedActions: Record<ActionCategory, string[]> = {
-      general: [],
-      class: [],
-      feat: [],
-      stance: [],
-      item: []
-    };
+    const categorizedActions: Record<string, string[]> = {};
+    const categories = getRegisteredActionCategories();
+    categories.forEach(entry => {
+      categorizedActions[entry.category] = [];
+    });
     character.actions.forEach(actionName => {
       const action = ActionsData[actionName];
       if (action) {
@@ -189,8 +190,12 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
           maxNumber: isNumberAction ? (action as any).maxNumberResolver(character) : undefined,
           label: isNumberAction ? (action as any).label : undefined,
           category: cat,
-          actionType: action.actionType || 'standard'
+          actionType: action.actionType || 'standard',
+          target: action.target
         };
+        if (!categorizedActions[cat]) {
+          categorizedActions[cat] = [];
+        }
         categorizedActions[cat].push(actionName);
       } else {
         categorizedActions.general.push(actionName);
@@ -198,6 +203,10 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
     });
     characterObject.actionsMetadata = actionsMetadata;
     characterObject.categorizedActions = categorizedActions;
+    characterObject.actionCategories = categories;
+  }
+  if (character.actionCategoryResources && Object.keys(character.actionCategoryResources).length > 0) {
+    characterObject.actionCategoryResources = { ...character.actionCategoryResources };
   }
 
   // Add spell casting

@@ -298,13 +298,22 @@ export function createCastMenu(slotData) {
   const isValid = slotData.isValid !== false;
 
   if (slotData.casterClassName === 'Actions' || slotData.casterClass === 'Actions') {
+    const actionMetadata = (characterRep as any).actionsMetadata?.[slotData.spell];
+    const actionTarget = actionMetadata?.target;
+    const targetHtml = actionTarget ? renderTargetSelector(actionTarget) : '';
+    const targetInitiallyValid = (!actionTarget || actionTarget === 'Self' || actionTarget === 'Area' || actionTarget === 'Object' || actionTarget === 'Special');
+    const canReactivate = Boolean(actionTarget);
+
     let statusText = '';
     if (isUsed) {
       statusText = '<br><strong>Status:</strong> <span style="color: var(--text-muted); text-decoration: line-through;">Active</span>';
+    } else if (!isValid) {
+      statusText = '<br><strong>Status:</strong> <span style="color: #dc3545; font-weight: bold;">No uses remaining</span>';
     }
 
-    const actionDisabled = (isUsed || !isValid) ? 'disabled' : '';
-    const actionClass = (isUsed || !isValid) ? 'spell-button cast disabled' : 'spell-button cast';
+    const isBtnDisabled = (isUsed && !canReactivate) || !isValid || !targetInitiallyValid;
+    const actionDisabled = isBtnDisabled ? 'disabled' : '';
+    const actionClass = isBtnDisabled ? 'spell-button cast disabled' : 'spell-button cast';
 
     return `
           <h3>Use Action</h3>
@@ -312,6 +321,8 @@ export function createCastMenu(slotData) {
               <strong>Action:</strong> ${slotData.spell}
               ${statusText}
           </div>
+
+          <div id="spellTargetContainer">${targetHtml}</div>
           
           <div class="spell-actions">
               <button class="spell-button cancel" onclick="window.hideSpellPopup()">Cancel</button>

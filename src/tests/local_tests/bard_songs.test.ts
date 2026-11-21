@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { OnCastSpell, AddStatusToCharacter, GetCharacterByDocId, GetCharacterRepByDocId, OnRoundsElapsed } from '../../server/character/character_manipulation';
+import { OnCastSpell, OnUseAction, AddStatusToCharacter, GetCharacterByDocId, GetCharacterRepByDocId, OnRoundsElapsed } from '../../server/character/character_manipulation';
 import { adapter } from '../../server/character/adapter_selector';
 import { CharacterError, Character } from '../../server/character/character';
 import { CharacterRep } from '../../server/character/character_rep';
@@ -133,14 +133,7 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
         expect(res1 instanceof CharacterError).toBe(false);
 
         // Now cast Inspire Courage
-        const res2 = OnCastSpell(TEMP_BESS_FILE_PATH, {
-            casterClassName: 'Bard',
-            spellLevel: 'songs',
-            spellName: 'Inspire Courage',
-            slotIndex: 0,
-            isUsed: false,
-            isEmpty: false
-        });
+        const res2 = OnUseAction(TEMP_BESS_FILE_PATH, 'Inspire Courage', ['Self']);
         expect(res2 instanceof CharacterError).toBe(false);
         const char = res2 as CharacterRep;
 
@@ -177,14 +170,7 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
         expect(charAfterElapse.statuses.find(s => s.name === 'Inspirational Boost')).toBeUndefined();
 
         // Now cast Inspire Courage
-        const res3 = OnCastSpell(TEMP_BESS_FILE_PATH, {
-            casterClassName: 'Bard',
-            spellLevel: 'songs',
-            spellName: 'Inspire Courage',
-            slotIndex: 0,
-            isUsed: false,
-            isEmpty: false
-        });
+        const res3 = OnUseAction(TEMP_BESS_FILE_PATH, 'Inspire Courage', ['Self']);
         expect(res3 instanceof CharacterError).toBe(false);
         const charFinal = res3 as CharacterRep;
 
@@ -201,17 +187,7 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
     it('should cast Inspire Courage targeting all party members, consume song slot, apply locally to Bess and push to remote party members', () => {
         (adapter as any).pushedPartyStatuses = [];
 
-        const slotData = {
-            casterClassName: 'Bard',
-            spellLevel: 'songs',
-            spellName: 'Inspire Courage',
-            slotIndex: 0,
-            isUsed: false,
-            isEmpty: false,
-            targets: ['Self', 'Thror', 'Dein']
-        };
-
-        const result = OnCastSpell(TEMP_BESS_FILE_PATH, slotData);
+        const result = OnUseAction(TEMP_BESS_FILE_PATH, 'Inspire Courage', ['Self', 'Thror', 'Dein']);
         expect(result instanceof CharacterError).toBe(false);
         const charRep = result as CharacterRep;
 
@@ -270,15 +246,7 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
 
     it('should replace active Inspire Courage +3 with Inspire Courage +4 when re-cast with boost', () => {
         // 1. Bess casts Inspire Courage (song slot 0) -> gives Inspire Courage +3
-        const castSong1 = OnCastSpell(TEMP_BESS_FILE_PATH, {
-            casterClassName: 'Bard',
-            spellLevel: 'songs',
-            spellName: 'Inspire Courage',
-            slotIndex: 0,
-            isUsed: false,
-            isEmpty: false,
-            targets: ['Self']
-        });
+        const castSong1 = OnUseAction(TEMP_BESS_FILE_PATH, 'Inspire Courage', ['Self']);
         expect(castSong1 instanceof CharacterError).toBe(false);
         const char1 = castSong1 as CharacterRep;
         expect(char1.statuses.find(s => s.name === 'Inspire Courage +3')).toBeDefined();
@@ -296,15 +264,7 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
         expect(castBoost instanceof CharacterError).toBe(false);
 
         // 3. Cast Inspire Courage again (song slot 1) -> should apply Inspire Courage +4 and remove Inspire Courage +3
-        const castSong2 = OnCastSpell(TEMP_BESS_FILE_PATH, {
-            casterClassName: 'Bard',
-            spellLevel: 'songs',
-            spellName: 'Inspire Courage',
-            slotIndex: 1,
-            isUsed: false,
-            isEmpty: false,
-            targets: ['Self']
-        });
+        const castSong2 = OnUseAction(TEMP_BESS_FILE_PATH, 'Inspire Courage', ['Self']);
         expect(castSong2 instanceof CharacterError).toBe(false);
         const char2 = castSong2 as CharacterRep;
 
@@ -332,15 +292,7 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
         const baseWillSave = initialChar.saves.Will.bonus;
 
         // Step 1: Cast regular Inspire Courage (song slot 0)
-        const cast1 = OnCastSpell(TEMP_BESS_FILE_PATH, {
-            casterClassName: 'Bard',
-            spellLevel: 'songs',
-            spellName: 'Inspire Courage',
-            slotIndex: 0,
-            isUsed: false,
-            isEmpty: false,
-            targets: ['Self']
-        });
+        const cast1 = OnUseAction(TEMP_BESS_FILE_PATH, 'Inspire Courage', ['Self']);
         expect(cast1 instanceof CharacterError).toBe(false);
         const char1 = cast1 as CharacterRep;
 
@@ -363,15 +315,7 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
         expect(castBoost instanceof CharacterError).toBe(false);
 
         // Step 3: Cast Inspire Courage again (song slot 1) -> triggers boost consumption and upgrades to +4
-        const cast2 = OnCastSpell(TEMP_BESS_FILE_PATH, {
-            casterClassName: 'Bard',
-            spellLevel: 'songs',
-            spellName: 'Inspire Courage',
-            slotIndex: 1,
-            isUsed: false,
-            isEmpty: false,
-            targets: ['Self']
-        });
+        const cast2 = OnUseAction(TEMP_BESS_FILE_PATH, 'Inspire Courage', ['Self']);
         expect(cast2 instanceof CharacterError).toBe(false);
         const char2 = cast2 as CharacterRep;
 
@@ -390,15 +334,7 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
         expect(charWithFear.saves.Will.bonus).toBe(baseWillSave + 4);
 
         // Step 4: Cast Inspire Courage a 3rd time (song slot 2) without boost -> reverts to +3
-        const cast3 = OnCastSpell(TEMP_BESS_FILE_PATH, {
-            casterClassName: 'Bard',
-            spellLevel: 'songs',
-            spellName: 'Inspire Courage',
-            slotIndex: 2,
-            isUsed: false,
-            isEmpty: false,
-            targets: ['Self']
-        });
+        const cast3 = OnUseAction(TEMP_BESS_FILE_PATH, 'Inspire Courage', ['Self']);
         expect(cast3 instanceof CharacterError).toBe(false);
         const char3 = cast3 as CharacterRep;
 

@@ -2,7 +2,50 @@ import { ICharacter } from '../icharacter';
 import { EffectData, StaticPropertyEffect } from '../state/effects';
 import { registerStatusEffects } from '../_general_effects';
 
-export type ActionCategory = 'general' | 'class' | 'feat' | 'stance' | 'item';
+export type CoreActionCategory = 'general' | 'class' | 'feat' | 'stance' | 'item';
+export type ActionCategory = CoreActionCategory | (string & {});
+
+export interface ActionCategoryDefinition {
+  category: ActionCategory;
+  title: string;
+}
+
+const ActionCategoriesRegistry: ActionCategoryDefinition[] = [
+  { category: 'general', title: 'General Actions' },
+  { category: 'class', title: 'Class Actions' },
+  { category: 'feat', title: 'Feat Actions' },
+  { category: 'stance', title: 'Stances' },
+  { category: 'item', title: 'Item Actions' }
+];
+
+export function registerActionCategory(category: ActionCategory, title: string): void {
+  if (!ActionCategoriesRegistry.some(entry => entry.category === category)) {
+    ActionCategoriesRegistry.push({ category, title });
+  }
+}
+
+export function getRegisteredActionCategories(): ActionCategoryDefinition[] {
+  return ActionCategoriesRegistry.map(entry => ({ ...entry }));
+}
+
+export interface ActionUseHelpers {
+  adapter: any;
+  removeStatus: (statusName: string) => void;
+}
+
+export interface ActionUseResult {
+  error?: string;
+  statusName?: string;
+  skipDefaultStatus?: boolean;
+}
+
+export type ActionOnUseHook = (
+  character: ICharacter,
+  docId: string,
+  actionName: string,
+  targets: string[] | undefined,
+  helpers: ActionUseHelpers
+) => ActionUseResult | void;
 
 export type ActionCostType =
   | 'standard'
@@ -21,6 +64,8 @@ export interface ActionData {
   actionType?: ActionCostType;
   effects?: EffectData[];
   healFormula?: string;
+  target?: string;
+  onUse?: ActionOnUseHook;
 }
 
 export class NumberAction implements ActionData {
@@ -510,3 +555,19 @@ Object.keys(ActionsData).forEach(actionName => {
   }
 });
 registerStatusEffects(actionsEffectsForRegistration);
+
+/**
+ * Dynamically registers class- or feature-specific actions into ActionsData and StatusesEffects.
+ */
+export function registerActions(actions: Record<string, ActionData>): void {
+  const newEffects: Record<string, EffectData[]> = {};
+  Object.entries(actions).forEach(([actionName, actionData]) => {
+    ActionsData[actionName] = actionData;
+    if (actionData.effects) {
+      newEffects[actionData.statusName] = actionData.effects;
+    }
+  });
+  if (Object.keys(newEffects).length > 0) {
+    registerStatusEffects(newEffects);
+  }
+}

@@ -58,13 +58,9 @@ export function renderSpellsUI() {
 export function renderSpellSlots(spellSlots, preparedSpells = {}, className = '', preparation = 'Prepared') {
   let html = '';
 
-  const levelsToRender: (number | string)[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  if (preparedSpells['songs']) {
-    levelsToRender.push('songs');
-  }
+  const levelsToRender: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
   for (const level of levelsToRender) {
-    // @ts-ignore - TS thinks level is exclusively number, but we added 'songs' strings to it
     const expectedSlots = spellSlots[level] || 0;
     const levelPreparedSpells = preparedSpells[level] || [];
     const preparedSpellsCount = levelPreparedSpells.length;
@@ -82,7 +78,7 @@ export function renderSpellSlots(spellSlots, preparedSpells = {}, className = ''
     let discrepancyMsg = '';
 
     // Discrepancy logic for normal slots
-    if (String(level) !== 'songs' && (expectedSlots > 0 || slotsToRender > 0) && slotsToRender !== expectedSlots) {
+    if ((expectedSlots > 0 || slotsToRender > 0) && slotsToRender !== expectedSlots) {
       showDiscrepancyAlert = true;
       const slotType = preparation === 'Spontaneous' ? 'spontaneous slots' : 'prepared spells';
       discrepancyMsg = `⚠ Discrepancy! Level ${level}: ${slotsToRender} parsed ${slotType} vs ${expectedSlots} calculated slots!`;
@@ -98,9 +94,7 @@ export function renderSpellSlots(spellSlots, preparedSpells = {}, className = ''
     const shouldRenderLevel = slotsToRender > 0 || expectedSlots > 0 || preparedDomainSpellsCount > 0;
 
     if (shouldRenderLevel) {
-      const levelHeader = String(level) === 'songs'
-        ? `Songs (${slotsToRender} uses)`
-        : `Level ${level} Spells (${expectedSlots} slot${expectedSlots !== 1 ? 's' : ''}${hasDomainSlot ? ' + 1 domain' : ''})`;
+      const levelHeader = `Level ${level} Spells (${expectedSlots} slot${expectedSlots !== 1 ? 's' : ''}${hasDomainSlot ? ' + 1 domain' : ''})`;
 
       html += `
                 <div class="spell-level-slots">

@@ -222,6 +222,33 @@ export function OnPrepareSpell(docId: string, slotData: SpellSlotData, selectedS
   return GetCharacterRepByDocId(docId);
 }
 
+function pushStatusToRemoteTargets(
+  character: Character,
+  remoteTargets: string[],
+  statusName: string,
+  duration: number
+): void {
+  if (remoteTargets.length === 0 || !character.partyName) return;
+  const rawDbLink = GetScriptProperty('DB_LINK') || (typeof PropertiesService === 'undefined' ? 'https://local-test-db.firebaseio.com' : null);
+  const dbLink = sanitizeDbLink(rawDbLink);
+  if (dbLink) {
+    const senderName = character.partyNickname || character.name;
+    remoteTargets.forEach(targetMember => {
+      const payload = {
+        statusId: `status_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+        statusName: statusName,
+        senderName: senderName,
+        duration: duration,
+        durationUnit: 'rounds' as const,
+        timestamp: Date.now()
+      };
+      adapter.PushPartyMemberStatus(dbLink, character.partyName!, targetMember, payload);
+    });
+  } else {
+    console.warn('[PartySync] Cannot push status to party members: DB_LINK not configured');
+  }
+}
+
 /**
  * Casts a spell for a character
  */
@@ -291,26 +318,7 @@ export function OnCastSpell(docId: string, slotData: SpellSlotData): CharacterRe
 
   // Push status to remote party members
   const remoteTargets = targets.filter(t => !selfNames.includes(t));
-  if (remoteTargets.length > 0 && character.partyName) {
-    const rawDbLink = GetScriptProperty('DB_LINK') || (typeof PropertiesService === 'undefined' ? 'https://local-test-db.firebaseio.com' : null);
-    const dbLink = sanitizeDbLink(rawDbLink);
-    if (dbLink) {
-      const senderName = character.partyNickname || character.name;
-      remoteTargets.forEach(targetMember => {
-        const payload = {
-          statusId: `status_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
-          statusName: context.statusName,
-          senderName: senderName,
-          duration: context.duration,
-          durationUnit: 'rounds' as const,
-          timestamp: Date.now()
-        };
-        adapter.PushPartyMemberStatus(dbLink, character.partyName!, targetMember, payload);
-      });
-    } else {
-      console.warn('[PartySync] Cannot push status to party members: DB_LINK not configured');
-    }
-  }
+  pushStatusToRemoteTargets(character, remoteTargets, context.statusName, context.duration);
 
   return GetCharacterRepByDocId(docId);
 }
@@ -341,7 +349,7 @@ export function OnReplenishClassSpellSlots(docId: string, className: string): Ch
 /**
  * Uses a general action for a character.
  */
-export function OnUseAction(docId: string, actionName: string): CharacterRep | CharacterError {
+export function OnUseAction(docId: string, actionName: string, rawTargets?: string[]): CharacterRep | CharacterError {
   const character = GetCharacterByDocId(docId);
   if (character instanceof CharacterError) {
     return character;
@@ -356,8 +364,25 @@ export function OnUseAction(docId: string, actionName: string): CharacterRep | C
     return new CharacterError(`Character does not have action '${actionName}' available`);
   }
 
-  if (character.HasStatus(action.statusName)) {
+  if (!action.onUse && character.HasStatus(action.statusName)) {
     return new CharacterError(`Action '${actionName}' is already active`);
+  }
+
+  let resolvedStatusName = action.statusName;
+  if (action.onUse) {
+    const hookResult = action.onUse(character, docId, actionName, rawTargets, {
+      adapter,
+      removeStatus: (statusName: string) => _removeStatusFromCharacter(docId, statusName, true)
+    });
+    if (hookResult && hookResult.error) {
+      return new CharacterError(hookResult.error);
+    }
+    if (hookResult && hookResult.statusName) {
+      resolvedStatusName = hookResult.statusName;
+    }
+    if (hookResult && hookResult.skipDefaultStatus) {
+      return GetCharacterRepByDocId(docId);
+    }
   }
 
   const duration = action.calculateDuration(character);
@@ -381,7 +406,17 @@ export function OnUseAction(docId: string, actionName: string): CharacterRep | C
     updateResult.mutationMessage = `Activated ${actionName}. Healed for ${healedAmount} HP (${roll.detail}). HP is now ${newHp}/${character.hp.max}.`;
     return updateResult;
   }
-  _addStatusToCharacter(docId, action.statusName, duration);
+  let targets: string[] = rawTargets && rawTargets.length > 0 ? rawTargets : ['Self'];
+  if (targets.includes('All')) {
+    targets = ['Self', ...(character.partyMembers || [])];
+  }
+  const selfNames = ['Self', character.name];
+  const isTargetingSelf = targets.some(t => selfNames.includes(t));
+  if (isTargetingSelf) {
+    _addStatusToCharacter(docId, resolvedStatusName, duration);
+  }
+  const remoteTargets = targets.filter(t => !selfNames.includes(t));
+  pushStatusToRemoteTargets(character, remoteTargets, resolvedStatusName, duration);
 
   return GetCharacterRepByDocId(docId);
 }

@@ -49,21 +49,22 @@ export function renderGeneralActionsUI() {
 
   container.style.display = 'block';
 
-  const ACTION_SECTIONS: Array<{ category: string; title: string }> = [
-    { category: 'general', title: 'General Actions' },
-    { category: 'class', title: 'Class Actions' },
-    { category: 'feat', title: 'Feat Actions' },
-    { category: 'stance', title: 'Stances' },
-    { category: 'item', title: 'Item Actions' }
-  ];
+  const ACTION_SECTIONS: Array<{ category: string; title: string }> = (
+    Array.isArray((characterRep as any).actionCategories) && (characterRep as any).actionCategories.length > 0
+      ? (characterRep as any).actionCategories
+      : [
+        { category: 'general', title: 'General Actions' },
+        { category: 'class', title: 'Class Actions' },
+        { category: 'feat', title: 'Feat Actions' },
+        { category: 'stance', title: 'Stances' },
+        { category: 'item', title: 'Item Actions' }
+      ]
+  );
 
-  const categorized: Record<string, string[]> = {
-    general: [],
-    class: [],
-    feat: [],
-    stance: [],
-    item: []
-  };
+  const categorized: Record<string, string[]> = {};
+  ACTION_SECTIONS.forEach(s => {
+    categorized[s.category] = [];
+  });
 
   if ((characterRep as any).categorizedActions) {
     for (const key of Object.keys(categorized)) {
@@ -106,19 +107,30 @@ export function renderGeneralActionsUI() {
 
     tabsHtml += `<span class="action-tab${isActive ? ' active' : ''}" data-action-tab="${section.category}" onclick="selectActionCategoryTab('${section.category}')">${section.title}</span>`;
 
+    const catResource = (characterRep as any).actionCategoryResources?.[section.category];
+    const hasUses = !catResource || catResource.remaining > 0;
+    const resourceBannerHtml = catResource
+      ? `<div class="action-category-resource" style="margin-bottom: 10px; font-weight: bold; color: var(--primary-color);">${catResource.label || 'Uses'}: <span style="color: ${hasUses ? 'var(--accent-color)' : '#dc3545'};">${catResource.remaining} / ${catResource.max}</span></div>`
+      : '';
+
     panelsHtml += `
       <div class="action-tab-panel${isActive ? ' active' : ''}" data-action-category="${section.category}">
+        ${resourceBannerHtml}
         <div class="spell-slot-grid">
     `;
 
     sectionActions.forEach(actionName => {
       const metadata = (characterRep as any).actionsMetadata && (characterRep as any).actionsMetadata[actionName];
       const statusName = (metadata && metadata.statusName) || actionName;
-      const isActionActive = characterRep.statuses && characterRep.statuses.some((s: any) => s.name === statusName);
+      const isActionActive = characterRep.statuses && characterRep.statuses.some((s: any) =>
+        s.name === statusName || s.name.startsWith(statusName + ' +') || s.name.startsWith(statusName + ' -')
+      );
       const slotClass = 'filled';
       const usedClass = isActionActive ? 'used' : '';
+      const isSlotValid = hasUses;
+      const invalidClass = isSlotValid ? '' : ' invalid';
 
-      panelsHtml += `<div class="spell-slot ${slotClass} ${usedClass}" data-level="actions" data-slot="${globalSlotIndex++}" data-spell="${actionName}" data-used="${isActionActive}" data-valid="true" data-class="Actions" data-preparation="Actions" data-category="${section.category}" title="${actionName}">${actionName}</div>`;
+      panelsHtml += `<div class="spell-slot ${slotClass} ${usedClass}${invalidClass}" data-level="actions" data-slot="${globalSlotIndex++}" data-spell="${actionName}" data-used="${isActionActive}" data-valid="${isSlotValid}" data-class="Actions" data-preparation="Actions" data-category="${section.category}" title="${actionName}">${actionName}</div>`;
     });
 
     panelsHtml += `
@@ -161,7 +173,12 @@ export function useAction() {
     return;
   }
 
-  console.log('Using action:', slotData.spellName);
+  const targetCheckboxes = document.querySelectorAll('#spellTargetContainer input[name="spellTarget"]:checked');
+  const targets = targetCheckboxes.length > 0
+    ? Array.from(targetCheckboxes).map((cb: any) => cb.value)
+    : undefined;
+
+  console.log('Using action:', slotData.spellName, targets);
 
   google.script.run
     .withSuccessHandler((rep: any) => {
@@ -172,7 +189,7 @@ export function useAction() {
       console.error('Error using action:', error);
       alert('Error using action: ' + error.message);
     })
-    .OnUseAction(characterRep.docId, slotData.spellName);
+    .OnUseAction(characterRep.docId, slotData.spellName, targets);
 
   hideSpellPopup();
 }

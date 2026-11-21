@@ -244,12 +244,9 @@ describe('OnPrepareSpell - Local Integration Tests', () => {
                 expect(spell.isValid).toBe(true);
             });
 
-            // Verify that known songs are populated
-            expect(bardSpec.knownSpells['songs']).toBeDefined();
-            expect(bardSpec.knownSpells['songs'].length).toBeGreaterThan(0);
-            const inspireCourage = bardSpec.knownSpells['songs'].find(s => s.spellName === 'Inspire Courage');
-            expect(inspireCourage).toBeDefined();
-            expect(inspireCourage!.isValid).toBe(true);
+            // Songs are now registered as actions rather than spell slots/known spells
+            expect(bardSpec.knownSpells['songs']).toBeUndefined();
+            expect(bess.actions).toContain('Inspire Courage');
         }
     });
 });

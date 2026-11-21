@@ -6,6 +6,8 @@ import { ParsePreparedSlotsSpontaneous } from '../character/parsers/prepared_spe
 import { ICharacter } from '../character/icharacter';
 import { ParseKnownSpellsSpontaneous } from '../character/parsers/known_spells';
 import { Skill } from '../character/properties/skills';
+import { ActionData, registerActionCategory, registerActions } from '../character/actions/actions_effects';
+import { GetSpellData } from '../character/spells';
 
 export const Bard: ClassData = createClassData({
   name: 'Bard',
@@ -116,14 +118,7 @@ export const Bard: ClassData = createClassData({
     ],
     spells: {},
     getKnownSpells(character: Readonly<ICharacter>, maxLevel: number, domains?: string[]) {
-      const known = ParseKnownSpellsSpontaneous(character, 'Bard', domains);
-      const levelNum = character.GetClassLevel('Bard');
-      const specials = resolveBardicSpecials(levelNum);
-      known['songs'] = specials.map(s => ({
-        spellName: s.name,
-        isValid: true
-      }));
-      return known;
+      return ParseKnownSpellsSpontaneous(character, 'Bard', domains);
     },
 
     getBardicSpecials(level: number) {
@@ -143,7 +138,22 @@ export const Bard: ClassData = createClassData({
         if (special.value && (character as any).registerProperty) {
           (character as any).registerProperty(special.name, special.value);
         }
+        if (character.actions && !character.actions.includes(special.name)) {
+          character.actions.push(special.name);
+        }
       });
+
+      // Move Bardic Music daily uses ('songs') from spell slots to actionCategoryResources
+      const songSlots = runtimeData.preparedSpells?.['songs'];
+      if (Array.isArray(songSlots)) {
+        const remaining = songSlots.filter((s: any) => !s.used).length;
+        const max = songSlots.length;
+        if (!character.actionCategoryResources) {
+          character.actionCategoryResources = {};
+        }
+        character.actionCategoryResources['songs'] = { remaining, max, label: 'Uses' };
+        delete runtimeData.preparedSpells['songs'];
+      }
 
       // Add Bardic Knowledge skill
       const bardLevel = runtimeData.level.currentScore;
@@ -235,6 +245,70 @@ function resolveBardicSpecials(level: number): BardicSpecial[] {
 
   return bardicSpecials;
 }
+
+const ALL_BARD_SONGS = [
+  'Countersong',
+  'Fascinate',
+  'Inspire Courage',
+  'Inspire Competence',
+  'Suggestion',
+  'Inspire Greatness',
+  'Song of Freedom',
+  'Inspire Heroics',
+  'Mass Suggestion'
+] as const;
+
+function createBardSongAction(songName: string): ActionData {
+  const spellMeta = GetSpellData(songName);
+  return {
+    statusName: songName,
+    category: 'songs',
+    actionType: 'standard',
+    target: spellMeta?.target || 'Self',
+    calculateDuration: (character: ICharacter) => {
+      const bardData = character.spellCasting.GetSpellCasterClassData('Bard');
+      if (spellMeta && bardData) {
+        return spellMeta.calculateDuration(bardData);
+      }
+      return 1;
+    },
+    onUse: (character, docId, actionName, _targets, helpers) => {
+      const songResource = character.actionCategoryResources?.['songs'];
+      if (songResource && songResource.remaining <= 0) {
+        return { error: 'No Bardic Music uses remaining' };
+      }
+
+      const decrementResult = helpers.adapter.DecrementSpontaneousSlots(docId, 'Bard', 'songs');
+      if (decrementResult && decrementResult.success === false) {
+        return { error: decrementResult.error || 'Failed to consume Bardic Music use' };
+      }
+
+      let resolvedStatusName = actionName;
+      const bardCasterData = character.spellCasting.GetSpellCasterClassData('Bard');
+      if (bardCasterData && bardCasterData.bardicSpecials) {
+        const matchedSpecial = bardCasterData.bardicSpecials.find((s: any) => s.name === actionName);
+        if (matchedSpecial && matchedSpecial.value) {
+          const modifierVal = matchedSpecial.value.currentScore;
+          if (modifierVal) {
+            resolvedStatusName = `${actionName} +${modifierVal}`;
+          }
+          if (actionName === 'Inspire Courage' && character.HasStatus('Inspirational Boost')) {
+            helpers.removeStatus('Inspirational Boost');
+          }
+        }
+      }
+
+      return { statusName: resolvedStatusName };
+    }
+  };
+}
+
+registerActionCategory('songs', 'Songs');
+const bardSongActions: Record<string, ActionData> = {};
+ALL_BARD_SONGS.forEach(songName => {
+  bardSongActions[songName] = createBardSongAction(songName);
+});
+registerActions(bardSongActions);
 
 ClassesData.set('Bard', Bard);
 

@@ -79,6 +79,7 @@ export class Character implements ICharacter, IPropertyRegistry {
     public skills: Skill[] = [];
     public statuses: Status[] = [];
     public actions: string[] = [...STANDARD_COMBAT_ACTIONS];
+    public actionCategoryResources: Record<string, { remaining: number; max: number; label?: string }> = {};
     public feats: EffectData[][] = [];
     public flaws: EffectData[][] = [];
     public battleGear: Item[] = [];

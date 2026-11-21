@@ -48,6 +48,7 @@ export interface ICharacter {
     partyMembers: string[];
     quickStatuses: string[];
     partyNickname?: string | null;
+    actionCategoryResources?: Record<string, { remaining: number; max: number; label?: string }>;
     InitiativeBonus: ModifiableProperty;
     attacksOfOpportunity: ModifiableProperty;
     ac: ArmorClass;
