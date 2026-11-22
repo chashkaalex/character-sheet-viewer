@@ -1,5 +1,5 @@
-import { GDocsAdapter } from './_gdocs_adapter';
-import { DocumentAdapter } from './_document_adapter';
+import { GDocsAdapter } from './gdocs_adapter';
+import { DocumentAdapter } from './document_adapter';
 
 let adapter: DocumentAdapter;
 let LocalAdapter: any;
@@ -11,10 +11,10 @@ if (typeof DocumentApp !== 'undefined') {
 } else {
     // We are running in Node.js / Local context
     try {
-        // Dynamically require the local adapter from the test directory
-        // Use require for dynamic loading in Node.js environment
+        // Dynamically require the local adapter from the test directory (prevent Vite from bundling local_adapter into GAS)
+        const localAdapterPath = '../../tests/local_tests/' + 'local_adapter';
         // @ts-ignore
-        LocalAdapter = require('../../tests/local_tests/_local_adapter').LocalAdapter;
+        LocalAdapter = require(localAdapterPath).LocalAdapter;
         adapter = new LocalAdapter();
     } catch (e) {
         // @ts-ignore

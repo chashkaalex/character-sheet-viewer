@@ -1,5 +1,5 @@
-import { CreatureSize } from '../character/00_property';
-import { ModifierType } from '../character/_constants';
+import { CreatureSize } from '../character/property';
+import { ModifierType } from '../character/constants';
 import {
     StaticPropertyEffectData,
     PermanentPropertyEffectData,

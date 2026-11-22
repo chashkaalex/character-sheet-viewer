@@ -1,5 +1,5 @@
 import { SaveName } from './properties/saves';
-import { ModifiableProperty } from './00_property';
+import { ModifiableProperty } from './property';
 
 export interface BardicSpecial {
   name: string;

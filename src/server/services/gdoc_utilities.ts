@@ -1,7 +1,7 @@
 import { GetLineThatContainsOneOfTheseTokens, GetParenthesesContent } from '../character/parser_utils';
 import { SECTION_NAMES, IsSectionLine, ParsePreparedSpellsStructure } from '../character/parsers/doc_parser';
 import { AdapterResult } from '../character/common_types';
-import { ClassesData } from '../classes_data/_classes_general_data';
+import { ClassesData } from '../classes_data/classes_general_data';
 import { CharacterSession } from '../character/character_session';
 
 class DocSessionManager {

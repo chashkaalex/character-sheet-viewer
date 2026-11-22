@@ -2,7 +2,7 @@ import * as path from 'path';
 import { GetCharacterByDocId } from '../../server/character/character_manipulation';
 import { getCharacterRep } from '../../server/character/character_rep';
 import { Character } from '../../server/character/character';
-import { APP_VERSION } from '../../server/character/_version';
+import { APP_VERSION } from '../../server/character/version';
 import { GetAppVersion } from '../../server/services/gas_server';
 
 const MORTY_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'morty_test.txt');

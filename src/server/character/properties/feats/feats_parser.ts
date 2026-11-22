@@ -1,4 +1,4 @@
-import { GetEffects } from '../../_general_effects';
+import { GetEffects } from '../../general_effects';
 import { FeatEffects } from './feats_effects';
 import { EffectData, EffectFactory } from '../../state/effects';
 import { ICharacter } from '../../icharacter';

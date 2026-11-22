@@ -1,7 +1,7 @@
-import { RacesData } from '../../races_data/_races_general_data';
-import { ClassesData } from '../../classes_data/_classes_general_data';
-import { Races, SpellcasterClasses } from '../_constants';
-import { ModifiableProperty } from '../00_property';
+import { RacesData } from '../../races_data/races_general_data';
+import { ClassesData } from '../../classes_data/classes_general_data';
+import { Races, SpellcasterClasses } from '../constants';
+import { ModifiableProperty } from '../property';
 import { GetFirstNumberFromALine, GetLineThatContainsOneOfTheseTokens } from '../parser_utils';
 import { EffectFactory, PermanentPropertyEffectData } from '../state/effects';
 import { ICharacter } from '../icharacter';

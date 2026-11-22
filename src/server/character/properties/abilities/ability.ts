@@ -1,4 +1,4 @@
-import { ModifiableProperty } from '../../00_property';
+import { ModifiableProperty } from '../../property';
 import { AbilityName } from './ability_types';
 
 export class Ability extends ModifiableProperty {

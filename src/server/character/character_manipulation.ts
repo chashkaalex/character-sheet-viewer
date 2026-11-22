@@ -7,7 +7,7 @@ import { adapter } from './adapter_selector';
 
 declare let require: any;
 
-import { ClassesData } from '../classes_data/_classes_general_data';
+import { ClassesData } from '../classes_data/classes_general_data';
 import { SpellsData } from './spells';
 import { ActionsData, NumberAction } from './actions/actions_effects';
 import { GetScriptProperty } from '../services/gdoc_utilities';

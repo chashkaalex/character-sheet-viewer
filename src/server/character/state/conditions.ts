@@ -26,7 +26,7 @@ function createFearConditionEffects(conditionName: string, description: string):
     },
     {
       status: conditionName,
-      property: 'bab',
+      property: 'attackBonus',
       modifierType: 'Generic',
       value: -2
     }

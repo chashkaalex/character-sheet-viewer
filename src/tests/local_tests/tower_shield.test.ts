@@ -2,7 +2,7 @@ import * as path from 'path';
 import { Armor } from '../../server/character/gear/items/items';
 import { GetCharacterByDocId } from '../../server/character/character_manipulation';
 import { Character } from '../../server/character/character';
-import { SpecialAttackBonus } from '../../server/character/00_property';
+import { SpecialAttackBonus } from '../../server/character/property';
 
 describe('Tower Shield Attack Penalty Tests', () => {
     const DEIN_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'dein_test.txt');
@@ -11,33 +11,33 @@ describe('Tower Shield Attack Penalty Tests', () => {
         test('defaults to -2 attack penalty for Tower Shield base name', () => {
             const towerShield = new Armor('Tower Shield', 1, '');
             expect(towerShield.attackPenalty).toBe(-2);
-            const babEffect = towerShield.effects.find(e => 'property' in e && e.property === 'bab');
-            expect(babEffect).toBeDefined();
-            expect((babEffect as any).value).toBe(-2);
+            const atkEffect = towerShield.effects.find(e => 'property' in e && e.property === 'attackBonus');
+            expect(atkEffect).toBeDefined();
+            expect((atkEffect as any).value).toBe(-2);
         });
 
         test('parses explicit attack penalty from description', () => {
             const customShield = new Armor('Tower Shield +1', 1, '+5 AC, -2 atk, -9 penalty');
             expect(customShield.attackPenalty).toBe(-2);
-            const babEffect = customShield.effects.find(e => 'property' in e && e.property === 'bab');
-            expect(babEffect).toBeDefined();
-            expect((babEffect as any).value).toBe(-2);
+            const atkEffect = customShield.effects.find(e => 'property' in e && e.property === 'attackBonus');
+            expect(atkEffect).toBeDefined();
+            expect((atkEffect as any).value).toBe(-2);
         });
 
         test('does not apply attack penalty for non-tower shields', () => {
             const heavyShield = new Armor('Heavy Shield', 1, '');
             expect(heavyShield.attackPenalty).toBe(0);
-            const babEffect = heavyShield.effects.find(e => 'property' in e && e.property === 'bab');
-            expect(babEffect).toBeUndefined();
+            const atkEffect = heavyShield.effects.find(e => 'property' in e && e.property === 'attackBonus');
+            expect(atkEffect).toBeUndefined();
 
             const buckler = new Armor('Buckler', 1, '');
             expect(buckler.attackPenalty).toBe(0);
-            expect(buckler.effects.find(e => 'property' in e && e.property === 'bab')).toBeUndefined();
+            expect(buckler.effects.find(e => 'property' in e && e.property === 'attackBonus')).toBeUndefined();
         });
     });
 
     describe('Dein character integration with Tower Shield equipped', () => {
-        test('applies -2 attack penalty to BAB, weapon attack bonuses, and Grapple checks', () => {
+        test('applies -2 attack penalty to attackBonus, weapon attack bonuses, and Grapple checks while preserving true BAB', () => {
             const char = GetCharacterByDocId(DEIN_TEST_FILE) as Character;
             expect(char.parseSuccess).toBe(true);
 
@@ -46,8 +46,9 @@ describe('Tower Shield Attack Penalty Tests', () => {
             expect(shield).toBeDefined();
 
             // Dein base BAB from classes is 9 (Fighter 8 = 8, Monk 2 = 1).
-            // With Tower Shield -2 attack penalty, BAB currentScore is 7.
-            expect(char.bab.currentScore).toBe(7);
+            // With Tower Shield -2 attack penalty, true BAB remains 9 and attackBonus is -2.
+            expect(char.bab.currentScore).toBe(9);
+            expect(char.attackBonus.currentScore).toBe(-2);
 
             // Unarmed attack bonus: BAB (7) + Str (6) = 13 (matches Dein's sheet: "+13 Unarmed")
             const unarmed = char.weapons.find(w => w.baseName === 'Unarmed');

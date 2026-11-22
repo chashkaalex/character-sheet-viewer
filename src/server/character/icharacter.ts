@@ -1,6 +1,6 @@
 import { CharacterClass } from './properties/race_and_classes';
 import { AbilitiesMap } from './properties/abilities/ability_types';
-import { ModifiableProperty, BaseProperty, CreatureSize, ListOfSpecialProperties, GearItem } from './00_property';
+import { ModifiableProperty, BaseProperty, CreatureSize, ListOfSpecialProperties, GearItem } from './property';
 import { ArmorClass } from './properties/armorClass';
 import { Skill } from './properties/skills';
 import { SpellCasting } from './spells';
@@ -34,6 +34,9 @@ export interface ICharacter {
     battleGear: Item[];
     possessions: Item[];
     bab: ModifiableProperty;
+    attackBonus: ModifiableProperty;
+    meleeAttackBonus: ModifiableProperty;
+    rangedAttackBonus: ModifiableProperty;
     acp: ModifiableProperty;
     specialAttacks: Record<string, ModifiableProperty>;
     resistances: string;
@@ -41,6 +44,8 @@ export interface ICharacter {
     HD: number;
     temporaryHp: number;
     damageBonus: ModifiableProperty;
+    meleeDamageBonus: ModifiableProperty;
+    rangedDamageBonus: ModifiableProperty;
     weapons: Weapon[];
     Special: ListOfSpecialProperties;
     speed: ModifiableProperty;

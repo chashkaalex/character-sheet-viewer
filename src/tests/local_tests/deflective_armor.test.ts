@@ -1,9 +1,9 @@
 import * as path from 'path';
 import { ICharacter } from '../../server/character/icharacter';
-import { ModifiableProperty, CreatureSize } from '../../server/character/00_property';
+import { ModifiableProperty, CreatureSize } from '../../server/character/property';
 import { ArmorClass } from '../../server/character/properties/armorClass';
 import { Ability } from '../../server/character/properties/abilities/ability';
-import { Sizes } from '../../server/character/_constants';
+import { Sizes } from '../../server/character/constants';
 import { EffectFactory, StaticPropertyEffect } from '../../server/character/state/effects';
 import { FeatEffects, GetArmorBonus, HasHeavyArmorEquipped } from '../../server/character/properties/feats/feats_effects';
 import { Armor } from '../../server/character/gear/items/items';

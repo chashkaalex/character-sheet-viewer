@@ -1,6 +1,6 @@
 import { ICharacter } from '../icharacter';
 import { EffectData, StaticPropertyEffect } from '../state/effects';
-import { registerStatusEffects } from '../_general_effects';
+import { registerStatusEffects } from '../general_effects';
 
 export type CoreActionCategory = 'general' | 'class' | 'feat' | 'stance' | 'item';
 export type ActionCategory = CoreActionCategory | (string & {});
@@ -336,13 +336,13 @@ export const ActionsData: Record<string, ActionData> = {
     effects: [
       {
         status: 'Smite',
-        property: 'bab',
+        property: 'meleeAttackBonus',
         modifierType: 'Generic',
         valueResolver: (character: ICharacter) => Math.max(0, character.abilities.Cha?.modifier || 0)
       },
       {
         status: 'Smite',
-        property: 'damageBonus',
+        property: 'meleeDamageBonus',
         modifierType: 'Generic',
         valueResolver: (character: ICharacter) => character.GetClassLevel('Crusader')
       }
@@ -416,7 +416,7 @@ export const ActionsData: Record<string, ActionData> = {
     actionType: 'free',
     calculateDuration: (_character) => 1,
     effects: [
-      { status: 'Fighting Defensively', property: 'bab', modifierType: 'Generic', value: -4 },
+      { status: 'Fighting Defensively', property: 'attackBonus', modifierType: 'Generic', value: -4 },
       {
         status: 'Fighting Defensively',
         property: 'ac',
@@ -451,7 +451,7 @@ export const ActionsData: Record<string, ActionData> = {
     actionType: 'full-round',
     calculateDuration: (_character) => 1,
     effects: [
-      { status: 'Charge', property: 'bab', modifierType: 'Generic', value: 2 },
+      { status: 'Charge', property: 'meleeAttackBonus', modifierType: 'Generic', value: 2 },
       { status: 'Charge', property: 'ac', modifierType: 'Generic', value: -2 },
       {
         status: 'Charge',

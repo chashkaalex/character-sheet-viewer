@@ -2,7 +2,7 @@ import { SetPinnedSpecialAttack, SetSkillFilterPreference, SetSpellLayoutPrefere
 import { CharacterError } from '../character/character';
 import { recordUserLog } from './gsheet_logger';
 import { CharacterRep } from '../character/character_rep';
-import { APP_VERSION } from '../character/_version';
+import { APP_VERSION } from '../character/version';
 import {
     GetCharacterByDocId,
     GetCharacterRepByDocId,

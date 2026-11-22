@@ -1,7 +1,7 @@
 import { ICharacter } from '@server/character/icharacter';
-import { WeaponAttackBonus, WeaponDamageBonus, ModifiableProperty, currentRegistry } from '../../00_property';
+import { WeaponAttackBonus, WeaponDamageBonus, ModifiableProperty, currentRegistry } from '../../property';
 import { CharacterClass } from '@server/character/properties/race_and_classes';
-import { ClassesData } from '../../../classes_data/_classes_general_data';
+import { ClassesData } from '../../../classes_data/classes_general_data';
 import { Item } from '@server/character/gear/items/items';
 import { EffectData } from '@server/character/state/effects';
 import { AdditionalDamageComponent, ParseWeaponExtraDamage, BuildRolzDamageMessage } from './weapon_extra_damage';
@@ -431,8 +431,24 @@ export class Weapon {
     }
 
     const attackEnhancement = this.enhancement > 0 ? this.enhancement : (this.isMasterwork ? 1 : 0);
-    this.attackBonus = new WeaponAttackBonus(character.bab, weaponAttackAbility, character.size, attackEnhancement, this.featAttackBonus);
-    this.damageBonus = new WeaponDamageBonus(weaponDamageAbility, character.damageBonus, this.damageBonusFromWeapon + this.enhancement, this.featDamageBonus);
+    const rangeAtkBonus = this.rangeType === 'Melee' ? character.meleeAttackBonus : character.rangedAttackBonus;
+    const rangeDmgBonus = this.rangeType === 'Melee' ? character.meleeDamageBonus : character.rangedDamageBonus;
+    this.attackBonus = new WeaponAttackBonus(
+      character.bab,
+      weaponAttackAbility,
+      character.size,
+      attackEnhancement,
+      this.featAttackBonus,
+      character.attackBonus,
+      rangeAtkBonus
+    );
+    this.damageBonus = new WeaponDamageBonus(
+      weaponDamageAbility,
+      character.damageBonus,
+      this.damageBonusFromWeapon + this.enhancement,
+      this.featDamageBonus,
+      rangeDmgBonus
+    );
   }
 
   public isMonkWeapon(): boolean {

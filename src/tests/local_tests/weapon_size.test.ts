@@ -5,8 +5,8 @@ import { OnCastSpell, GetCharacterByDocId } from '../../server/character/charact
 import { scaleWeaponDamage, getIncreasedDamage, getDecreasedDamage } from '../../server/character/gear/weapons/weapons';
 import { Item } from '../../server/character/gear/items/items';
 import { ItemWeapon } from '../../server/character/gear/weapons/weapons';
-import { CreatureSize, ModifiableProperty } from '../../server/character/00_property';
-import { Sizes } from '../../server/character/_constants';
+import { CreatureSize, ModifiableProperty } from '../../server/character/property';
+import { Sizes } from '../../server/character/constants';
 import { ICharacter } from '../../server/character/icharacter';
 
 describe('Weapon Damage Size Scaling Tests', () => {

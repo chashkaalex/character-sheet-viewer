@@ -1,4 +1,4 @@
-import { DocumentAdapter } from './_document_adapter';
+import { DocumentAdapter } from './document_adapter';
 import { AdapterResult } from './common_types';
 import { normalizeQuotes } from './parser_utils';
 

@@ -1,7 +1,7 @@
 import { Character } from '../character';
 import { OnCastSpell, OnReplenishClassSpellSlots } from '../character_manipulation';
 import { getCharacterRep } from '../character_rep';
-import { ModifiableProperty } from '../00_property';
+import { ModifiableProperty } from '../property';
 import { ParseRaceAndClassesString } from '../properties/race_and_classes';
 import { GetCharacterByDocId } from '../../services/gas_server';
 

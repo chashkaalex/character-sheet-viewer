@@ -1,4 +1,4 @@
-import { GetEffects, StatusesEffects } from '../_general_effects';
+import { GetEffects, StatusesEffects } from '../general_effects';
 import { GetFirstNumberFromALine } from '../parser_utils';
 import { EffectFactory, EffectData } from './effects';
 import { Status } from './state';

@@ -54,21 +54,6 @@ export const FlawsEffects: Record<string, EffectData[]> = {
     ],
     'Shaky': [
         { status: 'Shaky', property: 'Special', description: 'You take a -2 penalty on ranged attack rolls.' },
-        {
-            status: 'Shaky',
-            property: 'Weapons',
-            callback: (character) => {
-                character.weapons.forEach(weapon => {
-                    if (weapon.rangeType === 'Ranged') {
-                        weapon.featAttackBonus.applyEffect(new StaticPropertyEffect({
-                            status: 'Shaky',
-                            property: 'featAttackBonus',
-                            modifierType: 'Generic',
-                            value: -2
-                        }));
-                    }
-                });
-            }
-        }
+        { status: 'Shaky', property: 'rangedAttackBonus', modifierType: 'Generic', value: -2 }
     ]
 };

@@ -176,7 +176,7 @@ export const FeatEffects: Record<string, EffectData[]> = {
   'Dragonfoe': [
     {
       status: 'Dragonfoe',
-      property: 'bab',
+      property: 'attackBonus',
       modifierType: 'Generic',
       valueResolver: (character: ICharacter) => StatusRelatedValue(character, 'Fighting Dragon', 2)
     },

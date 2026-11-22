@@ -1,6 +1,6 @@
 import { Character } from '../../server/character/character';
 import { EffectFactory } from '../../server/character/state/effects';
-import { setPropertyRegistry } from '../../server/character/00_property';
+import { setPropertyRegistry } from '../../server/character/property';
 
 describe('Order-Independent Effect Application', () => {
     test('should apply pending effects when property is registered late', () => {

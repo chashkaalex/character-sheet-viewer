@@ -1,5 +1,5 @@
 import { Character } from '../../server/character/character';
-import { SpecialAttackBonus } from '../../server/character/00_property';
+import { SpecialAttackBonus } from '../../server/character/property';
 import { ActionsData } from '../../server/character/actions/actions_effects';
 
 function buildPhase2TestSheet(overrides: {

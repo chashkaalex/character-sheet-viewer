@@ -77,7 +77,8 @@ describe('Standard Combat Actions', () => {
     expect(afterLow instanceof CharacterError).toBe(false);
     if (afterLow instanceof CharacterError) return;
 
-    expect(afterLow.bab.currentScore).toBe(baseLow.bab.currentScore - 4);
+    expect(afterLow.bab.currentScore).toBe(baseLow.bab.currentScore);
+    expect(afterLow.attackBonus.currentScore).toBe(baseLow.attackBonus.currentScore - 4);
     expect(afterLow.ac.currentScore).toBe(baseLow.ac.currentScore + 2);
     expect(afterLow.ac.touchArmorClass).toBe(baseLow.ac.touchArmorClass + 2);
     expect(afterLow.ac.flatFootedArmorClass).toBe(baseLow.ac.flatFootedArmorClass);
@@ -92,7 +93,8 @@ describe('Standard Combat Actions', () => {
     expect(afterHigh instanceof CharacterError).toBe(false);
     if (afterHigh instanceof CharacterError) return;
 
-    expect(afterHigh.bab.currentScore).toBe(baseHigh.bab.currentScore - 4);
+    expect(afterHigh.bab.currentScore).toBe(baseHigh.bab.currentScore);
+    expect(afterHigh.attackBonus.currentScore).toBe(baseHigh.attackBonus.currentScore - 4);
     expect(afterHigh.ac.currentScore).toBe(baseHigh.ac.currentScore + 3);
     expect(afterHigh.ac.touchArmorClass).toBe(baseHigh.ac.touchArmorClass + 3);
   });
@@ -137,7 +139,8 @@ describe('Standard Combat Actions', () => {
     expect(after instanceof CharacterError).toBe(false);
     if (after instanceof CharacterError) return;
 
-    expect(after.bab.currentScore).toBe(base.bab.currentScore + 2);
+    expect(after.bab.currentScore).toBe(base.bab.currentScore);
+    expect(after.meleeAttackBonus.currentScore).toBe(base.meleeAttackBonus.currentScore + 2);
     expect(after.ac.currentScore).toBe(base.ac.currentScore - 2);
     expect(after.ac.touchArmorClass).toBe(base.ac.touchArmorClass - 2);
     expect(after.ac.flatFootedArmorClass).toBe(base.ac.flatFootedArmorClass - 2);

@@ -1,4 +1,4 @@
-import { SpellcasterClasses } from '../_constants';
+import { SpellcasterClasses } from '../constants';
 import { AbilityNames } from '../properties/abilities/ability_types';
 import {
   CharacterParsedSpellSlots,

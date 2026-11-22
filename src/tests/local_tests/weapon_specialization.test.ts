@@ -1,6 +1,6 @@
 import { ICharacter } from '../../server/character/icharacter';
-import { ModifiableProperty, CreatureSize, BaseProperty, setPropertyRegistry } from '../../server/character/00_property';
-import { Sizes } from '../../server/character/_constants';
+import { ModifiableProperty, CreatureSize, BaseProperty, setPropertyRegistry } from '../../server/character/property';
+import { Sizes } from '../../server/character/constants';
 import { Weapon } from '../../server/character/gear/weapons/weapons';
 import { FeatEffects } from '../../server/character/properties/feats/feats_effects';
 import { EffectFactory, StaticPropertyEffect } from '../../server/character/state/effects';

@@ -1,5 +1,5 @@
 import { ParsePreparedSlotsDivine } from '../character/parsers/prepared_spells';
-import { ClassesData } from './_classes_general_data';
+import { ClassesData } from './classes_general_data';
 import { ClassData, createClassData } from './class_types';
 import { GetLineThatContainsOneOfTheseTokens, GetParenthesesContent } from '../character/parser_utils';
 import { ICharacter } from '../character/icharacter';

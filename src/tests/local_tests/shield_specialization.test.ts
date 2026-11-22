@@ -1,5 +1,5 @@
 import { ICharacter } from '../../server/character/icharacter';
-import { ModifiableProperty } from '../../server/character/00_property';
+import { ModifiableProperty } from '../../server/character/property';
 import { EffectFactory } from '../../server/character/state/effects';
 import { FeatEffects } from '../../server/character/properties/feats/feats_effects';
 import { Armor } from '../../server/character/gear/items/items';

@@ -1,6 +1,6 @@
 import { ICharacter } from '@server/character/icharacter';
 import { Weapon } from './weapons';
-import { ClassesData } from '../../../classes_data/_classes_general_data';
+import { ClassesData } from '../../../classes_data/classes_general_data';
 import { BuildRolzDamageMessage } from './weapon_extra_damage';
 
 export interface FullAttackEntry {
@@ -23,9 +23,12 @@ export interface WeaponFullAttackData {
 }
 
 /**
- * Calculates the base BAB summing only the contributions from classes.
+ * Calculates the base BAB from character.bab (including true BAB effects like Divine Power).
  */
 export function getBaseBab(character: ICharacter): number {
+  if (character.bab) {
+    return character.bab.currentScore;
+  }
   let baseBab = 0;
   if (!character.classes) return 0;
   for (const charClass of character.classes) {

@@ -1,5 +1,5 @@
-import { SpellcasterClasses } from '../_constants';
-import { ClassesData } from '../../classes_data/_classes_general_data';
+import { SpellcasterClasses } from '../constants';
+import { ClassesData } from '../../classes_data/classes_general_data';
 import { GetFirstNumberFromALine } from '../parser_utils';
 import { CharacterSpellSlots, CasterClassSpellSlots } from '../common_types';
 

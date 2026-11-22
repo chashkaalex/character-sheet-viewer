@@ -3,8 +3,8 @@ import { GetCharacterByDocId } from '../../server/character/character_manipulati
 import { Character } from '../../server/character/character';
 import { Weapon } from '../../server/character/gear/weapons/weapons';
 import { ICharacter } from '../../server/character/icharacter';
-import { ModifiableProperty, CreatureSize } from '../../server/character/00_property';
-import { Sizes } from '../../server/character/_constants';
+import { ModifiableProperty, CreatureSize } from '../../server/character/property';
+import { Sizes } from '../../server/character/constants';
 
 const THRORS_TEST_FILE = path.join(__dirname, 'test_character_sheets', 'thror_test.txt');
 

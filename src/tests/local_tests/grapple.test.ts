@@ -1,6 +1,6 @@
 import { Character } from '../../server/character/character';
 import { GetCharacterByDocId } from '../../server/character/character_manipulation';
-import { SpecialAttackBonus } from '../../server/character/00_property';
+import { SpecialAttackBonus } from '../../server/character/property';
 import * as path from 'path';
 
 describe('Grapple Bonus Calculations', () => {

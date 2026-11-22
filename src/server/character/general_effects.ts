@@ -21,7 +21,7 @@ export function initializeGeneralEffects(): void {
   const keepingGrudgeEffects: EffectData[] = [
     {
       status: 'Keeping Grudge',
-      property: 'bab',
+      property: 'attackBonus',
       modifierType: 'Circumstance',
       value: -2
     }
@@ -63,7 +63,7 @@ export function initializeGeneralEffects(): void {
   StatusesEffects['Invisible'] = [
     {
       status: 'Invisible',
-      property: 'bab',
+      property: 'attackBonus',
       modifierType: 'Generic',
       value: 2
     }
@@ -78,7 +78,7 @@ const DynamicStatusesEffects: Record<string, DynamicEffectGenerator> = {
       modifierType: 'Morale',
       valueResolver: (character: ICharacter) => character.HasStatus('Frightful Presence') ? parsedValue : 0
     },
-    { status: statusName, property: 'bab', modifierType: 'Morale', value: parsedValue },
+    { status: statusName, property: 'attackBonus', modifierType: 'Morale', value: parsedValue },
     { status: statusName, property: 'damageBonus', modifierType: 'Morale', value: parsedValue }
   ],
   'Inspire Competence': (parsedValue, statusName) => {
@@ -90,7 +90,7 @@ const DynamicStatusesEffects: Record<string, DynamicEffectGenerator> = {
     }));
   },
   'Inspire Greatness': (parsedValue, statusName) => [
-    { status: statusName, property: 'bab', modifierType: 'Competence', value: parsedValue },
+    { status: statusName, property: 'attackBonus', modifierType: 'Competence', value: parsedValue },
     { status: statusName, property: 'Fort', modifierType: 'Competence', value: Math.max(0, parsedValue - 1) }
   ],
   'Inspire Heroics': (parsedValue, statusName) => {
@@ -105,14 +105,14 @@ const DynamicStatusesEffects: Record<string, DynamicEffectGenerator> = {
   'Furious Counterstrike': (parsedValue, statusName) => {
     const bonus = Math.max(1, Math.floor(Math.abs(parsedValue) / 5));
     return [
-      { status: statusName, property: 'bab', modifierType: 'Generic', value: bonus },
+      { status: statusName, property: 'attackBonus', modifierType: 'Generic', value: bonus },
       { status: statusName, property: 'damageBonus', modifierType: 'Generic', value: bonus }
     ];
   },
   'Combat Expertise': (parsedValue, statusName) => {
     const acBonus = Math.abs(parsedValue);
     return [
-      { status: statusName, property: 'bab', modifierType: 'Generic', value: parsedValue },
+      { status: statusName, property: 'attackBonus', modifierType: 'Generic', value: parsedValue },
       { status: statusName, property: 'ac', modifierType: 'Dodge', value: acBonus }
     ];
   }

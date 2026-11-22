@@ -1,7 +1,7 @@
-import { ClassesData } from '../classes_data/_classes_general_data';
-import { ModifiableProperty } from './00_property';
+import { ClassesData } from '../classes_data/classes_general_data';
+import { ModifiableProperty } from './property';
 import { Ability } from './properties/abilities/ability';
-import { registerStatusEffects } from './_general_effects';
+import { registerStatusEffects } from './general_effects';
 import { EffectData, StaticPropertyEffect } from './state/effects';
 import { ParsedLevelSpellSlots, BardicSpecial, KnownSpellEntry, SpellSlotData, CharacterSpellSlots } from './common_types';
 import { ICharacter } from './icharacter';
@@ -248,8 +248,8 @@ const SpellsData: Record<string, SpellData> = {
           const modifierType = 'Luck';
           const status = 'Prayer';
 
-          // Attack (bab), saves (Fort, Ref, Will), weapon damage (damageBonus)
-          const targetProps = ['bab', 'damageBonus', 'Fort', 'Ref', 'Will'];
+          // Attack (attackBonus), saves (Fort, Ref, Will), weapon damage (damageBonus)
+          const targetProps = ['attackBonus', 'damageBonus', 'Fort', 'Ref', 'Will'];
           targetProps.forEach(propName => {
             const prop = character.GetNamedProperty(propName);
             if (prop) {
@@ -288,7 +288,7 @@ const SpellsData: Record<string, SpellData> = {
         modifierType: 'Generic',
         valueResolver: (character: ICharacter) => Math.min(30, character.speed.score)
       },
-      { status: 'Haste', property: 'bab', modifierType: 'Generic', value: 1 },
+      { status: 'Haste', property: 'attackBonus', modifierType: 'Generic', value: 1 },
       { status: 'Haste', property: 'ac', modifierType: 'Dodge', value: 1 },
       { status: 'Haste', property: 'Ref', modifierType: 'Dodge', value: 1 }
     ],

@@ -7,7 +7,7 @@ import { calculateNormalFullAttack, calculateTwfFullAttack } from './gear/weapon
 import { BuildWeaponDamageVariants } from './gear/weapons/weapon_extra_damage';
 import { sanitizeDbLink } from './parser_utils';
 import { GetScriptProperty } from '../services/gdoc_utilities';
-import { APP_VERSION } from './_version';
+import { APP_VERSION } from './version';
 
 /**
  * Character representation for the client.

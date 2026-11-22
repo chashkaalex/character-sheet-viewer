@@ -41,8 +41,9 @@ describe('Combat Expertise Local Integration Tests', () => {
         expect(expertiseMeta.maxNumber).toBe(5); // Math.min(5, Dein's BAB=9) = 5
         expect(expertiseMeta.label).toBe('Penalty value:');
 
-        // Check initial stats (Dein has Tower Shield equipped: -2 to BAB and attacks)
-        expect(char.bab.currentScore).toBe(7); // 9 base - 2 Tower Shield = 7
+        // Check initial stats (Dein has Tower Shield equipped: -2 to attackBonus, while true BAB remains 9)
+        expect(char.bab.currentScore).toBe(9);
+        expect(char.attackBonus.currentScore).toBe(-2); // -2 Tower Shield
         expect(char.ac.currentArmorClass).toBe(23);
         const waraxe = char.weapons.find(w => w.name.includes('Waraxe'));
         expect(waraxe).toBeDefined();
@@ -66,8 +67,9 @@ describe('Combat Expertise Local Integration Tests', () => {
         expect(updatedChar instanceof CharacterError).toBe(false);
         if (updatedChar instanceof CharacterError) return;
 
-        // BAB should be reduced by 3 (7 - 3 = 4)
-        expect(updatedChar.bab.currentScore).toBe(4);
+        // True BAB remains 9, while attackBonus is reduced by 3 (-2 - 3 = -5)
+        expect(updatedChar.bab.currentScore).toBe(9);
+        expect(updatedChar.attackBonus.currentScore).toBe(-5);
 
         // AC should increase by +3 (23 + 3 = 26)
         expect(updatedChar.ac.currentArmorClass).toBe(26);

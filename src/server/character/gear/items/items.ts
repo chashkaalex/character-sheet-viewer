@@ -1,6 +1,6 @@
-import { GetEffects } from '../../_general_effects';
+import { GetEffects } from '../../general_effects';
 import { EffectData } from '../../state/effects';
-import { currentRegistry } from '../../00_property';
+import { currentRegistry } from '../../property';
 
 import { Monk } from '../../../classes_data/monk';
 import { IsAWeapon, GetSpecialWeaponMaterial } from '../weapons/weapons';
@@ -90,8 +90,23 @@ export const ItemEffects: Record<string, EffectData[]> = {
   ],
 
   'Amulet of Mighty Fists': [
-    { status: 'Amulet of Mighty Fists', property: 'bab', modifierType: 'Generic', value: 1 },
-    { status: 'Amulet of Mighty Fists', property: 'damageBonus', modifierType: 'Generic', value: 1 }
+    {
+      status: 'Amulet of Mighty Fists',
+      callback: (character: ICharacter) => {
+        character.addGearEffect('Amulet of Mighty Fists', 'Unarmed', {
+          status: 'Amulet of Mighty Fists',
+          property: 'featAttackBonus',
+          modifierType: 'Enhancement',
+          value: 1
+        });
+        character.addGearEffect('Amulet of Mighty Fists', 'Unarmed', {
+          status: 'Amulet of Mighty Fists',
+          property: 'featDamageBonus',
+          modifierType: 'Enhancement',
+          value: 1
+        });
+      }
+    }
   ],
 
   'Amulet of Pelor/Set': [
@@ -508,7 +523,7 @@ export class Armor extends Item {
     if (this.attackPenalty !== 0) {
       this.effects.push({
         status: this.name,
-        property: 'bab',
+        property: 'attackBonus',
         modifierType: 'Generic',
         value: this.attackPenalty
       });

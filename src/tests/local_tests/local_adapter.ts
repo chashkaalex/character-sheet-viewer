@@ -1,9 +1,9 @@
 import * as fs from 'fs';
-import { DocumentAdapter } from '../../server/character/_document_adapter';
+import { DocumentAdapter } from '../../server/character/document_adapter';
 import { GetFirstNumberFromALine, normalizeQuotes } from '../../server/character/parser_utils';
 import { IsSectionLine } from '../../server/character/parsers/doc_parser';
 import { AdapterResult } from '../../server/character/common_types';
-import { ClassesData } from '../../server/classes_data/_classes_general_data';
+import { ClassesData } from '../../server/classes_data/classes_general_data';
 import { CharacterSession } from '../../server/character/character_session';
 
 function hashString(str: string): number {

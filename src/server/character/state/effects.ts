@@ -1,5 +1,5 @@
-import { ModifierType } from '../_constants';
-import { BaseProperty, currentRegistry } from '../00_property';
+import { ModifierType } from '../constants';
+import { BaseProperty, currentRegistry } from '../property';
 import type { ICharacter } from '../icharacter';
 import { SkillsAbilities } from '../properties/skills';
 

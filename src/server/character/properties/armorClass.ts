@@ -1,9 +1,9 @@
-import { ModifiableProperty, CreatureSize } from '../00_property';
+import { ModifiableProperty, CreatureSize } from '../property';
 import { CharacterClass } from './race_and_classes';
 import { AbilitiesMap } from './abilities/ability_types';
 import { Ability } from './abilities/ability';
-import { ClassesData } from '../../classes_data/_classes_general_data';
-import { ModifierTypes } from '../_constants';
+import { ClassesData } from '../../classes_data/classes_general_data';
+import { ModifierTypes } from '../constants';
 
 export class ArmorClass extends ModifiableProperty {
   public abilities: Ability[];

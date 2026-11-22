@@ -187,11 +187,11 @@ describe('Local Character Parsing', () => {
 
         // Emulate `OnCastSpell` generating a +3 string and Verify it maps cleanly in _general_effects
         const generatedStatusName = `Inspire Courage +${icProperty.currentScore}`;
-        const { GetEffects, StatusesEffects } = require('../../server/character/_general_effects');
+        const { GetEffects, StatusesEffects } = require('../../server/character/general_effects');
         const retrievedEffects = GetEffects(StatusesEffects, generatedStatusName);
         expect(retrievedEffects).not.toBeNull();
         expect(retrievedEffects!.length).toBe(3);
-        expect(retrievedEffects!.find(e => e.property === 'bab')!.value).toBe(3); // Prove numerical 3 carried over via RegExp
+        expect(retrievedEffects!.find(e => e.property === 'attackBonus')!.value).toBe(3); // Prove numerical 3 carried over via RegExp
 
         // Verify Weapons (now parsed from items)
         const unarmed = bess.weapons.find(w => w.baseName === 'Unarmed');

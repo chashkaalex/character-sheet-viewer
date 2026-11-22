@@ -2,7 +2,7 @@ import * as path from 'path';
 import { GetCharacterByDocId, GetCharacterRepByDocId } from '../../server/character/character_manipulation';
 import { Character, CharacterError } from '../../server/character/character';
 import { CharacterRep } from '../../server/character/character_rep';
-import { SpecialAttackNames } from '../../server/character/_constants';
+import { SpecialAttackNames } from '../../server/character/constants';
 
 describe('Special Attacks Cleanup & Calculations', () => {
   const THROR_FILE_PATH = path.join(__dirname, 'test_character_sheets', 'thror_test.txt');

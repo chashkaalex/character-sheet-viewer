@@ -1,5 +1,5 @@
 import { GetFirstNumberFromALine } from '../parser_utils';
-import { ModifiableProperty } from '../00_property';
+import { ModifiableProperty } from '../property';
 import { AbilityName, AbilityNames, AbilitiesMap } from './abilities/ability_types';
 import type { Ability } from './abilities/ability';
 

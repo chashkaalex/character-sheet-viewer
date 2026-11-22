@@ -2,7 +2,7 @@ import { characterRep, setCharacterRep } from './state';
 import { populateWeaponDropdown, populateSpecialAttackDropdown, RemoveStatus, updateAttacksOfOpportunityDisplay } from './dashboard_script';
 import { PrepareSpellsUI } from './spells_script';
 import { startPartyStatusListener } from './party_sync_listener';
-import { APP_VERSION as CLIENT_APP_VERSION } from '../../server/character/_version';
+import { APP_VERSION as CLIENT_APP_VERSION } from '../../server/character/version';
 import { renderRoundActionsUI } from './round_actions';
 import { addTooltip, UpdateValueAndTooltip } from './character/tooltip_rolz';
 import { populateInventory } from './character/inventory';

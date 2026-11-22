@@ -1,6 +1,6 @@
 import { AbilityName } from '../character/properties/abilities/ability_types';
 import { ICharacter } from '../character/icharacter';
-import { ModifiableProperty } from '../character/00_property';
+import { ModifiableProperty } from '../character/property';
 import { CasterClassSpellSlots, BardicSpecial, KnownSpellEntry, SpellSlotData, AdapterResult } from '../character/common_types';
 
 

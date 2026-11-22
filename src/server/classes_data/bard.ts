@@ -1,6 +1,6 @@
-import { ClassesData } from './_classes_general_data';
+import { ClassesData } from './classes_general_data';
 import { ClassData, createClassData } from './class_types';
-import { ModifiableProperty } from '../character/00_property';
+import { ModifiableProperty } from '../character/property';
 import { BardicSpecial } from '../character/common_types';
 import { ParsePreparedSlotsSpontaneous } from '../character/parsers/prepared_spells';
 import { ICharacter } from '../character/icharacter';

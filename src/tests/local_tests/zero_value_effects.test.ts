@@ -1,4 +1,4 @@
-import { ModifiableProperty } from '../../server/character/00_property';
+import { ModifiableProperty } from '../../server/character/property';
 
 describe('ModifiableProperty EffectsString', () => {
     test('should include zero value effects by default (reproduction)', () => {

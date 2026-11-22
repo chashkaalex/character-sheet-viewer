@@ -1,5 +1,5 @@
-import { ModifiableProperty, CreatureSize } from '../../server/character/00_property';
-import { Sizes } from '../../server/character/_constants';
+import { ModifiableProperty, CreatureSize } from '../../server/character/property';
+import { Sizes } from '../../server/character/constants';
 
 describe('ModifiableProperty', () => {
   let modifiableProperty: ModifiableProperty;

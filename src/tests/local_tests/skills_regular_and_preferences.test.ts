@@ -1,7 +1,7 @@
 import { ParseSkills, RegularSkills, isSkillTrainedOnly } from '../../server/character/properties/skills';
 import { Ability } from '../../server/character/properties/abilities/ability';
 import { AbilitiesMap } from '../../server/character/properties/abilities/ability_types';
-import { ModifiableProperty } from '../../server/character/00_property';
+import { ModifiableProperty } from '../../server/character/property';
 import { getSkillFilterPreference, SetSkillFilterPreference, getSpellLayoutPreference, SetSpellLayoutPreference } from '../../server/character/character_preferences';
 
 function makeAbilities(): AbilitiesMap {

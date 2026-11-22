@@ -9,12 +9,12 @@ import {
     BaseProperty,
     setPropertyRegistry,
     GearItem
-} from './00_property';
+} from './property';
 import { SpellCasting, ExtractAndValidateSpell } from './spells';
 import { AbilityNames, AbilitiesMap } from './properties/abilities/ability_types';
 import { Ability, AbilityBasedProperty } from './properties/abilities/ability';
 import { ParseAbilities } from './properties/abilities/ability_parser';
-import { Sizes, SpecialAttackNames } from './_constants';
+import { Sizes, SpecialAttackNames } from './constants';
 import { BodySlots, BodySlotsMap, Item } from './gear/items/items';
 import { ParsePreparedSpells } from './parsers/prepared_spells';
 import { Skill, ParseSkills, SkillsAbilities } from './properties/skills';
@@ -27,7 +27,7 @@ import { ParseRaceAndClasses, ApplyClassesEffects, ApplyRacesEffects, CharacterC
 import { CreateArmorClass, ArmorClass } from './properties/armorClass';
 import { CreateSaves, SavesMap, SaveNames } from './properties/saves';
 import { ParseHp } from './state/hp';
-import { initializeGeneralEffects } from './_general_effects';
+import { initializeGeneralEffects } from './general_effects';
 import { ICharacter } from './icharacter';
 import { Status } from './state/state';
 import { BaseEffect, EffectData, EffectFactory, StaticPropertyEffect } from './state/effects';
@@ -51,9 +51,9 @@ import '../races_data/elf';
 import '../races_data/human';
 import '../races_data/half-elf';
 
-import { RacesData } from '../races_data/_races_general_data';
+import { RacesData } from '../races_data/races_general_data';
 
-import { ClassesData } from '../classes_data/_classes_general_data';
+import { ClassesData } from '../classes_data/classes_general_data';
 import { UpdateHpCallback, OnCastSpellCallback } from './manipulation_types';
 import './actions/actions_effects';
 
@@ -85,6 +85,9 @@ export class Character implements ICharacter, IPropertyRegistry {
     public battleGear: Item[] = [];
     public possessions: Item[] = [];
     public bab: ModifiableProperty;
+    public attackBonus: ModifiableProperty;
+    public meleeAttackBonus: ModifiableProperty;
+    public rangedAttackBonus: ModifiableProperty;
     public acp: ModifiableProperty;
     public specialAttacks: Record<string, ModifiableProperty> = {};
     public resistances: string = '';
@@ -92,6 +95,8 @@ export class Character implements ICharacter, IPropertyRegistry {
     public HD: number = 0;
     public temporaryHp: number = 0;
     public damageBonus: ModifiableProperty;
+    public meleeDamageBonus: ModifiableProperty;
+    public rangedDamageBonus: ModifiableProperty;
     public weapons: Weapon[] = [];
     public Special: ListOfSpecialProperties;
     public speed: ModifiableProperty;
@@ -235,9 +240,14 @@ export class Character implements ICharacter, IPropertyRegistry {
             this.spellCasting = new SpellCasting();
             this.actions = [...STANDARD_COMBAT_ACTIONS];
             this.bab = new ModifiableProperty(0, 'bab');
+            this.attackBonus = new ModifiableProperty(0, 'attackBonus');
+            this.meleeAttackBonus = new ModifiableProperty(0, 'meleeAttackBonus');
+            this.rangedAttackBonus = new ModifiableProperty(0, 'rangedAttackBonus');
             this.acp = new ModifiableProperty(0, 'acp');
             this.hp = { current: 0, max: 0 };
             this.damageBonus = new ModifiableProperty(0, 'damageBonus');
+            this.meleeDamageBonus = new ModifiableProperty(0, 'meleeDamageBonus');
+            this.rangedDamageBonus = new ModifiableProperty(0, 'rangedDamageBonus');
             this.Special = new ListOfSpecialProperties();
             this.speed = new ModifiableProperty(0, 'speed');
         } finally {
@@ -277,7 +287,7 @@ export class Character implements ICharacter, IPropertyRegistry {
                 if (attackName === 'Trip' || attackName === 'Bull rush' || attackName === 'Overrun') {
                     this.specialAttacks[attackName] = new SpecialAttackBonus(this.abilities.Str!, this.size, attackName);
                 } else if (attackName === 'Grapple') {
-                    this.specialAttacks[attackName] = new SpecialAttackBonus(this.abilities.Str!, this.size, attackName, this.bab);
+                    this.specialAttacks[attackName] = new SpecialAttackBonus(this.abilities.Str!, this.size, attackName, this.bab, this.attackBonus);
                 } else {
                     this.specialAttacks[attackName] = new ModifiableProperty(0, attackName);
                 }

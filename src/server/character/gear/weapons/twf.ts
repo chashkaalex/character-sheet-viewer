@@ -74,6 +74,7 @@ function calculateOffHandDamageBonus(weapon: Weapon, strModifier: number): numbe
   const halfStr = Math.floor(strModifier / 2);
   const otherBonuses =
     weapon.damageBonus.globalDmgBonus.currentScore +
+    weapon.damageBonus.rangeDmgBonus.currentScore +
     weapon.damageBonus.weaponSpecificBonus +
     weapon.damageBonus.featBonus.currentScore;
   return halfStr + otherBonuses;
