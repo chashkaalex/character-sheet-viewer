@@ -1,5 +1,5 @@
 import { ICharacter } from '@server/character/icharacter';
-import { Weapon } from './weapons';
+import { Weapon, MeleeWeapon } from './weapons';
 import { BuildWeaponDamageVariants } from './weapon_extra_damage';
 
 /**
@@ -63,6 +63,9 @@ function getTwfPenalties(hasTWF: boolean, offHandIsLight: boolean): { mainPenalt
  * Determines if a weapon is eligible for off-hand TWF use (melee only).
  */
 function isEligibleForTwf(weapon: Weapon): boolean {
+  if (weapon instanceof MeleeWeapon) {
+    return weapon.isEligibleForTwf();
+  }
   return weapon.rangeType === 'Melee' && weapon.encumbrance !== 'Two-Handed';
 }
 

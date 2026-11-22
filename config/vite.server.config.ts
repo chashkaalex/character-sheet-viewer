@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import path from 'path';
 
 export default defineConfig({
+  define: {
+    __IS_GAS_BUILD__: 'true'
+  },
   build: {
     outDir: path.resolve(__dirname, '../dist/server'),
     emptyOutDir: true,

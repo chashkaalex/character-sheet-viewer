@@ -22,7 +22,7 @@ function collectFilesRecursively(dir: string): string[] {
 }
 
 describe('Step 1.1b: Single-File GAS Server Bundle & Prefix Cleanup', () => {
-  test('1. No source files in src/ use legacy artificial alphabetical load-order prefixes (00_ or _)', () => {
+  test('1. No source files in src/ use legacy artificial alphabetical load-order prefixes (00_ or _) and obsolete gas_tests dir is removed', () => {
     const allSrcFiles = collectFilesRecursively(SRC_DIR);
     const prefixedFiles = allSrcFiles
       .map(f => path.relative(ROOT_DIR, f))
@@ -32,9 +32,10 @@ describe('Step 1.1b: Single-File GAS Server Bundle & Prefix Cleanup', () => {
       });
 
     expect(prefixedFiles).toEqual([]);
+    expect(fs.existsSync(path.join(SRC_DIR, 'server', 'character', 'gas_tests'))).toBe(false);
   });
 
-  test('2. Build outputs a single clasp-uploadable dist/server/code.gs bundle that executes cleanly in a GAS-like VM context', () => {
+  test('2. Build outputs a single clasp-uploadable dist/server/code.gs bundle (with LocalAdapter tree-shaken out) that executes cleanly in a GAS-like VM context', () => {
     execSync('node build/build.js', { cwd: ROOT_DIR, stdio: 'pipe' });
 
     expect(fs.existsSync(DIST_SERVER_DIR)).toBe(true);
@@ -45,6 +46,10 @@ describe('Step 1.1b: Single-File GAS Server Bundle & Prefix Cleanup', () => {
     expect(gsFiles.map(f => path.relative(DIST_SERVER_DIR, f))).toEqual(['code.gs']);
 
     const bundleCode = fs.readFileSync(gsFiles[0], 'utf8');
+
+    // LocalAdapter and Node fs/child_process must be completely tree-shaken out of the GAS bundle
+    expect(bundleCode).not.toContain('LocalAdapter');
+    expect(bundleCode).not.toContain('child_process');
 
     // Execute inside an isolated V8 VM context simulating Google Apps Script global scope
     const gasContext: Record<string, any> = {

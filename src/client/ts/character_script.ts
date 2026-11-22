@@ -109,8 +109,8 @@ export function onCharacterRepresentation(response) {
   document.getElementById('characterName').innerHTML = nameDisplay;
 
   //render hp
-  document.getElementById('hpCurrent').innerHTML = characterRep.hp.current;
-  document.getElementById('hpMax').innerHTML = characterRep.hp.max;
+  document.getElementById('hpCurrent').innerHTML = String(characterRep.hp.current);
+  document.getElementById('hpMax').innerHTML = String(characterRep.hp.max);
   const hpMeter = document.getElementById('hpMeter') as HTMLMeterElement;
   hpMeter.value = characterRep.hp.current;
   hpMeter.max = characterRep.hp.max;

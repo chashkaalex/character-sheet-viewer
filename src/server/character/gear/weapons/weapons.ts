@@ -392,47 +392,13 @@ export class Weapon {
   }
 
   calculateBonuses(character: ICharacter): void {
-    let weaponAttackAbilityName: 'Str' | 'Dex' = this.rangeType === 'Melee' ? 'Str' : 'Dex';
-
-    // Weapon Finesse check
-    if (this.rangeType === 'Melee' && character.HasFeat('Weapon Finesse')) {
-      const finesseBaseNames = ['Rapier', 'Whip', 'Spiked Chain', 'Unarmed', 'Thinblade', 'Elven Thinblade'];
-      if (this.encumbrance === 'Light' || (this.baseName && finesseBaseNames.includes(this.baseName))) {
-        if (character.abilities.Dex.modifier > character.abilities.Str.modifier) {
-          weaponAttackAbilityName = 'Dex';
-        }
-      }
-    }
-
+    const weaponAttackAbilityName: 'Str' | 'Dex' = this.rangeType === 'Melee' ? 'Str' : 'Dex';
     const weaponAttackAbility = character.abilities[weaponAttackAbilityName];
-    let weaponDamageAbility: any = this.rangeType === 'Melee' ? character.abilities['Str'] : null;
-
-    // Composite bows add Strength to damage (capped at rating in name if rating exists)
-    const isComposite = this.baseName && this.baseName.toLowerCase().includes('composite');
-    if (isComposite) {
-      const strAbility = character.abilities['Str'];
-      if (strAbility) {
-        // Find Str rating from name (e.g. "+5 Str")
-        const compositeStrMatch = this.name.match(/\+(\d+)\s*Str/i);
-        const strRating = compositeStrMatch ? parseInt(compositeStrMatch[1]) : 0;
-
-        const getCappedModifier = () => strRating > 0 ? Math.min(strAbility.modifier, strRating) : strAbility.modifier;
-
-        // Construct a mock Ability object with the capped modifier
-        const compositeAbility = Object.create(strAbility);
-        Object.defineProperty(compositeAbility, 'modifier', {
-          get: () => getCappedModifier()
-        });
-        Object.defineProperty(compositeAbility, 'ModifierString', {
-          get: () => `${getCappedModifier()} Str modifier (composite capped)`
-        });
-        weaponDamageAbility = compositeAbility;
-      }
-    }
+    const weaponDamageAbility: any = this.rangeType === 'Melee' ? character.abilities['Str'] : null;
 
     const attackEnhancement = this.enhancement > 0 ? this.enhancement : (this.isMasterwork ? 1 : 0);
-    const rangeAtkBonus = this.rangeType === 'Melee' ? character.meleeAttackBonus : character.rangedAttackBonus;
-    const rangeDmgBonus = this.rangeType === 'Melee' ? character.meleeDamageBonus : character.rangedDamageBonus;
+    const rangeAtkBonus = (this.rangeType === 'Melee' ? character.meleeAttackBonus : character.rangedAttackBonus) || new ModifiableProperty(0);
+    const rangeDmgBonus = (this.rangeType === 'Melee' ? character.meleeDamageBonus : character.rangedDamageBonus) || new ModifiableProperty(0);
     this.attackBonus = new WeaponAttackBonus(
       character.bab,
       weaponAttackAbility,
@@ -459,7 +425,152 @@ export class Weapon {
   }
 }
 
-export class ItemWeapon extends Weapon {
+export class MeleeWeapon extends Weapon {
+  public override rangeType: 'Melee' = 'Melee';
+
+  constructor(name: string, description: string, weight: number, character: ICharacter) {
+    super(name, description, weight, character);
+    this.rangeType = 'Melee';
+    this.calculateBonuses(character);
+  }
+
+  public override calculateBonuses(character: ICharacter): void {
+    if (!character || !character.abilities) return;
+    let weaponAttackAbilityName: 'Str' | 'Dex' = 'Str';
+
+    // Weapon Finesse check for melee weapons
+    if (character.HasFeat && character.HasFeat('Weapon Finesse')) {
+      const finesseBaseNames = ['Rapier', 'Whip', 'Spiked Chain', 'Unarmed', 'Thinblade', 'Elven Thinblade'];
+      if (this.encumbrance === 'Light' || (this.baseName && finesseBaseNames.includes(this.baseName))) {
+        if (character.abilities.Dex.modifier > character.abilities.Str.modifier) {
+          weaponAttackAbilityName = 'Dex';
+        }
+      }
+    }
+
+    const weaponAttackAbility = character.abilities[weaponAttackAbilityName];
+    const weaponDamageAbility = character.abilities['Str'];
+    const attackEnhancement = this.enhancement > 0 ? this.enhancement : (this.isMasterwork ? 1 : 0);
+
+    this.attackBonus = new WeaponAttackBonus(
+      character.bab,
+      weaponAttackAbility,
+      character.size,
+      attackEnhancement,
+      this.featAttackBonus,
+      character.attackBonus,
+      character.meleeAttackBonus
+    );
+    this.damageBonus = new WeaponDamageBonus(
+      weaponDamageAbility,
+      character.damageBonus,
+      this.damageBonusFromWeapon + this.enhancement,
+      this.featDamageBonus,
+      character.meleeDamageBonus
+    );
+  }
+
+  public isEligibleForTwf(): boolean {
+    return this.encumbrance !== 'Two-Handed';
+  }
+}
+
+export class RangedWeapon extends Weapon {
+  public override rangeType: 'Ranged' = 'Ranged';
+
+  constructor(name: string, description: string, weight: number, character: ICharacter) {
+    super(name, description, weight, character);
+    this.rangeType = 'Ranged';
+    this.calculateBonuses(character);
+  }
+
+  public override calculateBonuses(character: ICharacter): void {
+    if (!character || !character.abilities) return;
+    const weaponAttackAbility = character.abilities['Dex'];
+    let weaponDamageAbility: any = null;
+
+    // Composite bows add Strength to damage (capped at rating in name if rating exists)
+    const isComposite = this.baseName && this.baseName.toLowerCase().includes('composite');
+    if (isComposite) {
+      const strAbility = character.abilities['Str'];
+      if (strAbility) {
+        const compositeStrMatch = this.name.match(/\+(\d+)\s*Str/i);
+        const strRating = compositeStrMatch ? parseInt(compositeStrMatch[1]) : 0;
+        const getCappedModifier = () => strRating > 0 ? Math.min(strAbility.modifier, strRating) : strAbility.modifier;
+
+        const compositeAbility = Object.create(strAbility);
+        Object.defineProperty(compositeAbility, 'modifier', {
+          get: () => getCappedModifier()
+        });
+        Object.defineProperty(compositeAbility, 'ModifierString', {
+          get: () => `${getCappedModifier()} Str modifier (composite capped)`
+        });
+        weaponDamageAbility = compositeAbility;
+      }
+    }
+
+    const attackEnhancement = this.enhancement > 0 ? this.enhancement : (this.isMasterwork ? 1 : 0);
+    this.attackBonus = new WeaponAttackBonus(
+      character.bab,
+      weaponAttackAbility,
+      character.size,
+      attackEnhancement,
+      this.featAttackBonus,
+      character.attackBonus,
+      character.rangedAttackBonus
+    );
+    this.damageBonus = new WeaponDamageBonus(
+      weaponDamageAbility,
+      character.damageBonus,
+      this.damageBonusFromWeapon + this.enhancement,
+      this.featDamageBonus,
+      character.rangedDamageBonus
+    );
+  }
+}
+
+export function ResolveWeaponRangeType(fullName: string): 'Melee' | 'Ranged' {
+  const basicName = fullName.split('(')[0].trim();
+  const baseName = FindWeaponBaseName(basicName);
+  let rangeType: 'Melee' | 'Ranged' = 'Melee';
+  if (baseName) {
+    const weaponData = WeaponsData.get(baseName);
+    if (weaponData) rangeType = weaponData.range;
+  }
+  const customData = CustomWeapons.get(fullName) || CustomWeapons.get(basicName);
+  if (customData && customData.range) {
+    rangeType = customData.range;
+  }
+  return rangeType;
+}
+
+export function CreateWeapon(name: string, description: string, weight: number, character: ICharacter): MeleeWeapon | RangedWeapon {
+  let fullName = name;
+  if (description) {
+    const splitDesc = description.split(/\)\s*\(/);
+    if (splitDesc.length > 1) {
+      const notes = splitDesc[0].trim();
+      if (!notes.match(/^[+\d]/) || notes.match(/^\+\d+\s*Str\b/i)) {
+        fullName = `${name} (${notes})`;
+      }
+    } else if (!description.match(/^[+\d]/) && !description.includes(',')) {
+      fullName = `${name} (${description})`;
+    }
+  }
+  const rangeType = ResolveWeaponRangeType(fullName);
+  return rangeType === 'Ranged'
+    ? new RangedWeapon(name, description, weight, character)
+    : new MeleeWeapon(name, description, weight, character);
+}
+
+export function CreateWeaponFromItem(item: Item, character: ICharacter): MeleeWeapon | RangedWeapon {
+  const displayName = item.material && !item.name.includes(item.material) ? `${item.material} ${item.name}` : item.name;
+  const weapon = CreateWeapon(displayName, item.description, item.weight, character);
+  weapon.isPreferred = Boolean(item.isPreferred);
+  return weapon;
+}
+
+export class ItemWeapon extends MeleeWeapon {
   constructor(item: Item, character: ICharacter) {
     const displayName = item.material && !item.name.includes(item.material) ? `${item.material} ${item.name}` : item.name;
     super(displayName, item.description, item.weight, character);
@@ -467,7 +578,7 @@ export class ItemWeapon extends Weapon {
   }
 }
 
-export class UnarmedWeapon extends Weapon {
+export class UnarmedWeapon extends MeleeWeapon {
   constructor(name: string, character: ICharacter) {
     super(name, '', 0, character);
   }

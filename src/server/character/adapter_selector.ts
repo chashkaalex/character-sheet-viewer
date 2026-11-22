@@ -1,20 +1,20 @@
 import { GDocsAdapter } from './gdocs_adapter';
 import { DocumentAdapter } from './document_adapter';
 
+declare const __IS_GAS_BUILD__: boolean | undefined;
+
 let adapter: DocumentAdapter;
 let LocalAdapter: any;
 
-// Determine environment dynamically
-if (typeof DocumentApp !== 'undefined') {
+// Determine environment: in GAS builds, __IS_GAS_BUILD__ is replaced with true at compile time so LocalAdapter is tree-shaken out
+if ((typeof __IS_GAS_BUILD__ !== 'undefined' && __IS_GAS_BUILD__) || typeof DocumentApp !== 'undefined') {
     // We are running in Google Apps Script context
     adapter = new GDocsAdapter();
 } else {
-    // We are running in Node.js / Local context
+    // We are running in Node.js / Local test context
     try {
-        // Dynamically require the local adapter from the test directory (prevent Vite from bundling local_adapter into GAS)
-        const localAdapterPath = '../../tests/local_tests/' + 'local_adapter';
         // @ts-ignore
-        LocalAdapter = require(localAdapterPath).LocalAdapter;
+        LocalAdapter = require('../../tests/local_tests/local_adapter').LocalAdapter;
         adapter = new LocalAdapter();
     } catch (e) {
         // @ts-ignore

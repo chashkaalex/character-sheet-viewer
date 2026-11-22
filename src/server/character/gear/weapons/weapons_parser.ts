@@ -1,5 +1,5 @@
 import { ICharacter } from '@server/character/icharacter';
-import { IsAWeapon, UnarmedWeapon, ItemWeapon } from './weapons';
+import { IsAWeapon, UnarmedWeapon, CreateWeaponFromItem } from './weapons';
 import { Item } from '@server/character/gear/items/items';
 
 /**
@@ -19,7 +19,7 @@ export function ParseWeapons(character: ICharacter): void {
             // Avoid adding another "Unarmed" if it's explicitly in items (we already added the default)
             if (item.name.toLowerCase().includes('unarmed')) return;
 
-            const weapon = new ItemWeapon(item, character);
+            const weapon = CreateWeaponFromItem(item, character);
             if (weapon) {
                 character.weapons.push(weapon);
             }
