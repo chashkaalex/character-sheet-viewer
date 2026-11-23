@@ -442,26 +442,27 @@ export interface ArmorData {
   type: 'Light' | 'Medium' | 'Heavy' | 'Shield';
   acBonus: number;
   acp: number;
+  maxDex?: number;
   attackPenalty?: number;
 }
 
 export const ArmorsData = new Map<string, ArmorData>();
-ArmorsData.set('Padded', { type: 'Light', acBonus: 1, acp: 0 });
-ArmorsData.set('Leather', { type: 'Light', acBonus: 2, acp: -1 });
-ArmorsData.set('Studded Leather', { type: 'Light', acBonus: 3, acp: -1 });
-ArmorsData.set('Chain Shirt', { type: 'Light', acBonus: 4, acp: -2 });
-ArmorsData.set('Hide', { type: 'Medium', acBonus: 3, acp: -3 });
-ArmorsData.set('Scale Mail', { type: 'Medium', acBonus: 4, acp: -4 });
-ArmorsData.set('Chainmail', { type: 'Medium', acBonus: 5, acp: -5 });
-ArmorsData.set('Breastplate', { type: 'Medium', acBonus: 5, acp: -4 });
-ArmorsData.set('Splint Mail', { type: 'Heavy', acBonus: 6, acp: -7 });
-ArmorsData.set('Banded Mail', { type: 'Heavy', acBonus: 6, acp: -5 });
-ArmorsData.set('Half-Plate', { type: 'Heavy', acBonus: 7, acp: -7 });
-ArmorsData.set('Full Plate', { type: 'Heavy', acBonus: 8, acp: -6 });
+ArmorsData.set('Padded', { type: 'Light', acBonus: 1, acp: 0, maxDex: 8 });
+ArmorsData.set('Leather', { type: 'Light', acBonus: 2, acp: -1, maxDex: 6 });
+ArmorsData.set('Studded Leather', { type: 'Light', acBonus: 3, acp: -1, maxDex: 5 });
+ArmorsData.set('Chain Shirt', { type: 'Light', acBonus: 4, acp: -2, maxDex: 4 });
+ArmorsData.set('Hide', { type: 'Medium', acBonus: 3, acp: -3, maxDex: 4 });
+ArmorsData.set('Scale Mail', { type: 'Medium', acBonus: 4, acp: -4, maxDex: 3 });
+ArmorsData.set('Chainmail', { type: 'Medium', acBonus: 5, acp: -5, maxDex: 2 });
+ArmorsData.set('Breastplate', { type: 'Medium', acBonus: 5, acp: -4, maxDex: 3 });
+ArmorsData.set('Splint Mail', { type: 'Heavy', acBonus: 6, acp: -7, maxDex: 0 });
+ArmorsData.set('Banded Mail', { type: 'Heavy', acBonus: 6, acp: -5, maxDex: 1 });
+ArmorsData.set('Half-Plate', { type: 'Heavy', acBonus: 7, acp: -7, maxDex: 0 });
+ArmorsData.set('Full Plate', { type: 'Heavy', acBonus: 8, acp: -6, maxDex: 1 });
 ArmorsData.set('Buckler', { type: 'Shield', acBonus: 1, acp: -1 });
 ArmorsData.set('Light Shield', { type: 'Shield', acBonus: 1, acp: -1 });
 ArmorsData.set('Heavy Shield', { type: 'Shield', acBonus: 2, acp: -2 });
-ArmorsData.set('Tower Shield', { type: 'Shield', acBonus: 4, acp: -10, attackPenalty: -2 });
+ArmorsData.set('Tower Shield', { type: 'Shield', acBonus: 4, acp: -10, maxDex: 2, attackPenalty: -2 });
 
 export function FindArmorBaseName(fullName: string): string | null {
   if (ArmorsData.has(fullName)) return fullName;
@@ -482,6 +483,7 @@ export function IsAnArmor(name: string): boolean {
 export class Armor extends Item {
   public armorType: 'Light' | 'Medium' | 'Heavy' | 'Shield';
   public acpValue: number;
+  public maxDex: number | null = null;
   public attackPenalty: number = 0;
 
   constructor(name: string, amount = 1, description = '') {
@@ -492,12 +494,40 @@ export class Armor extends Item {
       const data = ArmorsData.get(baseName)!;
       this.armorType = data.type;
       this.acpValue = data.acp;
+      this.maxDex = data.maxDex !== undefined ? data.maxDex : null;
       if (data.attackPenalty) {
         this.attackPenalty = data.attackPenalty;
       }
     } else {
       this.armorType = 'Medium';
       this.acpValue = 0;
+    }
+
+    const isMithral = this.material === 'Mithral' || /\bmithral\b/i.test(name) || /\bmithral\b/i.test(description);
+    const isDarkwood = this.material === 'Darkwood' || /\bdarkwood\b/i.test(name) || /\bdarkwood\b/i.test(description);
+    const hasMagicEnhancement = /\+\d+/.test(this.name);
+    const isMasterwork = /\bmasterwork\b/i.test(name) || /\bmasterwork\b/i.test(description) || hasMagicEnhancement;
+
+    if (isMithral) {
+      if (this.armorType === 'Heavy') {
+        this.armorType = 'Medium';
+      } else if (this.armorType === 'Medium') {
+        this.armorType = 'Light';
+      }
+      if (this.maxDex !== null) {
+        this.maxDex += 2;
+      }
+      if (this.acpValue < 0) {
+        this.acpValue = Math.min(0, this.acpValue + 3);
+      }
+    } else if (isDarkwood) {
+      if (this.acpValue < 0) {
+        this.acpValue = Math.min(0, this.acpValue + 2);
+      }
+    } else if (isMasterwork) {
+      if (this.acpValue < 0) {
+        this.acpValue = Math.min(0, this.acpValue + 1);
+      }
     }
 
     if (this.description) {
@@ -509,6 +539,23 @@ export class Armor extends Item {
       if (atkMatch) {
         this.attackPenalty = parseInt(atkMatch[1]);
       }
+      const maxDexMatch = this.description.match(/\+?\s*(\d+)\s*max\s*dex/i);
+      if (maxDexMatch) {
+        this.maxDex = parseInt(maxDexMatch[1], 10);
+      }
+    }
+
+    if (this.maxDex !== null) {
+      const cap = this.maxDex;
+      const armorName = this.name;
+      this.effects.push({
+        status: armorName,
+        callback: (character: ICharacter) => {
+          if (character.ac && typeof character.ac.applyMaxDexCap === 'function') {
+            character.ac.applyMaxDexCap(cap, armorName);
+          }
+        }
+      });
     }
 
     if (this.acpValue !== 0) {

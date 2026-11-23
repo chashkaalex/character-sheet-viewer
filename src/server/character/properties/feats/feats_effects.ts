@@ -461,6 +461,14 @@ export const FeatEffects: Record<string, EffectData[]> = {
         const currentRunMultiplier = isHeavyArmor ? 3 : 4;
         return Math.round(character.speed.currentScore / currentRunMultiplier);
       }
+    },
+    {
+      status: 'Run',
+      callback: (character: ICharacter) => {
+        if (character.ac && character.HasStatus('Run')) {
+          character.ac.losesDexToAc = false;
+        }
+      }
     }
   ],
   'Self-Sufficient': [

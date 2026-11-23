@@ -59,8 +59,8 @@ describe('Bardic Songs & Inspire Statuses Integration Tests', () => {
         expect(result instanceof CharacterError).toBe(false);
         const char = result as CharacterRep;
 
-        // Check Balance: normal is 6, should be 9
-        expect(char.skills['Balance'].bonus).toBe(9);
+        // Check Balance: normal is 7 (2 ranks + 3 Dex + 2 Tumble synergy, 0 ACP for +1 Studded Leather), should be 10
+        expect(char.skills['Balance'].bonus).toBe(10);
         // Check Perform (voice): normal is 22, should be 25
         expect(char.skills['Perform (voice)'].bonus).toBe(25);
     });

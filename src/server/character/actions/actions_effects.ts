@@ -479,6 +479,14 @@ export const ActionsData: Record<string, ActionData> = {
       },
       {
         status: 'Run',
+        callback: (character: ICharacter) => {
+          if (character.ac) {
+            character.ac.losesDexToAc = true;
+          }
+        }
+      },
+      {
+        status: 'Run',
         description: 'Move up to 4x speed in a straight line (3x in heavy armor; +1x with Run feat). Lose Dexterity bonus to AC unless you have the Run feat.'
       }
     ]

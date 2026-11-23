@@ -127,9 +127,23 @@ export function ApplyClassesEffects(character: ICharacter): void {
  */
 export function ApplyRacesEffects(character: ICharacter): void {
     const raceData = RacesData.get(character.race);
-    if (raceData && raceData.effects) {
-        raceData.effects.forEach((effect: RacialEffectData) => {
-            EffectFactory({ ...effect, status: character.race }).ApplyEffect(character);
-        });
+    if (raceData) {
+        if (raceData.size) {
+            character.size.score = raceData.size.score;
+            character.size.currentScore = raceData.size.currentScore;
+        }
+        // Apply dynamic size modifier to Hide skill (+4 for Small, -4 for Large, etc.)
+        EffectFactory({
+            status: 'Size',
+            property: 'Hide',
+            modifierType: 'Size',
+            valueResolver: (char: Readonly<ICharacter>) => -char.size.bonus
+        }).ApplyEffect(character);
+
+        if (raceData.effects) {
+            raceData.effects.forEach((effect: RacialEffectData) => {
+                EffectFactory({ ...effect, status: character.race }).ApplyEffect(character);
+            });
+        }
     }
 }

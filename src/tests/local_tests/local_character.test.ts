@@ -116,8 +116,8 @@ describe('Local Character Parsing', () => {
         expect(bess.speed.currentScore).toBe(30);
         console.log('Bess AC:', bess.ac.currentArmorClass);
 
-        //skills
-        expect(bess.skills.find(s => s.name === 'Balance')!.bonus).toBe(6);
+        //skills (Glamour Studded Leather Armor +1 is masterwork/magic so ACP is 0)
+        expect(bess.skills.find(s => s.name === 'Balance')!.bonus).toBe(7);
         expect(bess.skills.find(s => s.name === 'Bluff')!.bonus).toBe(25);
         expect(bess.skills.find(s => s.name === 'Concentration')!.bonus).toBe(10);
         expect(bess.skills.find(s => s.name === 'Decipher Script')!.bonus).toBe(8);
@@ -130,13 +130,13 @@ describe('Local Character Parsing', () => {
         expect(bess.skills.find(s => s.name === 'Perform (mandolin)')!.bonus).toBe(10);
         expect(bess.skills.find(s => s.name === 'Perform (voice)')!.bonus).toBe(22);
         expect(bess.skills.find(s => s.name === 'Perform (White Oak Lute)')!.bonus).toBe(12);
-        expect(bess.skills.find(s => s.name === 'Ride')!.bonus).toBe(5);
+        expect(bess.skills.find(s => s.name === 'Ride')!.bonus).toBe(6);
         expect(bess.skills.find(s => s.name === 'Search')!.bonus).toBe(4 + 3 + 1);
         expect(bess.skills.find(s => s.name === 'Sense Motive')!.bonus).toBe(20);
-        expect(bess.skills.find(s => s.name === 'Sleight of Hand')!.bonus).toBe(10);
+        expect(bess.skills.find(s => s.name === 'Sleight of Hand')!.bonus).toBe(11);
         expect(bess.skills.find(s => s.name === 'Spellcraft')!.bonus).toBe(14);
         expect(bess.skills.find(s => s.name === 'Spot')!.bonus).toBe(15);
-        expect(bess.skills.find(s => s.name === 'Tumble')!.bonus).toBe(12);
+        expect(bess.skills.find(s => s.name === 'Tumble')!.bonus).toBe(13);
         expect(bess.skills.find(s => s.name === 'Use Magic Device')!.bonus).toBe(21);
 
         console.log('Bess parse warnings:', bess.parseWarnings);

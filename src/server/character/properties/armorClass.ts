@@ -10,6 +10,9 @@ export class ArmorClass extends ModifiableProperty {
   public size: CreatureSize;
   public applyShieldToTouch: boolean = false;
   public applyArmorToTouch: boolean = false;
+  public maxDexBonus: number | null = null;
+  public maxDexSource: string | null = null;
+  public losesDexToAc: boolean = false;
 
   constructor(abilities: Ability[], size: CreatureSize) {
     super(10, 'ac');
@@ -17,15 +20,54 @@ export class ArmorClass extends ModifiableProperty {
     this.size = size;
   }
 
+  public applyMaxDexCap(cap: number, source?: string): void {
+    if (this.maxDexBonus === null || cap < this.maxDexBonus) {
+      this.maxDexBonus = cap;
+      this.maxDexSource = source || null;
+    }
+  }
+
+  private getEffectiveAbilityModifier(ability: Ability, isFlatFooted: boolean = false): number {
+    if (ability.name === 'Dex') {
+      if (isFlatFooted || this.losesDexToAc) {
+        return Math.min(0, ability.modifier);
+      }
+      if (this.maxDexBonus !== null && ability.modifier > this.maxDexBonus) {
+        return this.maxDexBonus;
+      }
+    }
+    return ability.modifier;
+  }
+
+  private formatAbilityString(ability: Ability, isFlatFooted: boolean = false): string {
+    if (ability.name === 'Dex') {
+      if (isFlatFooted || this.losesDexToAc) {
+        const mod = Math.min(0, ability.modifier);
+        return `+ ${mod} Dex modifier (flat-footed)`;
+      }
+      if (this.maxDexBonus !== null && ability.modifier > this.maxDexBonus) {
+        const src = this.maxDexSource ? ` (max Dex from ${this.maxDexSource})` : ' (max Dex)';
+        return `+ ${this.maxDexBonus} Dex modifier${src}`;
+      }
+    }
+    return `+ ${ability.ModifierString}`;
+  }
+
   public get currentArmorClass(): number {
-    return this.currentScore +
+    const activeEffectsValue = this.activeEffects
+      .filter(e => !this.losesDexToAc || e.modifierType !== 'Dodge')
+      .reduce((acc, e) => acc + e.value, 0);
+
+    return this.score +
+      activeEffectsValue +
       this.size.modifier +
-      this.abilities.reduce((acc, ability) => acc + ability.modifier, 0);
+      this.abilities.reduce((acc, ability) => acc + this.getEffectiveAbilityModifier(ability, false), 0);
   }
 
   public get touchArmorClass(): number {
     const activeTouchEffectsValue = this.activeEffects
       .filter(e => {
+        if (this.losesDexToAc && e.modifierType === 'Dodge') return false;
         const typeInfo = ModifierTypes[e.modifierType];
         const isShield = e.modifierType === 'Shield' || e.status.startsWith('Shield Specialization');
         const isArmor = e.modifierType === 'Armor' || e.status.startsWith('Heavy Armor Optimization') || e.status.startsWith('Greater Heavy Armor Optimization');
@@ -35,7 +77,7 @@ export class ArmorClass extends ModifiableProperty {
 
     return this.score +
       this.size.modifier +
-      this.abilities.reduce((acc, ability) => acc + ability.modifier, 0) +
+      this.abilities.reduce((acc, ability) => acc + this.getEffectiveAbilityModifier(ability, false), 0) +
       activeTouchEffectsValue;
   }
 
@@ -45,10 +87,7 @@ export class ArmorClass extends ModifiableProperty {
       .reduce((acc, e) => acc + e.value, 0);
 
     const abilitiesValue = this.abilities.reduce((acc, ability) => {
-      if (ability.name === 'Dex') {
-        return acc + Math.min(0, ability.modifier);
-      }
-      return acc + ability.modifier;
+      return acc + this.getEffectiveAbilityModifier(ability, true);
     }, 0);
 
     return this.score +
@@ -59,6 +98,7 @@ export class ArmorClass extends ModifiableProperty {
 
   public get touchString(): string {
     const activeTouchEffects = this.activeEffects.filter(e => {
+      if (this.losesDexToAc && e.modifierType === 'Dodge') return false;
       const typeInfo = ModifierTypes[e.modifierType];
       const isShield = e.modifierType === 'Shield' || e.status.startsWith('Shield Specialization');
       const isArmor = e.modifierType === 'Armor' || e.status.startsWith('Heavy Armor Optimization') || e.status.startsWith('Greater Heavy Armor Optimization');
@@ -68,7 +108,7 @@ export class ArmorClass extends ModifiableProperty {
       ? activeTouchEffects.map(e => `${e.value >= 0 ? '+' : ''}${e.value} (${e.status})`).join(', ')
       : '';
     const effectsPart = effectsStr ? `, ${effectsStr}` : '';
-    return `${this.touchArmorClass} (base: ${this.score})${effectsPart} ${this.size.string} ${this.abilities.map(a => `+ ${a.ModifierString}`).join(', ')}`;
+    return `${this.touchArmorClass} (base: ${this.score})${effectsPart} ${this.size.string} ${this.abilities.map(a => this.formatAbilityString(a, false)).join(', ')}`;
   }
 
   public get flatFootedString(): string {
@@ -78,20 +118,14 @@ export class ArmorClass extends ModifiableProperty {
       : '';
     const effectsPart = effectsStr ? `, ${effectsStr}` : '';
 
-    const abilitiesStr = this.abilities.map(a => {
-      if (a.name === 'Dex') {
-        const mod = Math.min(0, a.modifier);
-        return `+ ${mod} Dex modifier (flat-footed)`;
-      }
-      return `+ ${a.ModifierString}`;
-    }).join(', ');
+    const abilitiesStr = this.abilities.map(a => this.formatAbilityString(a, true)).join(', ');
 
     return `${this.flatFootedArmorClass} (base: ${this.score})${effectsPart} ${this.size.string} ${abilitiesStr}`;
   }
 
   public override get string(): string {
     const baseString = `${this.currentArmorClass} (base: ${this.score})  ${this.EffectsString}`;
-    return `${baseString} ${this.size.string} ${this.abilities.map(a => `+ ${a.ModifierString}`).join(', ')}`;
+    return `${baseString} ${this.size.string} ${this.abilities.map(a => this.formatAbilityString(a, false)).join(', ')}`;
   }
 
   public override get state(): any {

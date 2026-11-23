@@ -387,7 +387,7 @@ export class Weapon {
 
   calculateWeaponStats(character: ICharacter): void {
     if (!character || !character.size) return;
-    const sizeStep = (character.size.currentSize.bonus - character.size.score.bonus) / 4;
+    const sizeStep = character.size.currentSize.bonus / 4;
     this.damage = scaleWeaponDamage(this.baseDamage, sizeStep);
   }
 
@@ -589,7 +589,7 @@ export class UnarmedWeapon extends MeleeWeapon {
     const effectiveMonkLevel = character.GetModifiableProperty('effectiveMonkLevel');
 
     // 1. Calculate base damage from classes
-    let bestDamage = '1d3';
+    let bestDamage = '1';
     let isMonkOrSimilar = false;
 
     for (const charClass of character.classes) {
