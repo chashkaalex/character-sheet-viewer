@@ -189,6 +189,24 @@ export function IsAWeapon(name: string): boolean {
   return false;
 }
 
+export function doubleThreatRange(crit: string): string {
+  if (!crit || crit === '—') return crit;
+  const rangeMatch = crit.match(/(\d+)-(\d+)/);
+  const multiplierMatch = crit.match(/[xX](\d+)/);
+  const multiplier = multiplierMatch ? multiplierMatch[1] : '2';
+
+  let low = 20;
+  let high = 20;
+  if (rangeMatch) {
+    low = parseInt(rangeMatch[1], 10);
+    high = parseInt(rangeMatch[2], 10);
+  }
+  const span = Math.max(1, high - low + 1);
+  const newSpan = span * 2;
+  const newLow = Math.max(2, high - newSpan + 1);
+  return `${newLow}-${high}/x${multiplier}`;
+}
+
 export class Weapon {
   public name: string;
   public baseName: string | null;
@@ -198,9 +216,13 @@ export class Weapon {
   public enhancement: number = 0;
   public isMasterwork: boolean = false;
   public isPreferred: boolean = false;
+  public isKeen: boolean = false;
+  public hasImprovedCritical: boolean = false;
+  public isTwoHandedWield: boolean = false;
   public baseDamage: string = '1d3';
   public damage: string = '1d3';
   public damageBonusFromWeapon: number = 0;
+  public baseCritical: string = 'x2';
   public critical: string = 'x2';
   public range: number = 0;
   public weight: number = 0;
@@ -229,10 +251,11 @@ export class Weapon {
   }
 
   public get critValue(): string {
-    const crit = this.critical || 'x2';
-    const rangeMatch = crit.match(/(\d+-\d+)/);
+    const baseCrit = this.critical || 'x2';
+    const effectiveCrit = (this.isKeen || this.hasImprovedCritical) ? doubleThreatRange(baseCrit) : baseCrit;
+    const rangeMatch = effectiveCrit.match(/(\d+-\d+)/);
     const range = rangeMatch ? rangeMatch[1] : '';
-    const multiplierMatch = crit.match(/[xX](\d+)/);
+    const multiplierMatch = effectiveCrit.match(/[xX](\d+)/);
     const multiplier = multiplierMatch ? multiplierMatch[1] : '2';
     return range ? `${range}X${multiplier}` : `X${multiplier}`;
   }
@@ -321,10 +344,13 @@ export class Weapon {
 
     this.baseDamage = defaultDamage;
     this.damage = defaultDamage;
+    this.baseCritical = defaultCritical;
     this.critical = defaultCritical;
     this.range = defaultRange;
     this.damageBonusFromWeapon = defaultDamageBonus;
     this.weight = weight || 0;
+    this.isKeen = /\bkeen\b/i.test(fullName) || (description ? /\bkeen\b/i.test(description) : false);
+    this.isTwoHandedWield = /\b(?:2h|two-handed)\b/i.test(fullName) || (description ? /\b(?:2h|two-handed)\b/i.test(description) : false);
 
     // 3. Parse enhancement bonus (+1, +2, etc.) from name (including basicName) or description
     // We use a negative lookahead to avoid matching non-weapon enhancement bonuses (e.g. "+2 to Trip", "+5 Str", "+2 resistance")
@@ -451,6 +477,11 @@ export class MeleeWeapon extends Weapon {
     const weaponAttackAbility = character.abilities[weaponAttackAbilityName];
     const weaponDamageAbility = character.abilities['Str'];
     const attackEnhancement = this.enhancement > 0 ? this.enhancement : (this.isMasterwork ? 1 : 0);
+    // Two-handed melee weapons (except Quarterstaff when used as double weapon, though standard 2H strike is 1.5x; Quarterstaff in 3.5 is a double weapon / 2H)
+    // Wait: let's check if Quarterstaff or double weapons in existing tests expect 1x Str!
+    const isDoubleOrQuarterstaff = this.baseName === 'Quarterstaff' || this.baseDamage.includes('/');
+    const usesTwoHandedStr = (this.encumbrance === 'Two-Handed' && !isDoubleOrQuarterstaff) || this.isTwoHandedWield;
+    const strMultiplier = usesTwoHandedStr ? 1.5 : 1;
 
     this.attackBonus = new WeaponAttackBonus(
       character.bab,
@@ -466,7 +497,8 @@ export class MeleeWeapon extends Weapon {
       character.damageBonus,
       this.damageBonusFromWeapon + this.enhancement,
       this.featDamageBonus,
-      character.meleeDamageBonus
+      character.meleeDamageBonus,
+      strMultiplier
     );
   }
 

@@ -32,6 +32,7 @@ export interface SpellData {
   statusName?: string;
   range: SpellRange;
   target: SpellTarget;
+  requiresWeaponSelection?: boolean;
 }
 
 const SpellsData: Record<string, SpellData> = {
@@ -902,6 +903,14 @@ const SpellsData: Record<string, SpellData> = {
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
+  },
+  'Keen Edge': {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
+    requiresWeaponSelection: true,
+    calculateDuration: function (spellCasterClassData) {
+      return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
+    }
   }
 };
 
@@ -915,6 +924,10 @@ export function GetSpellTarget(spellName: string): SpellTarget | null {
 
 export function GetSpellRange(spellName: string): SpellRange | null {
   return SpellsData[spellName]?.range || null;
+}
+
+export function GetSpellRequiresWeaponSelection(spellName: string): boolean {
+  return Boolean(SpellsData[spellName]?.requiresWeaponSelection);
 }
 
 // Register effects
@@ -1017,7 +1030,8 @@ class SpellCasting {
                   spellName: name,
                   isValid: isValid,
                   range: name ? GetSpellRange(name) : null,
-                  target: name ? GetSpellTarget(name) : null
+                  target: name ? GetSpellTarget(name) : null,
+                  requiresWeaponSelection: name ? GetSpellRequiresWeaponSelection(name) : false
                 };
               })
             ])
@@ -1031,7 +1045,8 @@ class SpellCasting {
                 isEmpty,
                 isValid,
                 range: spellName ? GetSpellRange(spellName) : null,
-                target: spellName ? GetSpellTarget(spellName) : null
+                target: spellName ? GetSpellTarget(spellName) : null,
+                requiresWeaponSelection: spellName ? GetSpellRequiresWeaponSelection(spellName) : false
               }))
             ])
           ),

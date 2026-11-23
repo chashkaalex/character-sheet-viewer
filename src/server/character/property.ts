@@ -263,24 +263,35 @@ export class WeaponDamageBonus {
   public weaponSpecificBonus: number;
   public featBonus: ModifiableProperty;
   public rangeDmgBonus: ModifiableProperty;
+  public abilityMultiplier: number;
 
   constructor(
     ability: Ability | null,
     globalDmgBonus: ModifiableProperty,
     weaponSpecificBonus: number = 0,
     featBonus: ModifiableProperty = new ModifiableProperty(0),
-    rangeDmgBonus: ModifiableProperty = new ModifiableProperty(0)
+    rangeDmgBonus: ModifiableProperty = new ModifiableProperty(0),
+    abilityMultiplier: number = 1
   ) {
     this.globalDmgBonus = globalDmgBonus;
     this.ability = ability;
     this.weaponSpecificBonus = weaponSpecificBonus;
     this.featBonus = featBonus;
     this.rangeDmgBonus = rangeDmgBonus;
+    this.abilityMultiplier = abilityMultiplier;
+  }
+
+  private get effectiveAbilityModifier(): number {
+    if (!this.ability) return 0;
+    const rawMod = this.ability.modifier;
+    if (rawMod > 0 && this.abilityMultiplier !== 1) {
+      return Math.floor(rawMod * this.abilityMultiplier);
+    }
+    return rawMod;
   }
 
   public get bonus(): number {
-    const abilityModifier = this.ability ? this.ability.modifier : 0;
-    return abilityModifier +
+    return this.effectiveAbilityModifier +
       this.globalDmgBonus.currentScore +
       this.rangeDmgBonus.currentScore +
       this.weaponSpecificBonus +
@@ -288,7 +299,12 @@ export class WeaponDamageBonus {
   }
 
   public get string(): string {
-    const abilityString = this.ability ? this.ability.ModifierString : '';
+    let abilityString = this.ability ? this.ability.ModifierString : '';
+    if (this.ability && this.ability.modifier > 0 && this.abilityMultiplier !== 1) {
+      const effMod = this.effectiveAbilityModifier;
+      const sign = effMod >= 0 ? '+' : '';
+      abilityString = `${sign}${effMod} (${this.abilityMultiplier}x ${this.ability.name} modifier)`;
+    }
     const globalDmgBonusString = this.globalDmgBonus.EffectsString;
     const rangeDmgBonusString = this.rangeDmgBonus.EffectsString ? `, ${this.rangeDmgBonus.EffectsString}` : '';
     const weaponSpecificBonusString = this.weaponSpecificBonus !== 0 ? `, +${this.weaponSpecificBonus} weapon bonus` : '';

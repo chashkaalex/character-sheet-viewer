@@ -520,8 +520,8 @@ describe('Local Character Parsing', () => {
         const spikedChain = char.weapons.find(w => w.baseName === 'Spiked Chain');
         expect(spikedChain).toBeDefined();
         expect(spikedChain!.attackBonus.bonus).toBe(13); // 7 BAB + 5 Str + 1 enhancement
-        expect(spikedChain!.damageBonus.bonus).toBe(6);  // 5 Str + 1 enhancement
-        expect(spikedChain!.statsString).toBe('Attack: 13 Damage: 2d4 + 6 Crit. X2');
+        expect(spikedChain!.damageBonus.bonus).toBe(8);  // 1.5x Str (floor(5 * 1.5) = 7) + 1 enhancement = 8
+        expect(spikedChain!.statsString).toBe('Attack: 13 Damage: 2d4 + 8 Crit. X2');
 
         const longsword = char.weapons.find(w => w.baseName === 'Longsword');
         expect(longsword).toBeDefined();

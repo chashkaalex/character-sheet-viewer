@@ -5,6 +5,89 @@ let activeEventSource: EventSource | null = null;
 let activeStreamUrl: string | null = null;
 const processedStatusKeys = new Set<string>();
 
+export const WEAPON_TARGETED_STATUSES = new Set<string>(['Keen Edge']);
+
+/**
+ * Formats a weapon-targeted status with the chosen weapon name, e.g. "Keen Edge (Longsword)".
+ */
+export function resolveIncomingWeaponTargetedStatus(statusName: string, weaponName: string): string {
+  const cleanStatus = statusName.trim();
+  const cleanWeapon = weaponName.trim();
+  if (!cleanWeapon || cleanStatus.includes('(')) {
+    return cleanStatus;
+  }
+  return `${cleanStatus} (${cleanWeapon})`;
+}
+
+/**
+ * Prompts the receiving player to choose which weapon from their Battle Gear receives an incoming weapon-targeted status (e.g. Keen Edge).
+ */
+export function promptWeaponSelectionForIncomingStatus(
+  statusName: string,
+  senderName: string,
+  duration: number,
+  durationUnit: string,
+  characterRep: CharacterRep,
+  onSelect: (selectedWeaponName: string) => void
+): void {
+  const eligibleWeapons = (characterRep.weapons || []).filter((w: any) => w.name && w.name !== 'Unarmed');
+
+  if (eligibleWeapons.length === 0) {
+    // Fallback if character has no manufactured weapons
+    onSelect('Unarmed');
+    return;
+  }
+
+  if (typeof document === 'undefined' || !document.body) {
+    // Headless / test fallback: select preferred or first weapon
+    const preferred = eligibleWeapons.find((w: any) => w.isPreferred) || eligibleWeapons[0];
+    onSelect(preferred.name);
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'spell-popup-overlay show';
+  document.body.appendChild(overlay);
+
+  const popup = document.createElement('div');
+  popup.className = 'spell-popup show';
+  popup.style.position = 'fixed';
+  popup.style.top = '50%';
+  popup.style.left = '50%';
+  popup.style.transform = 'translate(-50%, -50%)';
+  popup.style.zIndex = '10001';
+
+  const optionsHtml = eligibleWeapons
+    .map((w: any) => `<option value="${w.name}" ${w.isPreferred ? 'selected' : ''}>${w.name} (Crit: ${w.critValue || 'x2'})</option>`)
+    .join('');
+
+  popup.innerHTML = `
+    <h3>Incoming Spell: ${statusName}</h3>
+    <div class="spell-info">
+      <strong>From:</strong> ${senderName}<br>
+      <strong>Duration:</strong> ${duration} ${durationUnit}<br>
+      <p style="margin: 8px 0 4px;">Select a weapon from your Battle Gear to receive <b>${statusName}</b>:</p>
+    </div>
+    <div class="spell-dropdown">
+      <select id="incomingStatusWeaponSelect">${optionsHtml}</select>
+    </div>
+    <div class="spell-actions">
+      <button class="spell-button cast" id="confirmIncomingWeaponBtn">Apply</button>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  const confirmBtn = popup.querySelector('#confirmIncomingWeaponBtn');
+  confirmBtn?.addEventListener('click', () => {
+    const selectEl = popup.querySelector('#incomingStatusWeaponSelect') as HTMLSelectElement | null;
+    const chosenWeapon = selectEl?.value || eligibleWeapons[0].name;
+    overlay.remove();
+    popup.remove();
+    onSelect(chosenWeapon);
+  });
+}
+
 /**
  * Displays a toast notification in the UI for party sync events.
  */
@@ -88,33 +171,44 @@ export function handleIncomingStatus(
   processedStatusKeys.add(statusKey);
   console.log(`[PartySync] Processing incoming status '${statusName}' from ${senderName} (key: ${statusKey})...`);
 
-  // Call GAS server to apply status to character sheet
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    google.script.run
-      .withSuccessHandler(function (updatedRep: CharacterRep) {
-        onCharacterRepresentation(updatedRep);
-        showPartyNotification(`Received status "<b>${statusName}</b>" from ${senderName} (${duration} ${durationUnit})`);
+  const applyResolvedStatus = (finalStatusName: string) => {
+    // Call GAS server to apply status to character sheet
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run
+        .withSuccessHandler(function (updatedRep: CharacterRep) {
+          onCharacterRepresentation(updatedRep);
+          showPartyNotification(`Received status "<b>${finalStatusName}</b>" from ${senderName} (${duration} ${durationUnit})`);
 
-        // Delete from Realtime DB once successfully applied
-        if (characterRep.dbLink && characterRep.partyName) {
-          const dbMemberNode = characterRep.partyNickname || characterRep.name;
-          deleteStatusFromDb(characterRep.dbLink, characterRep.partyName, dbMemberNode, statusKey);
-        }
-      })
-      .withFailureHandler(function (error: Error) {
-        processedStatusKeys.delete(statusKey);
-        console.error(`[PartySync] Failed to apply status '${statusName}':`, error);
-        showPartyNotification(`Failed to apply status "${statusName}": ${error.message}`, true);
-      })
-      .AddStatusToCharacter(characterRep.docId, statusName, duration);
-  } else {
-    console.log(`[PartySync (Local)] Would apply ${statusName} (${duration} ${durationUnit}) and delete ${statusKey}`);
-    showPartyNotification(`[Simulated] Received "${statusName}" from ${senderName} (${duration} ${durationUnit})`);
-    if (characterRep.dbLink && characterRep.partyName) {
-      const dbMemberNode = characterRep.partyNickname || characterRep.name;
-      deleteStatusFromDb(characterRep.dbLink, characterRep.partyName, dbMemberNode, statusKey);
+          // Delete from Realtime DB once successfully applied
+          if (characterRep.dbLink && characterRep.partyName) {
+            const dbMemberNode = characterRep.partyNickname || characterRep.name;
+            deleteStatusFromDb(characterRep.dbLink, characterRep.partyName, dbMemberNode, statusKey);
+          }
+        })
+        .withFailureHandler(function (error: Error) {
+          processedStatusKeys.delete(statusKey);
+          console.error(`[PartySync] Failed to apply status '${finalStatusName}':`, error);
+          showPartyNotification(`Failed to apply status "${finalStatusName}": ${error.message}`, true);
+        })
+        .AddStatusToCharacter(characterRep.docId, finalStatusName, duration);
+    } else {
+      console.log(`[PartySync (Local)] Would apply ${finalStatusName} (${duration} ${durationUnit}) and delete ${statusKey}`);
+      showPartyNotification(`[Simulated] Received "${finalStatusName}" from ${senderName} (${duration} ${durationUnit})`);
+      if (characterRep.dbLink && characterRep.partyName) {
+        const dbMemberNode = characterRep.partyNickname || characterRep.name;
+        deleteStatusFromDb(characterRep.dbLink, characterRep.partyName, dbMemberNode, statusKey);
+      }
     }
+  };
+
+  if (WEAPON_TARGETED_STATUSES.has(statusName.trim()) && !statusName.includes('(')) {
+    promptWeaponSelectionForIncomingStatus(statusName, senderName, duration, durationUnit, characterRep, (selectedWeapon) => {
+      applyResolvedStatus(resolveIncomingWeaponTargetedStatus(statusName, selectedWeapon));
+    });
+    return;
   }
+
+  applyResolvedStatus(statusName);
 }
 
 /**

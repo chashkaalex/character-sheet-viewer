@@ -7,6 +7,7 @@ import type { ICharacter } from './icharacter';
 import { registerConditions } from './state/conditions';
 
 export type DynamicEffectGenerator = (parsedValue: number, statusName: string) => EffectData[];
+export type ParameterizedEffectGenerator = (parameterText: string, statusName: string) => EffectData[];
 
 export const StatusesEffects: Record<string, EffectData[]> = {};
 
@@ -118,6 +119,27 @@ const DynamicStatusesEffects: Record<string, DynamicEffectGenerator> = {
   }
 };
 
+const ParameterizedStatusesEffects: Record<string, ParameterizedEffectGenerator> = {
+  'Keen Edge': (targetWeaponName, statusName) => [
+    {
+      status: statusName,
+      description: `Doubles the threat range of ${targetWeaponName} (does not stack with Keen or Improved Critical).`,
+      callback: (character: ICharacter) => {
+        if (!targetWeaponName) return;
+        character.addGearEffect(statusName, targetWeaponName, {
+          status: statusName,
+          callback: (_char: ICharacter, gearArgs: Record<string, unknown>) => {
+            const targetItem = gearArgs['item'] as any;
+            if (targetItem && 'isKeen' in targetItem) {
+              targetItem.isKeen = true;
+            }
+          }
+        });
+      }
+    }
+  ]
+};
+
 export function GetEffects(container: Record<string, any>, identifier: string): EffectData[] | null {
   // Try exact lookup first
   const effects = container[identifier];
@@ -126,8 +148,8 @@ export function GetEffects(container: Record<string, any>, identifier: string): 
     return effects.map((effect: any) => ({ ...effect }));
   }
 
-  // If container is StatusesEffects, try dynamic extraction (e.g., getting +3 out of "Inspire Courage +3")
   if (container === StatusesEffects) {
+    // 1. Try dynamic numeric extraction (e.g., getting +3 out of "Inspire Courage +3")
     const dynamicMatch = identifier.match(/^(.+?)\s+([+-]?\d+)$/);
     if (dynamicMatch) {
       const baseName = dynamicMatch[1];
@@ -136,6 +158,18 @@ export function GetEffects(container: Record<string, any>, identifier: string): 
       const dynamicEffectGenerator = DynamicStatusesEffects[baseName];
       if (dynamicEffectGenerator) {
         const generatedEffects = dynamicEffectGenerator(numericValue, identifier);
+        return generatedEffects.map((effect: any) => ({ ...effect }));
+      }
+    }
+
+    // 2. Try parameterized parenthesized extraction (e.g., getting "Longsword" out of "Keen Edge (Longsword)")
+    const openParenIdx = identifier.indexOf('(');
+    if (openParenIdx > 0 && identifier.endsWith(')')) {
+      const baseName = identifier.substring(0, openParenIdx).trim();
+      const paramText = identifier.substring(openParenIdx + 1, identifier.length - 1).trim();
+      const paramGenerator = ParameterizedStatusesEffects[baseName];
+      if (paramGenerator && paramText) {
+        const generatedEffects = paramGenerator(paramText, identifier);
         return generatedEffects.map((effect: any) => ({ ...effect }));
       }
     }

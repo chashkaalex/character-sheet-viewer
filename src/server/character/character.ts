@@ -30,7 +30,7 @@ import { ParseHp } from './state/hp';
 import { initializeGeneralEffects } from './general_effects';
 import { ICharacter } from './icharacter';
 import { Status } from './state/state';
-import { BaseEffect, EffectData, EffectFactory, StaticPropertyEffect } from './state/effects';
+import { BaseEffect, EffectData, EffectFactory, MutatingEffect, StaticPropertyEffect } from './state/effects';
 import { Weapon } from './gear/weapons/weapons';
 
 // Ensure data files are loaded (side effects)
@@ -156,6 +156,10 @@ export class Character implements ICharacter, IPropertyRegistry {
 
     private applyGearEffect(item: GearItem, effect: BaseEffect | EffectData): void {
         const effInstance = EffectFactory(effect);
+        if (effInstance instanceof MutatingEffect) {
+            effInstance.callback(this, { ...effInstance.args, item });
+            return;
+        }
         if ('property' in effInstance) {
             const propName = (effInstance as any).property;
             const targetProp = (item as any)[propName];

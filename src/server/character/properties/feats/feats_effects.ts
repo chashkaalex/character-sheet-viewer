@@ -282,7 +282,29 @@ export const FeatEffects: Record<string, EffectData[]> = {
     { status: 'Improved Counterspell', description: 'When counterspelling, you may use a spell of the same school that is one or more spell levels higher than the target spell [15].' }
   ],
   'Improved Critical': [
-    { status: 'Improved Critical', description: 'Doubles the threat range of the selected weapon. This effect does not stack with other effects that expand the threat range [15, 16]. This feat can be gained multiple times for different weapons [16].' }
+    {
+      status: 'Improved Critical',
+      description: 'Doubles the threat range of the selected weapon. This effect does not stack with other effects that expand the threat range [15, 16]. This feat can be gained multiple times for different weapons [16].',
+      callback: (character: ICharacter, args: Record<string, unknown>) => {
+        const params = args['params'] as string[] | undefined;
+        const weaponParam = params?.[0];
+        if (!weaponParam) return;
+
+        character.addGearEffect(
+          `Improved Critical (${weaponParam})`,
+          weaponParam,
+          {
+            status: `Improved Critical (${weaponParam})`,
+            callback: (_char: ICharacter, gearArgs: Record<string, unknown>) => {
+              const targetItem = gearArgs['item'] as any;
+              if (targetItem && 'hasImprovedCritical' in targetItem) {
+                targetItem.hasImprovedCritical = true;
+              }
+            }
+          }
+        );
+      }
+    } as MutatingEffectData
   ],
   'Improved Disarm': [
     { status: 'Improved Disarm', property: 'Disarm', modifierType: 'Generic', value: 4 },

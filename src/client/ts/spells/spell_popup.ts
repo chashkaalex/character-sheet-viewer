@@ -9,13 +9,13 @@ export function getCurrentSlotData(): SpellSlotData | null {
   return currentSlotData;
 }
 
-export function getSpellInfo(className: string, spellName: string): { range: string | null; target: string | null } {
+export function getSpellInfo(className: string, spellName: string): { range: string | null; target: string | null; requiresWeaponSelection?: boolean } {
   if (!characterRep || !characterRep.spellCasting || !characterRep.spellCasting.classSpellCastingData) {
-    return { range: null, target: null };
+    return { range: null, target: null, requiresWeaponSelection: false };
   }
   const casterClassData = characterRep.spellCasting.classSpellCastingData.find((c: any) => c.className === className);
   if (!casterClassData) {
-    return { range: null, target: null };
+    return { range: null, target: null, requiresWeaponSelection: false };
   }
 
   // Check preparedSpells
@@ -23,7 +23,11 @@ export function getSpellInfo(className: string, spellName: string): { range: str
     for (const lvl of Object.keys(casterClassData.preparedSpells)) {
       const spellEntry = casterClassData.preparedSpells[lvl]?.find((s: any) => s.spell === spellName);
       if (spellEntry && (spellEntry.range || spellEntry.target)) {
-        return { range: spellEntry.range || null, target: spellEntry.target || null };
+        return {
+          range: spellEntry.range || null,
+          target: spellEntry.target || null,
+          requiresWeaponSelection: Boolean(spellEntry.requiresWeaponSelection)
+        };
       }
     }
   }
@@ -33,12 +37,34 @@ export function getSpellInfo(className: string, spellName: string): { range: str
     for (const lvl of Object.keys(casterClassData.knownSpells)) {
       const spellEntry = casterClassData.knownSpells[lvl]?.find((s: any) => (typeof s === 'string' ? s : s.spellName) === spellName);
       if (spellEntry && (spellEntry.range || spellEntry.target)) {
-        return { range: spellEntry.range || null, target: spellEntry.target || null };
+        return {
+          range: spellEntry.range || null,
+          target: spellEntry.target || null,
+          requiresWeaponSelection: Boolean(spellEntry.requiresWeaponSelection)
+        };
       }
     }
   }
 
-  return { range: null, target: null };
+  return { range: null, target: null, requiresWeaponSelection: spellName === 'Keen Edge' };
+}
+
+export function renderWeaponTargetSelector(): string {
+  const weapons = (characterRep?.weapons || []).filter((w: any) => w.name && w.name !== 'Unarmed');
+  if (weapons.length === 0) return '';
+
+  const options = weapons
+    .map((w: any) => `<option value="${w.name}" ${w.isPreferred ? 'selected' : ''}>${w.name}</option>`)
+    .join('');
+
+  return `
+    <div class="spell-weapon-selector-container" style="margin-top: 8px;">
+      <label class="spell-targets-title">Target Weapon (Battle Gear):</label>
+      <div class="spell-dropdown" style="margin-top: 4px;">
+        <select id="spellWeaponSelect">${options}</select>
+      </div>
+    </div>
+  `;
 }
 
 /**
@@ -159,10 +185,12 @@ export function showSpellPopup(targetElement, uiSlotData) {
     const spellInfo = getSpellInfo(uiSlotData.casterClass, uiSlotData.spell);
     uiSlotData.range = spellInfo.range;
     uiSlotData.target = spellInfo.target;
+    uiSlotData.requiresWeaponSelection = spellInfo.requiresWeaponSelection;
     slotData.spellName = uiSlotData.spell;
     slotData.isValid = uiSlotData.isValid;
     slotData.range = spellInfo.range;
     slotData.target = spellInfo.target;
+    slotData.requiresWeaponSelection = spellInfo.requiresWeaponSelection;
   }
 
   currentSlotData = slotData;
@@ -342,6 +370,7 @@ export function createCastMenu(slotData) {
   const range = slotData.range || 'N/A';
   const target = slotData.target || 'N/A';
   const targetHtml = renderTargetSelector(slotData.target);
+  const weaponHtml = slotData.requiresWeaponSelection ? renderWeaponTargetSelector() : '';
   const targetInitiallyValid = (!slotData.target || slotData.target === 'Self' || slotData.target === 'Area' || slotData.target === 'Object' || slotData.target === 'Special');
 
   const castButtonDisabled = (isUsed || !isValid || !targetInitiallyValid) ? 'disabled' : '';
@@ -360,6 +389,7 @@ export function createCastMenu(slotData) {
         </div>
 
         ${targetHtml}
+        ${weaponHtml}
         
         <div class="spell-actions">
             <button class="spell-button cancel" onclick="window.hideSpellPopup()">Cancel</button>
@@ -485,7 +515,8 @@ export function setupPopupEventListeners(popup, slotData) {
         details.style.display = 'block';
         rangeText.textContent = info.range || 'N/A';
         targetText.textContent = info.target || 'N/A';
-        targetContainer.innerHTML = renderTargetSelector(info.target);
+        const weaponHtml = info.requiresWeaponSelection ? renderWeaponTargetSelector() : '';
+        targetContainer.innerHTML = renderTargetSelector(info.target) + weaponHtml;
         targetContainer.dataset.targetType = info.target || '';
       } else if (details && targetContainer) {
         details.style.display = 'none';
@@ -703,6 +734,13 @@ export function castSpell() {
   }
 
   slotData.targets = selectedTargets;
+
+  if (popup) {
+    const weaponSelect = popup.querySelector('#spellWeaponSelect') as HTMLSelectElement | null;
+    if (weaponSelect && weaponSelect.value) {
+      slotData.targetWeapon = weaponSelect.value;
+    }
+  }
 
   if (!checkActionCostWithPrompt(characterRep.docId, 'standard')) {
     return;

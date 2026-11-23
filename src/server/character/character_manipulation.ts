@@ -320,10 +320,13 @@ export function OnCastSpell(docId: string, slotData: SpellSlotData): CharacterRe
 
   // Apply to self if targeted
   if (isTargetingSelf) {
-    _addStatusToCharacter(docId, context.statusName, context.duration);
+    const selfStatusName = (spellObject.requiresWeaponSelection && slotData.targetWeapon)
+      ? `${context.statusName} (${slotData.targetWeapon})`
+      : context.statusName;
+    _addStatusToCharacter(docId, selfStatusName, context.duration);
   }
 
-  // Push status to remote party members
+  // Push status to remote party members (remote recipient selects their own weapon if requiresWeaponSelection)
   const remoteTargets = targets.filter(t => !selfNames.includes(t));
   pushStatusToRemoteTargets(character, remoteTargets, context.statusName, context.duration);
 
