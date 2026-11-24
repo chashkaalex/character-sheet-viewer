@@ -1,5 +1,6 @@
-import { convertToRounds } from '../../client/ts/dashboard_script';
+import { convertToRounds, refreshCharacterData } from '../../client/ts/dashboard_script';
 import { formatRoundsToReadable } from '../../client/ts/character_script';
+import { setCharacterRep } from '../../client/ts/state';
 import { ParseSkills } from '../../server/character/properties/skills';
 import { Ability } from '../../server/character/properties/abilities/ability';
 import { AbilitiesMap } from '../../server/character/properties/abilities/ability_types';
@@ -160,6 +161,48 @@ describe('P0 D&D 3.5 Rules & Design Correctness Tests', () => {
             const repSword = rep.weapons.find((w: any) => w.name === 'Longsword');
             expect(repSword.atkValue).toBe('5');
             expect(repSword.dmgValue).toBe('1d8 + 4');
+        });
+    });
+
+    describe('5. refreshCharacterData UI rendering (Init Bonus & AC)', () => {
+        test('refreshCharacterData should render numeric initBonus and AC bonus, never "[object Object]"', () => {
+            const lines = buildMinimalSheet({});
+            const character = new Character(lines);
+            character.ParseCharacter();
+            const rep = getCharacterRep(character);
+            setCharacterRep(rep);
+
+            const elements: Record<string, { innerHTML: string; dataset: Record<string, string>; style: Record<string, string>; removeAttribute: () => void; addEventListener: () => void }> = {
+                initBonus: { innerHTML: '', dataset: {}, style: {}, removeAttribute: () => {}, addEventListener: () => {} },
+                acValue: { innerHTML: '', dataset: {}, style: {}, removeAttribute: () => {}, addEventListener: () => {} }
+            };
+
+            const prevDoc = (global as any).document;
+            const prevGoogle = (global as any).google;
+            (global as any).document = {
+                getElementById: (id: string) => elements[id] || null
+            };
+            (global as any).google = {
+                script: {
+                    run: {
+                        withSuccessHandler: () => ({
+                            withFailureHandler: () => ({
+                                GetCharacterRepByDocId: () => {}
+                            })
+                        })
+                    }
+                }
+            };
+
+            try {
+                refreshCharacterData();
+                expect(String(elements.initBonus.innerHTML)).not.toBe('[object Object]');
+                expect(String(elements.initBonus.innerHTML)).toBe(String(rep.initBonus.bonus));
+                expect(String(elements.acValue.innerHTML)).toBe(String(rep.ac.bonus));
+            } finally {
+                (global as any).document = prevDoc;
+                (global as any).google = prevGoogle;
+            }
         });
     });
 });

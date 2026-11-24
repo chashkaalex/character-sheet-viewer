@@ -1,5 +1,5 @@
 import { characterRep } from './state';
-import { onCharacterRepresentation } from './character_script';
+import { onCharacterRepresentation, UpdateValueAndTooltip } from './character_script';
 import { advanceRound } from './round_actions';
 import { convertToRounds } from './dashboard/statuses';
 
@@ -10,6 +10,7 @@ export * from './dashboard/statuses';
 export * from './dashboard/hp';
 
 export function refreshCharacterData() {
+  if (!characterRep) return;
   google.script.run
     .withSuccessHandler(onCharacterRepresentation)
     .withFailureHandler(function (error) {
@@ -17,8 +18,12 @@ export function refreshCharacterData() {
     })
     .GetCharacterRepByDocId(characterRep.docId);
 
-  document.getElementById('initBonus').innerHTML = characterRep.initBonus || '-';
-  document.getElementById('acValue').innerHTML = characterRep.ac.currentScore || '-';
+  if (characterRep.initBonus) {
+    UpdateValueAndTooltip('initBonus', characterRep.initBonus);
+  }
+  if (characterRep.ac) {
+    UpdateValueAndTooltip('acValue', characterRep.ac);
+  }
 
   console.log('Character data refreshed successfully');
 }
