@@ -379,10 +379,12 @@ export function OnUseAction(docId: string, actionName: string, rawTargets?: stri
   }
 
   let resolvedStatusName = action.statusName;
+  let hookMutationMessage: string | undefined;
   if (action.onUse) {
     const hookResult = action.onUse(character, docId, actionName, rawTargets, {
       adapter,
-      removeStatus: (statusName: string) => _removeStatusFromCharacter(docId, statusName, true)
+      removeStatus: (statusName: string) => _removeStatusFromCharacter(docId, statusName, true),
+      rollWithRolz: RollWithRolz
     });
     if (hookResult && hookResult.error) {
       return new CharacterError(hookResult.error);
@@ -390,8 +392,15 @@ export function OnUseAction(docId: string, actionName: string, rawTargets?: stri
     if (hookResult && hookResult.statusName) {
       resolvedStatusName = hookResult.statusName;
     }
+    if (hookResult && hookResult.mutationMessage) {
+      hookMutationMessage = hookResult.mutationMessage;
+    }
     if (hookResult && hookResult.skipDefaultStatus) {
-      return GetCharacterRepByDocId(docId);
+      const rep = GetCharacterRepByDocId(docId);
+      if (!(rep instanceof CharacterError) && hookMutationMessage) {
+        rep.mutationMessage = hookMutationMessage;
+      }
+      return rep;
     }
   }
 
@@ -428,7 +437,11 @@ export function OnUseAction(docId: string, actionName: string, rawTargets?: stri
   const remoteTargets = targets.filter(t => !selfNames.includes(t));
   pushStatusToRemoteTargets(character, remoteTargets, resolvedStatusName, duration);
 
-  return GetCharacterRepByDocId(docId);
+  const finalRep = GetCharacterRepByDocId(docId);
+  if (!(finalRep instanceof CharacterError) && hookMutationMessage) {
+    finalRep.mutationMessage = hookMutationMessage;
+  }
+  return finalRep;
 }
 
 /**

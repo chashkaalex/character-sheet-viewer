@@ -32,12 +32,14 @@ export function getRegisteredActionCategories(): ActionCategoryDefinition[] {
 export interface ActionUseHelpers {
   adapter: any;
   removeStatus: (statusName: string) => void;
+  rollWithRolz?: (room: string, formula: string, characterName: string, label?: string) => { total: number; detail: string } | null;
 }
 
 export interface ActionUseResult {
   error?: string;
   statusName?: string;
   skipDefaultStatus?: boolean;
+  mutationMessage?: string;
 }
 
 export type ActionOnUseHook = (
@@ -361,7 +363,7 @@ export const ActionsData: Record<string, ActionData> = {
     getExtraMetadata: (character: ICharacter) => {
       return getGogglesFireballMetadata(character);
     },
-    onUse: (character, docId, _actionName, rawTargets, helpers) => {
+    onUse: (character, docId, actionName, rawTargets, helpers) => {
       const meta = getGogglesFireballMetadata(character);
       if (meta.usesRemaining <= 0) {
         return { error: 'No daily uses remaining for Goggles of the Golden Sun (3/3 used)' };
@@ -373,6 +375,26 @@ export const ActionsData: Record<string, ActionData> = {
       const chosenSlot = meta.eligibleSacrificeSlots.find(s => s.key === chosenKey);
       if (!chosenSlot) {
         return { error: 'Selected spell slot is not an eligible 3rd-level or higher slot' };
+      }
+
+      if (!character.rolzRoomId || character.rolzRoomId.trim() === '') {
+        return { error: 'Fireball action requires a Rolz Room ID to be configured in your character sheet.' };
+      }
+
+      let highestCl = 0;
+      character.spellCasting?.classSpellCastingData?.forEach(c => {
+        if (c.level.currentScore > highestCl) highestCl = c.level.currentScore;
+      });
+      const effectiveCl = Math.max(5, highestCl);
+      const dice = Math.min(10, effectiveCl);
+      const damageFormula = `${dice}d6`;
+
+      let roll: { total: number; detail: string } | null = null;
+      if (helpers.rollWithRolz) {
+        roll = helpers.rollWithRolz(character.rolzRoomId, damageFormula, character.name, actionName);
+        if (!roll) {
+          return { error: 'Rolz API is unavailable. Fireball action could not be completed.' };
+        }
       }
 
       const classData = ClassesData.get(chosenSlot.casterClassName);
@@ -401,7 +423,10 @@ export const ActionsData: Record<string, ActionData> = {
       }
       const nextUsed = meta.usedCount + 1;
       return {
-        statusName: `Goggles of the Golden Sun (Used ${nextUsed}/3)`
+        statusName: `Goggles of the Golden Sun (Used ${nextUsed}/3)`,
+        mutationMessage: roll
+          ? `Activated ${actionName} (sacrificed ${chosenSlot.label}). Rolled ${roll.total} fire damage (${roll.detail}, Reflex DC 14 half).`
+          : undefined
       };
     }
   },

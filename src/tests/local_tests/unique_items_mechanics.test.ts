@@ -95,12 +95,11 @@ describe('Unique Items Mechanics: Monks Chain Belt, Stunning Fist DC & Goggles o
   test('3. Goggles of the Golden Sun adds 3/day Fireball item action that sacrifices a 3rd+ level prepared spell or spontaneous slot', () => {
     expect(GetSpellData('Fireball')).toBeDefined();
 
-    // Inject Goggles of the Golden Sun into Thror's Battle Gear
+    // Inject Goggles of the Golden Sun and Rolz Room ID into Thror's temporary sheet
     const content = fs.readFileSync(THROR_TEMP_FILE, 'utf-8');
-    const updatedContent = content.replace(
-      'Battle Gear:',
-      'Battle Gear:\nGoggles of the Golden Sun,'
-    );
+    const updatedContent = content
+      .replace('Battle Gear:', 'Battle Gear:\nGoggles of the Golden Sun,')
+      .replace('Personal Information', 'Personal Information\nRolz Room ID: 1jgtoswkc0');
     fs.writeFileSync(THROR_TEMP_FILE, updatedContent, 'utf-8');
 
     const rep1 = GetCharacterRepByDocId(THROR_TEMP_FILE) as any;
@@ -128,20 +127,41 @@ describe('Unique Items Mechanics: Monks Chain Belt, Stunning Fist DC & Goggles o
     expect(popupHtml).toContain('sacrificeSlotSelect');
     expect(popupHtml).toContain('Prayer');
 
-    // Sacrifice the first eligible 3rd-level slot (1st use of 3/day)
-    const slotToSacrifice = gogglesMeta.eligibleSacrificeSlots[0];
-    const afterUse1 = OnUseAction(
-      THROR_TEMP_FILE,
-      'Fireball (Goggles of the Golden Sun)',
-      [slotToSacrifice.key]
-    ) as any;
-    expect(afterUse1.error).toBeFalsy();
-    expect(afterUse1.statuses.some((s: any) => s.name === 'Goggles of the Golden Sun (Used 1/3)')).toBe(true);
-    expect(afterUse1.actionsMetadata['Fireball (Goggles of the Golden Sun)'].usesRemaining).toBe(2);
+    const { adapter } = require('../../server/character/adapter_selector');
+    const rolzSpy = jest.spyOn(adapter, 'PostRollToRolz').mockReturnValue(JSON.stringify({
+      message: {
+        content: {
+          items: [{ type: 'dicemsg', result: '19', details: '([4, 5, 3, 2, 5])' }]
+        }
+      }
+    }));
 
-    // Verify the sacrificed level 3 spell slot was marked used in Cleric preparedSpells
-    const clericData1 = afterUse1.spellCasting.classSpellCastingData.find((c: any) => c.className === 'Cleric');
-    const sacrificedSlotState = clericData1.preparedSpells[slotToSacrifice.spellLevel][slotToSacrifice.slotIndex];
-    expect(sacrificedSlotState.used).toBe(true);
+    try {
+      // Sacrifice the first eligible 3rd-level slot (1st use of 3/day) and roll 5d6 on Rolz
+      const slotToSacrifice = gogglesMeta.eligibleSacrificeSlots[0];
+      const afterUse1 = OnUseAction(
+        THROR_TEMP_FILE,
+        'Fireball (Goggles of the Golden Sun)',
+        [slotToSacrifice.key]
+      ) as any;
+      expect(afterUse1.error).toBeFalsy();
+      // Thror has Cleric 3 + Sacred Fist 3 + Practiced Spellcaster (+4) = Caster Level 10 => 10d6 Fireball
+      expect(rolzSpy).toHaveBeenCalledWith(
+        '1jgtoswkc0',
+        'Fireball (Goggles of the Golden Sun) [10d6]',
+        'Throrgorlun Eiertrager'
+      );
+      expect(afterUse1.mutationMessage).toContain('19');
+      expect(afterUse1.mutationMessage).toContain('10d6');
+      expect(afterUse1.statuses.some((s: any) => s.name === 'Goggles of the Golden Sun (Used 1/3)')).toBe(true);
+      expect(afterUse1.actionsMetadata['Fireball (Goggles of the Golden Sun)'].usesRemaining).toBe(2);
+
+      // Verify the sacrificed level 3 spell slot was marked used in Cleric preparedSpells
+      const clericData1 = afterUse1.spellCasting.classSpellCastingData.find((c: any) => c.className === 'Cleric');
+      const sacrificedSlotState = clericData1.preparedSpells[slotToSacrifice.spellLevel][slotToSacrifice.slotIndex];
+      expect(sacrificedSlotState.used).toBe(true);
+    } finally {
+      rolzSpy.mockRestore();
+    }
   });
 });
