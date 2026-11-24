@@ -2,10 +2,10 @@ import { GetEffects } from '../../general_effects';
 import { EffectData } from '../../state/effects';
 import { currentRegistry } from '../../property';
 
-import { Monk } from '../../../classes_data/monk';
 import { IsAWeapon, GetSpecialWeaponMaterial } from '../weapons/weapons';
 import { ICharacter } from '@server/character/icharacter';
-import { ActionsData } from '../../actions/actions_effects';
+import { ResolveStandardWondrousItemEffects, StandardWondrousItems } from './wondrous_items';
+import { UniqueItemEffects } from './unique_items';
 
 const BodySlotNames = [
   'Head',
@@ -47,297 +47,14 @@ export const BodySlots: BodySlotInfo[] = [
 
 export type BodySlotsMap = Map<BodySlotNames, number>;
 
-
 /**
- * @type {Object.<string, EffectData[]>}
+ * Combined dictionary of unique and static standard item effects.
+ * Parametric wondrous items and standard armors/shields are resolved dynamically via
+ * ResolveStandardWondrousItemEffects and Armor constructor respectively.
  */
 export const ItemEffects: Record<string, EffectData[]> = {
-  'Thror\'s Holy Symbol of Moradin': [
-    {
-      status: 'Thror\'s Holy Symbol of Moradin',
-      callback: (character: ICharacter, _args: Record<string, unknown>) => {
-        if (!character.actions.includes('Use Thror\'s Holy Symbol')) {
-          character.actions.push('Use Thror\'s Holy Symbol');
-        }
-      }
-    }
-  ],
-
-  'Ring of Storing': [
-    {
-      status: 'Ring of Storing',
-      callback: (character: ICharacter) => {
-        const ringItem = character.battleGear.find(i => i.name === 'Ring of Storing');
-        const ringLine = ringItem?.line || character.sectionLines['Battle Gear']?.find(l => l.includes('Ring of Storing'));
-        if (!ringLine) return;
-        const match = ringLine.match(/\[(?:(\d+)x\s*)?([^\]]+)\]/);
-        if (match) {
-          const spellName = match[2].trim();
-          const actionName = `Cast ${spellName}`;
-          if (!ActionsData[actionName]) {
-            ActionsData[actionName] = {
-              statusName: spellName,
-              category: 'item',
-              calculateDuration: () => 10
-            };
-          }
-          if (!character.actions.includes(actionName)) {
-            character.actions.push(actionName);
-          }
-        }
-      }
-    }
-  ],
-
-  'Amulet of Mighty Fists': [
-    {
-      status: 'Amulet of Mighty Fists',
-      callback: (character: ICharacter) => {
-        character.addGearEffect('Amulet of Mighty Fists', 'Unarmed', {
-          status: 'Amulet of Mighty Fists',
-          property: 'featAttackBonus',
-          modifierType: 'Enhancement',
-          value: 1
-        });
-        character.addGearEffect('Amulet of Mighty Fists', 'Unarmed', {
-          status: 'Amulet of Mighty Fists',
-          property: 'featDamageBonus',
-          modifierType: 'Enhancement',
-          value: 1
-        });
-      }
-    }
-  ],
-
-  'Amulet of Pelor/Set': [
-    { status: 'Amulet of Pelor/Set', property: 'Fort', modifierType: 'Generic', value: 1 },
-    { status: 'Amulet of Pelor/Set', property: 'Ref', modifierType: 'Generic', value: 1 },
-    { status: 'Amulet of Pelor/Set', property: 'Will', modifierType: 'Generic', value: 1 }
-  ],
-
-  'Amulet of Pelor with Maple Leaf': [
-    { status: 'Amulet of Pelor with Maple Leaf', property: 'Fort', modifierType: 'Generic', value: 2 },
-    { status: 'Amulet of Pelor with Maple Leaf', property: 'Ref', modifierType: 'Generic', value: 2 },
-    { status: 'Amulet of Pelor with Maple Leaf', property: 'Will', modifierType: 'Generic', value: 2 }
-  ],
-
-  'Glamour Studded Leather Armor +1': [
-    { status: 'Glamour Studded Leather Armor +1', property: 'ac', modifierType: 'Armor', value: 4 }
-  ],
-
-  'Gloves of Dexterity +4': [
-    { status: 'Gloves of Dexterity +4', property: 'Dex', modifierType: 'Enhancement', value: 4 }
-  ],
-
-  'Kusarigama': [
-    { status: 'Kusarigama', property: 'Trip', modifierType: 'Generic', value: 2 },
-    { status: 'Kusarigama', property: 'Disarm', modifierType: 'Generic', value: 2 }
-  ],
-
-  'Boots of Agile Leaping': [
-    { status: 'Boots of Agile Leaping', property: 'Jump', modifierType: 'Generic', value: 5 }
-  ],
-
-  'Boots of Landing': [
-    { status: 'Boots of Landing', property: 'Special', description: 'Slow Fall 20 ft.' },
-    { status: 'Boots of Landing', property: 'Special', description: 'Feather Fall 1/day' },
-    { status: 'Boots of Landing', property: 'Special', description: 'Cloud Step 3/day' }
-  ],
-
-  'Bracers of Armor +3': [
-    { status: 'Bracers of Armor +3', property: 'ac', modifierType: 'Armor', value: 3 }
-  ],
-
-  'Buckler': [
-    { status: 'Buckler', property: 'ac', modifierType: 'Shield', value: 1 }
-  ],
-
-  'Ivory Ring of Deflection +1': [
-    { status: 'Ivory Ring of Deflection +1', property: 'ac', modifierType: 'Deflection', value: 1 }
-  ],
-
-  'Amulet of Natural Armor +1': [
-    { status: 'Amulet of Natural Armor +1', property: 'ac', modifierType: 'Natural Armor', value: 1 }
-  ],
-
-  'Ring of Protection +2': [
-    { status: 'Ring of Protection +2', property: 'ac', modifierType: 'Deflection', value: 2 }
-  ],
-
-  'Cloak of Resistance +2': [
-    { status: 'Cloak of Resistance +2', property: 'Fort', modifierType: 'Resistance', value: 2 },
-    { status: 'Cloak of Resistance +2', property: 'Ref', modifierType: 'Resistance', value: 2 },
-    { status: 'Cloak of Resistance +2', property: 'Will', modifierType: 'Resistance', value: 2 }
-  ],
-
-  'Cloak of Resistance +3': [
-    { status: 'Cloak of Resistance +3', property: 'Fort', modifierType: 'Resistance', value: 3 },
-    { status: 'Cloak of Resistance +3', property: 'Ref', modifierType: 'Resistance', value: 3 },
-    { status: 'Cloak of Resistance +3', property: 'Will', modifierType: 'Resistance', value: 3 }
-  ],
-
-  'Cloak of Charisma +4': [
-    { status: 'Cloak of Charisma +4', property: 'Cha', modifierType: 'Enhancement', value: 4 }
-  ],
-
-  'Goggles of the Golden Sun': [
-    { status: 'Goggles of the Golden Sun', property: 'Special', description: 'While wearing "goggles of the golden sun", you are immune to blindness and dazzling effects. This is a continuous effect and requires no activation.In addition, three times per day you can activate these goggles and sacrifice a prepared spell or spell slot of 3rd level or higher to use fireball (as the spell; Reflex DC 14 half), using your own caster level or that of the goggles, whichever is higher. The fireball created by the goggles resembles a hurtling, exploding comet.' }
-  ],
-
-  'Monks Chain Belt': [
-    {
-      status: 'Monks Chain Belt',
-      property: 'ac',
-      modifierType: 'Natural Armor',
-      valueResolver: (character: ICharacter) => {
-        const currentMonkLevel = character.GetClassLevel('Monk');
-        const monkLevel = Math.min(20, 5 + currentMonkLevel);
-        const currentMonkAcBonus = currentMonkLevel > 0 ? (Monk.levelTable[currentMonkLevel].ac as number) : 0;
-        return (Monk.levelTable[monkLevel].ac as number) - currentMonkAcBonus;
-      }
-    },
-    {
-      status: 'Monks Chain Belt',
-      property: 'effectiveMonkLevel',
-      modifierType: 'Generic',
-      value: 5
-    }
-  ],
-
-  'Hand Wraps with Adamantine Plates': [
-    { status: 'Hand Wraps with Adamantine Plates', property: 'Str', modifierType: 'Enhancement', value: 2 },
-    { status: 'Hand Wraps with Adamantine Plates', property: 'Dex', modifierType: 'Enhancement', value: 2 },
-    { status: 'Hand Wraps with Adamantine Plates', property: 'Special', description: '+2 to DC of the stunning fist attack.' }
-  ],
-
-  'Periapt of Wisdom': [
-    { status: 'Periapt of Wisdom', property: 'Wis', modifierType: 'Enhancement', value: 4 }
-  ],
-
-  'Silver Signet Ring': [
-    { status: 'Silver Signet Ring', property: 'Special', description: 'Abyssal, Infernal and Dark Speech' }
-  ],
-  'Signet Ring': [
-    { status: 'Signet Ring', property: 'Special', description: 'Abyssal, Infernal and Dark Speech' }
-  ],
-  'Brooch of Shielding': [
-    { status: 'Brooch of Shielding', property: 'Special', description: 'absorbs up to 101 points of damage from magic missile spells or spell-like abilities before melting and becoming useless' }
-  ],
-
-  'Whisperleaf Striders': [
-    { status: 'Whisperleaf Striders', property: 'Special', description: 'Pass without trace' },
-    { status: 'Whisperleaf Striders', property: 'Move Silently', modifierType: 'Generic', value: 5 },
-    { status: 'Whisperleaf Striders', property: 'Special', description: 'Once per Day: Greater Invisibility for 7 rounds' },
-    {
-      status: 'Whisperleaf Striders',
-      callback: (character: ICharacter) => {
-        if (!character.actions.includes('Greater Invisibility (Whisperleaf Striders)')) {
-          character.actions.push('Greater Invisibility (Whisperleaf Striders)');
-        }
-      }
-    }
-  ],
-
-  'Explorer\'s Outfit Masterwork': [],
-
-  'Elven Cloak': [
-    { status: 'Elven Cloak', property: 'Hide', modifierType: 'Competence', value: 5 }
-  ],
-
-  'Headband of Intellect +2': [
-    { status: 'Headband of Intellect +2', property: 'Int', modifierType: 'Enhancement', value: 2 }
-  ],
-
-  'Bone Ring +2': [
-    { status: 'Bone Ring +2', property: 'ac', modifierType: 'Deflection', value: 2 }
-  ],
-
-  'Ring of Chameleon Power': [
-    { status: 'Ring of Chameleon Power', property: 'Special', description: 'As a free action, the wearer of this ring can gain the ability to magically blend in with the surroundings. This provides a +10 competence bonus on her Hide checks. ' },
-    { status: 'Ring of Chameleon Power', property: 'Special', description: 'As a standard action, she can also command the ring to utilize the spell disguise self as often as she wants.' },
-    {
-      status: 'Ring of Chameleon Power',
-      callback: (character: ICharacter) => {
-        if (!character.actions.includes('Chameleon Power (Hide +10)')) {
-          character.actions.push('Chameleon Power (Hide +10)');
-        }
-        if (!character.actions.includes('Chameleon Power (Disguise Self)')) {
-          character.actions.push('Chameleon Power (Disguise Self)');
-        }
-      }
-    }
-  ],
-
-  'Dragoncraft bracers of armor +2': [
-    { status: 'Dragoncraft bracers of armor +2', property: 'ac', modifierType: 'Armor', value: 2 }
-  ],
-  'Black Dragoncraft Full Plate +2': [
-    { status: 'Black Dragoncraft Full Plate +2', property: 'ac', modifierType: 'Armor', value: 8 + 2 }
-  ],
-  'Tower Shield made from Blue Dragon Hide +2': [
-    { status: 'Tower Shield made from Blue Dragon Hide +2', property: 'ac', modifierType: 'Shield', value: 4 + 2 }
-  ],
-  'Belt of Giant Strength +4': [
-    { status: 'Belt of Giant Strength +4', property: 'Str', modifierType: 'Enhancement', value: 4 }
-  ],
-  'Full Plate +1': [
-    { status: 'Full Plate +1', property: 'ac', modifierType: 'Armor', value: 8 + 1 }
-  ],
-
-  'Restful Full Plate +1': [
-    { status: 'Restful Full Plate +1', property: 'ac', modifierType: 'Armor', value: 8 + 1 },
-    {
-      status: 'Restful Full Plate +1',
-      property: 'speed',
-      modifierType: 'Generic',
-      valueResolver: (character: ICharacter) => character.race === 'Dwarf' ? 0 : -10
-    },
-    { status: 'Restful Full Plate +1', property: 'Special', description: 'Restful Crystal: Sleeping in this armor does not cause fatigue.' }
-  ],
-  'Tower Shield': [
-    { status: 'Tower Shield', property: 'ac', modifierType: 'Shield', value: 4 }
-  ],
-  'Ring of Protection +3': [
-    { status: 'Ring of Protection +3', property: 'ac', modifierType: 'Deflection', value: 3 }
-  ],
-  'Cloak of Resistance +1': [
-    { status: 'Cloak of Resistance +1', property: 'Fort', modifierType: 'Resistance', value: 1 },
-    { status: 'Cloak of Resistance +1', property: 'Ref', modifierType: 'Resistance', value: 1 },
-    { status: 'Cloak of Resistance +1', property: 'Will', modifierType: 'Resistance', value: 1 }
-  ],
-  'Belt of Giant Strength +2': [
-    { status: 'Belt of Giant Strength +2', property: 'Str', modifierType: 'Enhancement', value: 2 }
-  ],
-  'Gloves of Dexterity +1': [
-    { status: 'Gloves of Dexterity +1', property: 'Dex', modifierType: 'Enhancement', value: 1 }
-  ],
-  'Helm of Glorious Recovery': [
-    { status: 'Helm of Glorious Recovery', property: 'Special', description: '1/day Cure Critical Wounds (4d8+7) on self as a swift action (+2 Cha in Cormyr).' },
-    {
-      status: 'Helm of Glorious Recovery',
-      callback: (character: ICharacter) => {
-        if (!character.actions.includes('Cure Critical Wounds (Helm of Glorious Recovery)')) {
-          character.actions.push('Cure Critical Wounds (Helm of Glorious Recovery)');
-        }
-      }
-    }
-  ],
-  'Hair Shirt of Suffering': [
-    { status: 'Hair Shirt of Suffering', property: 'ac', modifierType: 'Natural Armor', value: 1 },
-    { status: 'Hair Shirt of Suffering', property: 'Special', description: 'Once per day: Activate to use cure serious wounds on any creature other than yourself (healing 3d8+9 points of damage).' },
-    {
-      status: 'Hair Shirt of Suffering',
-      callback: (character: ICharacter) => {
-        character.hp.max -= 2;
-        if (!character.actions.includes('Cure Serious Wounds (Hair Shirt of Suffering)')) {
-          character.actions.push('Cure Serious Wounds (Hair Shirt of Suffering)');
-        }
-        if (character.hp.current > character.hp.max) {
-          character.hp.current = character.hp.max;
-        }
-      }
-    }
-  ]
+  ...StandardWondrousItems,
+  ...UniqueItemEffects
 };
 
 export function GetBodySlot(itemName: string, description: string = ''): string | null {
@@ -345,6 +62,16 @@ export function GetBodySlot(itemName: string, description: string = ''): string 
 
   if (lowerName.includes('holy symbol')) {
     return 'Holy Symbol';
+  }
+
+  // Standard armors (Light/Medium/Heavy, excluding Shields) always occupy the Body slot,
+  // even if their name contains a word like "Shirt" (e.g., "Chain Shirt") or "Leather"/"Hide".
+  const armorBaseName = FindArmorBaseName(itemName);
+  if (armorBaseName) {
+    const armorData = ArmorsData.get(armorBaseName);
+    if (armorData && armorData.type !== 'Shield') {
+      return 'Body';
+    }
   }
 
   const findSlotInWords = (text: string): string | null => {
@@ -404,7 +131,11 @@ export class Item {
     if (this.bodySlot === 'Holy Symbol') {
       this.name = this.name.replace(/\s*\(holy symbol\)/i, '');
     }
-    this.effects = GetEffects(ItemEffects, this.name) || [];
+    this.effects =
+      GetEffects(UniqueItemEffects, this.name) ||
+      ResolveStandardWondrousItemEffects(this.name, this.description) ||
+      GetEffects(ItemEffects, this.name) ||
+      [];
     this.isWeapon = IsAWeapon(this.name);
     this.isPotion = this.name.includes('Potion');
     this.isScroll = this.name.includes('Scroll');
@@ -485,9 +216,13 @@ export class Armor extends Item {
   public acpValue: number;
   public maxDex: number | null = null;
   public attackPenalty: number = 0;
+  public enhancement: number = 0;
 
   constructor(name: string, amount = 1, description = '') {
     super(name, amount, description);
+
+    const enhMatch = this.name.match(/(?:^\+(\d+)\b|\+(\d+)\s*$)/);
+    this.enhancement = enhMatch ? parseInt(enhMatch[1] || enhMatch[2], 10) : 0;
 
     const baseName = FindArmorBaseName(this.name);
     if (baseName) {
@@ -498,6 +233,15 @@ export class Armor extends Item {
       if (data.attackPenalty) {
         this.attackPenalty = data.attackPenalty;
       }
+
+      if (!this.effects.some(e => 'property' in e && e.property === 'ac') && !this.name.includes('{')) {
+        this.effects.push({
+          status: this.name,
+          property: 'ac',
+          modifierType: this.armorType === 'Shield' ? 'Shield' : 'Armor',
+          value: data.acBonus + this.enhancement
+        });
+      }
     } else {
       this.armorType = 'Medium';
       this.acpValue = 0;
@@ -505,7 +249,7 @@ export class Armor extends Item {
 
     const isMithral = this.material === 'Mithral' || /\bmithral\b/i.test(name) || /\bmithral\b/i.test(description);
     const isDarkwood = this.material === 'Darkwood' || /\bdarkwood\b/i.test(name) || /\bdarkwood\b/i.test(description);
-    const hasMagicEnhancement = /\+\d+/.test(this.name);
+    const hasMagicEnhancement = this.enhancement > 0 || /\+\d+/.test(this.name);
     const isMasterwork = /\bmasterwork\b/i.test(name) || /\bmasterwork\b/i.test(description) || hasMagicEnhancement;
 
     if (isMithral) {

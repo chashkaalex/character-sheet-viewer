@@ -911,6 +911,13 @@ const SpellsData: Record<string, SpellData> = {
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
+  },
+  'Fireball': {
+    range: 'Long',
+    target: SpellTarget.Area,
+    calculateDuration: function (_spellCasterClassData) {
+      return 1;
+    }
   }
 };
 

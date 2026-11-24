@@ -50,23 +50,15 @@ export const Monk: ClassData = createClassData({
     /*level: 20*/{ bab: 15, Fort: 12, Ref: 12, Will: 12, ac: 4, speed: 60 }
   ],
 
-  AddSpecialProps(character: ICharacter) {
-    const level = character.GetClassLevel('Monk');
-    if (level > 0) {
-      character.GetModifiableProperty('effectiveMonkLevel').applyPermanentEffect(level);
-    }
-  },
-
-  GetUnarmedDamage(character: ICharacter, _level: number) {
-    const effectiveLevel = character.GetModifiableProperty('effectiveMonkLevel').currentScore;
+  GetUnarmedDamage(_character: ICharacter, level: number) {
     const progression = ['1d6', '1d8', '1d10', '2d6', '2d8', '2d10', '4d8'];
 
     let baseKey = 0;
-    if (effectiveLevel < 4) baseKey = 0;
-    else if (effectiveLevel < 8) baseKey = 1;
-    else if (effectiveLevel < 12) baseKey = 2;
-    else if (effectiveLevel < 16) baseKey = 3;
-    else if (effectiveLevel < 20) baseKey = 4;
+    if (level < 4) baseKey = 0;
+    else if (level < 8) baseKey = 1;
+    else if (level < 12) baseKey = 2;
+    else if (level < 16) baseKey = 3;
+    else if (level < 20) baseKey = 4;
     else baseKey = 5;
 
     const finalKey = Math.min(baseKey, progression.length - 1);

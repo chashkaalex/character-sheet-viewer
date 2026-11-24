@@ -1,6 +1,7 @@
 import { EffectData, MutatingEffectData, StaticPropertyEffect } from '../../state/effects';
 import { ICharacter } from '../../icharacter';
 import { Armor } from '../../gear/items/items';
+import { AbilityBasedProperty } from '../abilities/ability';
 
 export const StatusRelatedValue = (character: ICharacter, statusName: string, value: number): number => {
   return character.HasStatus(statusName) ? value : 0;
@@ -348,6 +349,13 @@ export const FeatEffects: Record<string, EffectData[]> = {
       status: 'Stunning Fist',
       description: 'Forces a foe damaged by your unarmed attack to make a Fortitude saving throw (DC 10 + 1/2 your character level + your Wisdom modifier) or be stunned for 1 round. Usable once per day for every four levels you have attained (Monks have additional uses) [23].',
       callback: (character: ICharacter) => {
+        if (character.abilities?.Wis && !character.HasPropertyInitialized('Stunning Fist')) {
+          const baseDc = 10 + Math.floor((character.HD || 0) / 2);
+          const sfProp = new AbilityBasedProperty('Stunning Fist', character.abilities.Wis, baseDc);
+          if (!character.HasPropertyInitialized('Stunning Fist')) {
+            character.registerProperty('Stunning Fist', sfProp);
+          }
+        }
         if (!character.actions.includes('Stunning Fist')) {
           character.actions.push('Stunning Fist');
         }

@@ -416,7 +416,7 @@ export function OnUseAction(docId: string, actionName: string, rawTargets?: stri
     updateResult.mutationMessage = `Activated ${actionName}. Healed for ${healedAmount} HP (${roll.detail}). HP is now ${newHp}/${character.hp.max}.`;
     return updateResult;
   }
-  let targets: string[] = rawTargets && rawTargets.length > 0 ? rawTargets : ['Self'];
+  let targets: string[] = (action.target && rawTargets && rawTargets.length > 0) ? rawTargets : ['Self'];
   if (targets.includes('All')) {
     targets = ['Self', ...(character.partyMembers || [])];
   }

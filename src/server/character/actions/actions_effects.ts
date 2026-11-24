@@ -1,6 +1,7 @@
 import { ICharacter } from '../icharacter';
 import { EffectData, StaticPropertyEffect } from '../state/effects';
 import { registerStatusEffects } from '../general_effects';
+import { ClassesData } from '../../classes_data/classes_general_data';
 
 export type CoreActionCategory = 'general' | 'class' | 'feat' | 'stance' | 'item';
 export type ActionCategory = CoreActionCategory | (string & {});
@@ -59,7 +60,17 @@ export type ActionCostType =
 
 export interface ActionModifierInfo {
   value: number;
+  label?: string;
   string: string;
+}
+
+export interface EligibleSacrificeSlot {
+  key: string;
+  casterClassName: string;
+  spellLevel: string;
+  slotIndex: number;
+  spellName: string;
+  label: string;
 }
 
 export interface ActionData {
@@ -72,6 +83,7 @@ export interface ActionData {
   target?: string;
   onUse?: ActionOnUseHook;
   getModifier?: (character: ICharacter) => ActionModifierInfo | null;
+  getExtraMetadata?: (character: ICharacter) => Record<string, any>;
 }
 
 export class NumberAction implements ActionData {
@@ -161,7 +173,18 @@ export const ActionsData: Record<string, ActionData> = {
     statusName: 'Stunning Fist',
     category: 'feat',
     actionType: 'free',
-    calculateDuration: (_character) => 1
+    calculateDuration: (_character) => 1,
+    getModifier: (character: ICharacter) => {
+      if (!character.HasPropertyInitialized('Stunning Fist')) return null;
+      const prop = character.GetNamedProperty('Stunning Fist');
+      if (!prop) return null;
+      const val = typeof prop.bonus === 'number' ? prop.bonus : prop.currentScore;
+      return {
+        value: val,
+        label: `DC ${val}`,
+        string: prop.string
+      };
+    }
   },
   'Defensive Stance': {
     statusName: 'Defensive Stance',
@@ -316,6 +339,71 @@ export const ActionsData: Record<string, ActionData> = {
     actionType: 'standard',
     calculateDuration: (_character) => -1,
     healFormula: '3d8+9'
+  },
+  'Fireball (Goggles of the Golden Sun)': {
+    statusName: 'Goggles of the Golden Sun (Used 3/3)',
+    category: 'item',
+    actionType: 'standard',
+    calculateDuration: (_character) => -1,
+    getModifier: (character: ICharacter) => {
+      let highestCl = 0;
+      character.spellCasting?.classSpellCastingData?.forEach(c => {
+        if (c.level.currentScore > highestCl) highestCl = c.level.currentScore;
+      });
+      const effectiveCl = Math.max(5, highestCl);
+      const dice = Math.min(10, effectiveCl);
+      return {
+        value: 14,
+        label: `${dice}d6 (DC 14)`,
+        string: `${dice}d6 fire damage (Caster Level ${effectiveCl}, Reflex DC 14 half)`
+      };
+    },
+    getExtraMetadata: (character: ICharacter) => {
+      return getGogglesFireballMetadata(character);
+    },
+    onUse: (character, docId, _actionName, rawTargets, helpers) => {
+      const meta = getGogglesFireballMetadata(character);
+      if (meta.usesRemaining <= 0) {
+        return { error: 'No daily uses remaining for Goggles of the Golden Sun (3/3 used)' };
+      }
+      if (meta.eligibleSacrificeSlots.length === 0) {
+        return { error: 'Requires an unused prepared spell or spell slot of 3rd level or higher' };
+      }
+      const chosenKey = rawTargets && rawTargets.length > 0 ? rawTargets[0] : meta.eligibleSacrificeSlots[0].key;
+      const chosenSlot = meta.eligibleSacrificeSlots.find(s => s.key === chosenKey);
+      if (!chosenSlot) {
+        return { error: 'Selected spell slot is not an eligible 3rd-level or higher slot' };
+      }
+
+      const classData = ClassesData.get(chosenSlot.casterClassName);
+      const consumeFn = classData?.spellCastingData?.ConsumeSpellSlot;
+      if (!consumeFn) {
+        return { error: `Cannot consume spell slot for ${chosenSlot.casterClassName}` };
+      }
+      const consumeRes = consumeFn(
+        docId,
+        {
+          casterClassName: chosenSlot.casterClassName,
+          spellLevel: chosenSlot.spellLevel,
+          slotIndex: chosenSlot.slotIndex,
+          spellName: chosenSlot.spellName,
+          isUsed: false,
+          isEmpty: false
+        },
+        helpers.adapter
+      );
+      if (!consumeRes || !consumeRes.success) {
+        return { error: consumeRes?.error || 'Failed to sacrifice spell slot' };
+      }
+
+      if (meta.activeStatusName) {
+        helpers.removeStatus(meta.activeStatusName);
+      }
+      const nextUsed = meta.usedCount + 1;
+      return {
+        statusName: `Goggles of the Golden Sun (Used ${nextUsed}/3)`
+      };
+    }
   },
   'Furious Counterstrike': new NumberAction(
     'Furious Counterstrike',
@@ -564,6 +652,73 @@ export const ActionsData: Record<string, ActionData> = {
     calculateDuration: (_character) => 600
   }
 };
+
+export function getGogglesFireballMetadata(character: ICharacter): {
+  usedCount: number;
+  usesRemaining: number;
+  maxUses: number;
+  activeStatusName: string | null;
+  eligibleSacrificeSlots: EligibleSacrificeSlot[];
+} {
+  const maxUses = 3;
+  let usedCount = 0;
+  let activeStatusName: string | null = null;
+  for (const st of character.statuses || []) {
+    const m = st.name.match(/^Goggles of the Golden Sun \(Used (\d+)\/3\)$/);
+    if (m) {
+      usedCount = Math.min(maxUses, parseInt(m[1], 10));
+      activeStatusName = st.name;
+      break;
+    }
+  }
+
+  const eligibleSacrificeSlots: EligibleSacrificeSlot[] = [];
+  character.spellCasting?.classSpellCastingData?.forEach((casterData, casterClassName) => {
+    const classData = ClassesData.get(casterClassName);
+    const preparation = classData?.spellCastingData?.preparation || 'Prepared';
+
+    Object.entries(casterData.preparedSpells || {}).forEach(([levelKey, slots]) => {
+      const numericLevel = parseInt(levelKey, 10);
+      if (isNaN(numericLevel) || numericLevel < 3 || !Array.isArray(slots)) return;
+
+      if (preparation === 'Spontaneous') {
+        const remaining = slots.filter(s => !s.isUsed).length;
+        if (remaining > 0) {
+          eligibleSacrificeSlots.push({
+            key: `${casterClassName}|${levelKey}|0|Spontaneous`,
+            casterClassName,
+            spellLevel: levelKey,
+            slotIndex: 0,
+            spellName: 'Spontaneous',
+            label: `${casterClassName} Level ${levelKey} Slot (${remaining} remaining)`
+          });
+        }
+      } else {
+        slots.forEach((slot, idx) => {
+          if (!slot.isEmpty && !slot.isUsed && slot.spellName) {
+            const levelLabel = levelKey.includes('domain') ? `Level ${numericLevel} Domain` : `Level ${levelKey}`;
+            eligibleSacrificeSlots.push({
+              key: `${casterClassName}|${levelKey}|${idx}|${slot.spellName}`,
+              casterClassName,
+              spellLevel: levelKey,
+              slotIndex: idx,
+              spellName: slot.spellName,
+              label: `${casterClassName} ${levelLabel}: ${slot.spellName} (Slot ${idx + 1})`
+            });
+          }
+        });
+      }
+    });
+  });
+
+  return {
+    usedCount,
+    usesRemaining: Math.max(0, maxUses - usedCount),
+    maxUses,
+    activeStatusName,
+    eligibleSacrificeSlots
+  };
+}
 
 // Register effects
 const actionsEffectsForRegistration: Record<string, EffectData[]> = {};

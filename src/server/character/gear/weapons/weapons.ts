@@ -219,6 +219,7 @@ export class Weapon {
   public isKeen: boolean = false;
   public hasImprovedCritical: boolean = false;
   public isTwoHandedWield: boolean = false;
+  public bonusMonkLevels: number = 0;
   public baseDamage: string = '1d3';
   public damage: string = '1d3';
   public damageBonusFromWeapon: number = 0;
@@ -618,17 +619,19 @@ export class UnarmedWeapon extends MeleeWeapon {
   calculateWeaponStats(character: ICharacter): void {
     const hasSUS = character.HasFeat('Superior Unarmed Strike');
     const hasINA = character.HasFeat('Improved Natural Attack');
-    const effectiveMonkLevel = character.GetModifiableProperty('effectiveMonkLevel');
+    const monkUnarmedLevel =
+      character.GetClassLevel('Monk') +
+      character.GetClassLevel('Sacred Fist') +
+      (this.bonusMonkLevels || 0);
 
     // 1. Calculate base damage from classes
     let bestDamage = '1';
-    let isMonkOrSimilar = false;
+    let isMonkOrSimilar = monkUnarmedLevel > 0;
 
     for (const charClass of character.classes) {
       const classData = ClassesData.get(charClass.name);
       if (classData) {
-        // If they have Monk levels, we use the Monk's progression
-        if (charClass.name === 'Monk' || effectiveMonkLevel.currentScore > 0) {
+        if (charClass.name === 'Monk') {
           isMonkOrSimilar = true;
         }
         const damage = classData.GetUnarmedDamage(character, charClass.level);
@@ -643,7 +646,7 @@ export class UnarmedWeapon extends MeleeWeapon {
       // For Monks, SUS gives +4 effective levels
       const baseProgression = ['1d6', '1d8', '1d10', '2d6', '2d8', '2d10', '4d8'];
       const susBonus = hasSUS ? 4 : 0;
-      const calculatedLevel = effectiveMonkLevel.currentScore + susBonus;
+      const calculatedLevel = monkUnarmedLevel + susBonus;
 
       let baseKey = 0;
       if (calculatedLevel < 4) baseKey = 0;

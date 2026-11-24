@@ -34,8 +34,8 @@ export class AbilityBasedProperty extends ModifiableProperty {
   public name: string;
   public ability: Ability;
 
-  constructor(name: string, ability: Ability) {
-    super(0, name, true);
+  constructor(name: string, ability: Ability, baseScore: number = 0) {
+    super(baseScore, name, true);
     this.name = name;
     this.ability = ability;
   }
@@ -45,6 +45,10 @@ export class AbilityBasedProperty extends ModifiableProperty {
   }
 
   public override get string(): string {
+    if (this.score !== 0) {
+      const effectsPart = this.EffectsString ? `, ${this.EffectsString}` : '';
+      return `${this.bonus} (base: ${this.score}): +${this.ability.ModifierString}${effectsPart}`;
+    }
     return `${this.bonus}: ${this.ability.ModifierString} ${this.EffectsString}`;
   }
 

@@ -329,11 +329,47 @@ export function createCastMenu(slotData) {
     const actionMetadata = (characterRep as any).actionsMetadata?.[slotData.spell];
     const actionTarget = actionMetadata?.target;
     const targetHtml = actionTarget ? renderTargetSelector(actionTarget) : '';
-    const targetInitiallyValid = (!actionTarget || actionTarget === 'Self' || actionTarget === 'Area' || actionTarget === 'Object' || actionTarget === 'Special');
-    const canReactivate = Boolean(actionTarget);
+    const hasSacrificeSlotsConfig = Array.isArray(actionMetadata?.eligibleSacrificeSlots);
+    const sacrificeSlots: any[] = hasSacrificeSlotsConfig ? actionMetadata.eligibleSacrificeSlots : [];
+    const usesRemaining = typeof actionMetadata?.usesRemaining === 'number' ? actionMetadata.usesRemaining : null;
+    const maxUses = typeof actionMetadata?.maxUses === 'number' ? actionMetadata.maxUses : null;
+
+    let sacrificeHtml = '';
+    if (hasSacrificeSlotsConfig) {
+      if (sacrificeSlots.length > 0) {
+        const options = sacrificeSlots
+          .map((s: any) => `<option value="${s.key}">${s.label}</option>`)
+          .join('');
+        sacrificeHtml = `
+          <div class="spell-sacrifice-selector-container" style="margin-top: 8px;">
+            <label class="spell-targets-title">Sacrifice 3rd+ Level Spell / Slot:</label>
+            <div class="spell-dropdown" style="margin-top: 4px;">
+              <select id="sacrificeSlotSelect">${options}</select>
+            </div>
+          </div>
+        `;
+      } else {
+        sacrificeHtml = `
+          <div class="spell-sacrifice-selector-container" style="margin-top: 8px; color: #dc3545; font-weight: bold;">
+            Requires an unused 3rd-level or higher prepared spell or spell slot.
+          </div>
+        `;
+      }
+    }
+
+    const usesInfoHtml = (usesRemaining !== null && maxUses !== null)
+      ? `<br><strong>Daily Uses Remaining:</strong> ${usesRemaining}/${maxUses}`
+      : '';
+
+    const targetInitiallyValid = (!actionTarget || actionTarget === 'Self' || actionTarget === 'Area' || actionTarget === 'Object' || actionTarget === 'Special')
+      && (!hasSacrificeSlotsConfig || sacrificeSlots.length > 0)
+      && (usesRemaining === null || usesRemaining > 0);
+    const canReactivate = Boolean(actionTarget) || hasSacrificeSlotsConfig;
 
     let statusText = '';
-    if (isUsed) {
+    if (usesRemaining !== null && usesRemaining <= 0) {
+      statusText = '<br><strong>Status:</strong> <span style="color: #dc3545; font-weight: bold;">No daily uses remaining</span>';
+    } else if (isUsed && !hasSacrificeSlotsConfig) {
       statusText = '<br><strong>Status:</strong> <span style="color: var(--text-muted); text-decoration: line-through;">Active</span>';
     } else if (!isValid) {
       statusText = '<br><strong>Status:</strong> <span style="color: #dc3545; font-weight: bold;">No uses remaining</span>';
@@ -347,10 +383,11 @@ export function createCastMenu(slotData) {
           <h3>Use Action</h3>
           <div class="spell-info">
               <strong>Action:</strong> ${slotData.spell}
+              ${usesInfoHtml}
               ${statusText}
           </div>
 
-          <div id="spellTargetContainer">${targetHtml}</div>
+          <div id="spellTargetContainer">${targetHtml}${sacrificeHtml}</div>
           
           <div class="spell-actions">
               <button class="spell-button cancel" onclick="window.hideSpellPopup()">Cancel</button>

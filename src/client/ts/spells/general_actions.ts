@@ -121,14 +121,19 @@ export function renderGeneralActionsUI() {
       const isActionActive = characterRep.statuses && characterRep.statuses.some((s: any) =>
         s.name === statusName || s.name.startsWith(statusName + ' +') || s.name.startsWith(statusName + ' -')
       );
+      const isExhaustedDaily = metadata && typeof metadata.usesRemaining === 'number' && metadata.usesRemaining <= 0;
+      const lacksEligibleSlot = metadata && Array.isArray(metadata.eligibleSacrificeSlots) && metadata.eligibleSacrificeSlots.length === 0;
       const slotClass = 'filled';
-      const usedClass = isActionActive ? 'used' : '';
-      const isSlotValid = hasUses;
+      const usedClass = (isActionActive || isExhaustedDaily) ? 'used' : '';
+      const isSlotValid = hasUses && !lacksEligibleSlot;
       const invalidClass = isSlotValid ? '' : ' invalid';
 
       const modInfo = metadata && metadata.modifier;
+      const modText = modInfo
+        ? (modInfo.label || `${modInfo.value >= 0 ? '+' : ''}${modInfo.value}`)
+        : '';
       const modHtml = modInfo
-        ? ` <span class="action-slot-mod" data-action-mod="${actionName}">${modInfo.value >= 0 ? '+' : ''}${modInfo.value}</span>`
+        ? ` <span class="action-slot-mod" data-action-mod="${actionName}">${modText}</span>`
         : '';
 
       panelsHtml += `<div class="spell-slot ${slotClass} ${usedClass}${invalidClass}" data-level="actions" data-slot="${globalSlotIndex++}" data-spell="${actionName}" data-used="${isActionActive}" data-valid="${isSlotValid}" data-class="Actions" data-preparation="Actions" data-category="${section.category}" title="${actionName}">${actionName}${modHtml}</div>`;
@@ -182,10 +187,13 @@ export function useAction() {
     return;
   }
 
+  const sacrificeSelect = document.querySelector('#sacrificeSlotSelect') as HTMLSelectElement | null;
   const targetCheckboxes = document.querySelectorAll('#spellTargetContainer input[name="spellTarget"]:checked');
-  const targets = targetCheckboxes.length > 0
-    ? Array.from(targetCheckboxes).map((cb: any) => cb.value)
-    : undefined;
+  const targets = (sacrificeSelect && sacrificeSelect.value)
+    ? [sacrificeSelect.value]
+    : (targetCheckboxes.length > 0
+      ? Array.from(targetCheckboxes).map((cb: any) => cb.value)
+      : undefined);
 
   console.log('Using action:', slotData.spellName, targets);
 

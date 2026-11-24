@@ -184,6 +184,7 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
       if (action) {
         const isNumberAction = action instanceof NumberAction;
         const cat: ActionCategory = action.category || 'general';
+        const extraMeta = action.getExtraMetadata ? action.getExtraMetadata(character) : {};
         actionsMetadata[actionName] = {
           name: actionName,
           statusName: action.statusName,
@@ -194,7 +195,8 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
           category: cat,
           actionType: action.actionType || 'standard',
           target: action.target,
-          modifier: action.getModifier ? (action.getModifier(character) ?? undefined) : undefined
+          modifier: action.getModifier ? (action.getModifier(character) ?? undefined) : undefined,
+          ...extraMeta
         };
         if (!categorizedActions[cat]) {
           categorizedActions[cat] = [];
