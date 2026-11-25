@@ -8,6 +8,7 @@ import { BuildWeaponDamageVariants } from './gear/weapons/weapon_extra_damage';
 import { sanitizeDbLink } from './parser_utils';
 import { GetScriptProperty } from '../services/gdoc_utilities';
 import { APP_VERSION } from './version';
+import { EncumbranceState } from './properties/encumbrance';
 
 /**
  * Character representation for the client.
@@ -33,6 +34,7 @@ export interface CharacterRep {
   hp: { current: number; max: number };
   ac: any;
   speed: any;
+  encumbrance?: EncumbranceState | null;
   saves: Record<string, any>;
   resistances: string;
   preparedSpells: Record<string, any>;
@@ -120,6 +122,7 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
     hp: { current: character.hp.current, max: character.hp.max },
     ac: character.ac?.state ?? null,
     speed: character.speed?.state ?? null,
+    encumbrance: character.encumbrance ?? null,
     saves: {},
     resistances: character.resistances,
     preparedSpells: {},

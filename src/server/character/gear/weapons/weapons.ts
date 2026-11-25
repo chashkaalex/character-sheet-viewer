@@ -12,104 +12,105 @@ export interface WeaponData {
   damage: string;
   critical: string;
   rangeIncrement?: number;
+  weight: number;
 }
 
 export const WeaponsData = new Map<string, WeaponData>();
 
-// Simple Melee Weapons
-WeaponsData.set('Gauntlet', { range: 'Melee', encumbrance: 'Light', damage: '1d3', critical: 'x2' });
-WeaponsData.set('Unarmed', { range: 'Melee', encumbrance: 'Light', damage: '1d3', critical: 'x2' });
-WeaponsData.set('Punching Dagger', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x3' });
-WeaponsData.set('Dagger', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: '19-20/x2', rangeIncrement: 10 });
-WeaponsData.set('Mace', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });
-WeaponsData.set('Sickle', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });
-WeaponsData.set('Club', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x2', rangeIncrement: 10 });
-WeaponsData.set('Heavy Mace', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2' });
-WeaponsData.set('Morningstar', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2' });
-WeaponsData.set('Short Spear', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x2', rangeIncrement: 20 });
-WeaponsData.set('Shortspear', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x2', rangeIncrement: 20 });
-WeaponsData.set('Long Spear', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3' });
-WeaponsData.set('Longspear', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3' });
-WeaponsData.set('Quarterstaff', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d6', critical: 'x2' });
-WeaponsData.set('Spear', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3', rangeIncrement: 20 });
+// Simple Melee Weapons (PHB Table 7-5)
+WeaponsData.set('Gauntlet', { range: 'Melee', encumbrance: 'Light', damage: '1d3', critical: 'x2', weight: 1 });
+WeaponsData.set('Unarmed', { range: 'Melee', encumbrance: 'Light', damage: '1d3', critical: 'x2', weight: 0 });
+WeaponsData.set('Punching Dagger', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x3', weight: 1 });
+WeaponsData.set('Dagger', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: '19-20/x2', rangeIncrement: 10, weight: 1 });
+WeaponsData.set('Mace', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', weight: 4 });
+WeaponsData.set('Sickle', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', weight: 2 });
+WeaponsData.set('Club', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x2', rangeIncrement: 10, weight: 3 });
+WeaponsData.set('Heavy Mace', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2', weight: 8 });
+WeaponsData.set('Morningstar', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2', weight: 6 });
+WeaponsData.set('Short Spear', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x2', rangeIncrement: 20, weight: 3 });
+WeaponsData.set('Shortspear', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x2', rangeIncrement: 20, weight: 3 });
+WeaponsData.set('Long Spear', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3', weight: 9 });
+WeaponsData.set('Longspear', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3', weight: 9 });
+WeaponsData.set('Quarterstaff', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d6', critical: 'x2', weight: 4 });
+WeaponsData.set('Spear', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3', rangeIncrement: 20, weight: 6 });
 
 // Simple Ranged Weapons
-WeaponsData.set('Light Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: '19-20/x2', rangeIncrement: 80 });
-WeaponsData.set('Light Coil Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: '19-20/x2', rangeIncrement: 80 });
-WeaponsData.set('Heavy Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d10', critical: '19-20/x2', rangeIncrement: 120 });
-WeaponsData.set('Dart', { range: 'Ranged', encumbrance: 'ranged', damage: '1d4', critical: 'x2', rangeIncrement: 20 });
-WeaponsData.set('Javelin', { range: 'Ranged', encumbrance: 'ranged', damage: '1d6', critical: 'x2', rangeIncrement: 30 });
-WeaponsData.set('Sling', { range: 'Ranged', encumbrance: 'ranged', damage: '1d4', critical: 'x2', rangeIncrement: 50 });
+WeaponsData.set('Light Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: '19-20/x2', rangeIncrement: 80, weight: 4 });
+WeaponsData.set('Light Coil Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: '19-20/x2', rangeIncrement: 80, weight: 4 });
+WeaponsData.set('Heavy Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d10', critical: '19-20/x2', rangeIncrement: 120, weight: 8 });
+WeaponsData.set('Dart', { range: 'Ranged', encumbrance: 'ranged', damage: '1d4', critical: 'x2', rangeIncrement: 20, weight: 0.5 });
+WeaponsData.set('Javelin', { range: 'Ranged', encumbrance: 'ranged', damage: '1d6', critical: 'x2', rangeIncrement: 30, weight: 2 });
+WeaponsData.set('Sling', { range: 'Ranged', encumbrance: 'ranged', damage: '1d4', critical: 'x2', rangeIncrement: 50, weight: 0 });
 
 // Martial Melee Weapons
-WeaponsData.set('Throwing Axe', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', rangeIncrement: 10 });
-WeaponsData.set('Light Hammer', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x2', rangeIncrement: 20 });
-WeaponsData.set('Handaxe', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x3' });
-WeaponsData.set('Kukri', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: '18-20/x2' });
-WeaponsData.set('Light Pick', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x4' });
-WeaponsData.set('Sap', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });
-WeaponsData.set('Light Shield', { range: 'Melee', encumbrance: 'Light', damage: '1d3', critical: 'x2' });
-WeaponsData.set('Spiked Armour', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });
-WeaponsData.set('Light Spiked Shield', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x2' });
-WeaponsData.set('Short Sword', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: '19-20/x2' });
-WeaponsData.set('Battleaxe', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x3' });
-WeaponsData.set('Flail', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2' });
-WeaponsData.set('Longsword', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '19-20/x2' });
-WeaponsData.set('Pick', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x4' });
-WeaponsData.set('Heavy Pick', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x4' });
-WeaponsData.set('Rapier', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: '18-20/x2' });
-WeaponsData.set('Scimitar', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: '18-20/x2' });
-WeaponsData.set('Heavy Shield', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d4', critical: 'x2' });
-WeaponsData.set('Heavy Spiked Shield', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x2' });
-WeaponsData.set('Trident', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2', rangeIncrement: 10 });
-WeaponsData.set('Warhammer', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x3' });
-WeaponsData.set('Falchion', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: '18-20/x2' });
-WeaponsData.set('Glaive', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d10', critical: 'x3' });
-WeaponsData.set('Greataxe', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d12', critical: 'x3' });
-WeaponsData.set('Greatclub', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d10', critical: 'x2' });
-WeaponsData.set('Heavy Flail', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d10', critical: '19-20/x2' });
-WeaponsData.set('Greatsword', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d6', critical: '19-20/x2' });
-WeaponsData.set('Guisarme', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: 'x3' });
-WeaponsData.set('Halberd', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d10', critical: 'x3' });
-WeaponsData.set('Lance', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3' });
-WeaponsData.set('Ranseur', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: 'x3' });
-WeaponsData.set('Scythe', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: 'x4' });
+WeaponsData.set('Throwing Axe', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', rangeIncrement: 10, weight: 2 });
+WeaponsData.set('Light Hammer', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x2', rangeIncrement: 20, weight: 2 });
+WeaponsData.set('Handaxe', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x3', weight: 3 });
+WeaponsData.set('Kukri', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: '18-20/x2', weight: 2 });
+WeaponsData.set('Light Pick', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x4', weight: 3 });
+WeaponsData.set('Sap', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', weight: 2 });
+WeaponsData.set('Light Shield', { range: 'Melee', encumbrance: 'Light', damage: '1d3', critical: 'x2', weight: 6 });
+WeaponsData.set('Spiked Armour', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', weight: 10 });
+WeaponsData.set('Light Spiked Shield', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x2', weight: 7 });
+WeaponsData.set('Short Sword', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: '19-20/x2', weight: 2 });
+WeaponsData.set('Battleaxe', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x3', weight: 6 });
+WeaponsData.set('Flail', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2', weight: 5 });
+WeaponsData.set('Longsword', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '19-20/x2', weight: 4 });
+WeaponsData.set('Pick', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x4', weight: 6 });
+WeaponsData.set('Heavy Pick', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x4', weight: 6 });
+WeaponsData.set('Rapier', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: '18-20/x2', weight: 2 });
+WeaponsData.set('Scimitar', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: '18-20/x2', weight: 4 });
+WeaponsData.set('Heavy Shield', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d4', critical: 'x2', weight: 10 });
+WeaponsData.set('Heavy Spiked Shield', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d6', critical: 'x2', weight: 15 });
+WeaponsData.set('Trident', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x2', rangeIncrement: 10, weight: 4 });
+WeaponsData.set('Warhammer', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: 'x3', weight: 5 });
+WeaponsData.set('Falchion', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: '18-20/x2', weight: 8 });
+WeaponsData.set('Glaive', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d10', critical: 'x3', weight: 10 });
+WeaponsData.set('Greataxe', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d12', critical: 'x3', weight: 12 });
+WeaponsData.set('Greatclub', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d10', critical: 'x2', weight: 8 });
+WeaponsData.set('Heavy Flail', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d10', critical: '19-20/x2', weight: 10 });
+WeaponsData.set('Greatsword', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d6', critical: '19-20/x2', weight: 8 });
+WeaponsData.set('Guisarme', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: 'x3', weight: 12 });
+WeaponsData.set('Halberd', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d10', critical: 'x3', weight: 12 });
+WeaponsData.set('Lance', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3', weight: 10 });
+WeaponsData.set('Ranseur', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: 'x3', weight: 12 });
+WeaponsData.set('Scythe', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: 'x4', weight: 10 });
 
 // Martial Ranged Weapons
-WeaponsData.set('Longbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: 'x3', rangeIncrement: 100 });
-WeaponsData.set('Long Bow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: 'x3', rangeIncrement: 100 });
-WeaponsData.set('Composite Longbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: 'x3', rangeIncrement: 110 });
-WeaponsData.set('Composite Long Bow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: 'x3', rangeIncrement: 110 });
-WeaponsData.set('Shortbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d6', critical: 'x3', rangeIncrement: 60 });
-WeaponsData.set('Short Bow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d6', critical: 'x3', rangeIncrement: 60 });
-WeaponsData.set('Composite Shortbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d6', critical: 'x3', rangeIncrement: 70 });
-WeaponsData.set('Composite Short Bow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d6', critical: 'x3', rangeIncrement: 70 });
+WeaponsData.set('Longbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: 'x3', rangeIncrement: 100, weight: 3 });
+WeaponsData.set('Long Bow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: 'x3', rangeIncrement: 100, weight: 3 });
+WeaponsData.set('Composite Longbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: 'x3', rangeIncrement: 110, weight: 3 });
+WeaponsData.set('Composite Long Bow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: 'x3', rangeIncrement: 110, weight: 3 });
+WeaponsData.set('Shortbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d6', critical: 'x3', rangeIncrement: 60, weight: 2 });
+WeaponsData.set('Short Bow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d6', critical: 'x3', rangeIncrement: 60, weight: 2 });
+WeaponsData.set('Composite Shortbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d6', critical: 'x3', rangeIncrement: 70, weight: 2 });
+WeaponsData.set('Composite Short Bow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d6', critical: 'x3', rangeIncrement: 70, weight: 2 });
 
 // Exotic Melee Weapons
-WeaponsData.set('Kama', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });
-WeaponsData.set('Kusarigama', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });
-WeaponsData.set('Nunchaku', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });
-WeaponsData.set('Sai', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x2' });
-WeaponsData.set('Siangham', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2' });
-WeaponsData.set('Bastard Sword', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d10', critical: '19-20/x2' });
-WeaponsData.set('Dwarven Waraxe', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d10', critical: 'x3' });
-WeaponsData.set('Thinblade', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '18-20/x2' });
-WeaponsData.set('Elven Thinblade', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '18-20/x2' });
-WeaponsData.set('Whip', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d3', critical: 'x2' });
-WeaponsData.set('Orc Axe', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d12', critical: 'x3' });
-WeaponsData.set('Spiked Chain', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: 'x2' });
-WeaponsData.set('Dire Flail', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8/1d8', critical: 'x2' });
-WeaponsData.set('Gnome Hammer', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3' });
-WeaponsData.set('Two-bladed Sword', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: '19-20/x2' });
-WeaponsData.set('Dwarven Urgrosh', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3' });
+WeaponsData.set('Kama', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', weight: 2 });
+WeaponsData.set('Kusarigama', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', weight: 3 });
+WeaponsData.set('Nunchaku', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', weight: 2 });
+WeaponsData.set('Sai', { range: 'Melee', encumbrance: 'Light', damage: '1d4', critical: 'x2', weight: 1 });
+WeaponsData.set('Siangham', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', weight: 1 });
+WeaponsData.set('Bastard Sword', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d10', critical: '19-20/x2', weight: 6 });
+WeaponsData.set('Dwarven Waraxe', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d10', critical: 'x3', weight: 8 });
+WeaponsData.set('Thinblade', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '18-20/x2', weight: 3 });
+WeaponsData.set('Elven Thinblade', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '18-20/x2', weight: 3 });
+WeaponsData.set('Whip', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d3', critical: 'x2', weight: 2 });
+WeaponsData.set('Orc Axe', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d12', critical: 'x3', weight: 15 });
+WeaponsData.set('Spiked Chain', { range: 'Melee', encumbrance: 'Two-Handed', damage: '2d4', critical: 'x2', weight: 10 });
+WeaponsData.set('Dire Flail', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8/1d8', critical: 'x2', weight: 10 });
+WeaponsData.set('Gnome Hammer', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3', weight: 6 });
+WeaponsData.set('Two-bladed Sword', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: '19-20/x2', weight: 10 });
+WeaponsData.set('Dwarven Urgrosh', { range: 'Melee', encumbrance: 'Two-Handed', damage: '1d8', critical: 'x3', weight: 12 });
 
 // Exotic Ranged Weapons
-WeaponsData.set('Bolas', { range: 'Ranged', encumbrance: 'ranged', damage: '1d2', critical: 'x2', rangeIncrement: 10 });
-WeaponsData.set('Hand Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d4', critical: '19-20/x2', rangeIncrement: 30 });
-WeaponsData.set('Repeating Heavy Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d10', critical: '19-20/x2', rangeIncrement: 120 });
-WeaponsData.set('Repeating Light Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: '19-20/x2', rangeIncrement: 80 });
-WeaponsData.set('Net', { range: 'Ranged', encumbrance: 'ranged', damage: '—', critical: '—', rangeIncrement: 10 });
-WeaponsData.set('Shuriken', { range: 'Ranged', encumbrance: 'ranged', damage: '1d2', critical: 'x2', rangeIncrement: 10 });
+WeaponsData.set('Bolas', { range: 'Ranged', encumbrance: 'ranged', damage: '1d2', critical: 'x2', rangeIncrement: 10, weight: 2 });
+WeaponsData.set('Hand Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d4', critical: '19-20/x2', rangeIncrement: 30, weight: 2 });
+WeaponsData.set('Repeating Heavy Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d10', critical: '19-20/x2', rangeIncrement: 120, weight: 12 });
+WeaponsData.set('Repeating Light Crossbow', { range: 'Ranged', encumbrance: 'ranged', damage: '1d8', critical: '19-20/x2', rangeIncrement: 80, weight: 6 });
+WeaponsData.set('Net', { range: 'Ranged', encumbrance: 'ranged', damage: '—', critical: '—', rangeIncrement: 10, weight: 6 });
+WeaponsData.set('Shuriken', { range: 'Ranged', encumbrance: 'ranged', damage: '1d2', critical: 'x2', rangeIncrement: 10, weight: 0.1 });
 
 export interface CustomWeaponData {
   damage?: string;
@@ -171,6 +172,17 @@ export function FindWeaponBaseName(fullName: string): string | null {
     const regex = new RegExp(`\\b${escaped}\\b`);
     if (regex.test(lowerBasic)) {
       return baseName;
+    }
+  }
+  return null;
+}
+
+export function GetBaseWeaponWeight(fullName: string): number | null {
+  const baseName = FindWeaponBaseName(fullName);
+  if (baseName) {
+    const data = WeaponsData.get(baseName);
+    if (data && typeof data.weight === 'number') {
+      return data.weight;
     }
   }
   return null;

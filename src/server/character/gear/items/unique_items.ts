@@ -124,12 +124,6 @@ export const UniqueItemEffects: Record<string, EffectData[]> = {
 
   'Restful Full Plate +1': [
     { status: 'Restful Full Plate +1', property: 'ac', modifierType: 'Armor', value: 8 + 1 },
-    {
-      status: 'Restful Full Plate +1',
-      property: 'speed',
-      modifierType: 'Generic',
-      valueResolver: (character: ICharacter) => character.race === 'Dwarf' ? 0 : -10
-    },
     { status: 'Restful Full Plate +1', property: 'Special', description: 'Restful Crystal: Sleeping in this armor does not cause fatigue.' }
   ],
 

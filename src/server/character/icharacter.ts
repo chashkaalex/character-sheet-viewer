@@ -10,6 +10,7 @@ import { BodySlotsMap, Item } from './gear/items/items';
 import { BaseEffect, EffectData } from './state/effects';
 import { Weapon } from './gear/weapons/weapons';
 import { UpdateHpCallback, OnCastSpellCallback } from './manipulation_types';
+import { EncumbranceState } from './properties/encumbrance';
 
 export interface ICharacter {
     docId: string;
@@ -58,6 +59,7 @@ export interface ICharacter {
     attacksOfOpportunity: ModifiableProperty;
     ac: ArmorClass;
     saves: SavesMap;
+    encumbrance?: EncumbranceState;
     manipulationCallbacks: {
         UpdateHp: UpdateHpCallback[];
         OnCastSpell: OnCastSpellCallback[];

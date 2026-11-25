@@ -55,6 +55,7 @@ import { RacesData } from '../races_data/races_general_data';
 
 import { ClassesData } from '../classes_data/classes_general_data';
 import { UpdateHpCallback, OnCastSpellCallback } from './manipulation_types';
+import { ApplyEncumbranceEffects, EncumbranceState } from './properties/encumbrance';
 import './actions/actions_effects';
 
 export class Character implements ICharacter, IPropertyRegistry {
@@ -114,6 +115,7 @@ export class Character implements ICharacter, IPropertyRegistry {
     public attacksOfOpportunity!: ModifiableProperty;
     public ac!: ArmorClass;
     public saves!: SavesMap;
+    public encumbrance!: EncumbranceState;
     private _dynamicModifiableProperties: Map<string, ModifiableProperty> = new Map();
     private _initializedProperties: Map<string, BaseProperty<any>> = new Map();
     private _pendingEffects: Map<string, BaseEffect[]> = new Map();
@@ -353,6 +355,9 @@ export class Character implements ICharacter, IPropertyRegistry {
 
             // Resolve any remaining pending effects
             this.ResolveAllRemainingPendingEffects();
+
+            // Calculate carrying capacity, total carried weight, and apply D&D 3.5 encumbrance penalties
+            ApplyEncumbranceEffects(this);
         } finally {
             setPropertyRegistry(null);
         }

@@ -94,7 +94,8 @@
             <div class="stat-group">
               <div class="stat-group-header">
                 <h3>Combat Properties</h3>
-                <button type="button" id="combatToggleButton" class="passed-button" onclick="toggleCombatMode()">Start Combat</button>
+                <button type="button" id="combatToggleButton" class="passed-button" onclick="toggleCombatMode()">Start
+                  Combat</button>
               </div>
               <div id="roundActionsBar" class="round-actions-bar" style="display: none;"></div>
               <div class="saves-grid">
@@ -127,6 +128,10 @@
                 <div class="combat-item">
                   <label>Speed:</label>
                   <span id="speedValue">-</span>
+                </div>
+                <div class="combat-item">
+                  <label>Load:</label>
+                  <span id="loadValue">-</span>
                 </div>
                 <div class="combat-item">
                   <label>Init Bonus:</label>
@@ -166,7 +171,8 @@
                   <span class="special-attack-bonus">
                     <label>Bonus:</label>
                     <span id="specialAttackBonus">-</span>
-                  </span>                  <span class="special-attack-separator" aria-hidden="true"></span>
+                  </span>
+                  <span class="special-attack-separator" aria-hidden="true"></span>
                   <span class="special-attack-bonus">
                     <label>Attacks of Opportunity:</label>
                     <span id="attacksOfOpportunity">-</span>
@@ -224,7 +230,8 @@
         <div class="spellcasting-class" id="abilitiesSection">
           <div class="spellcasting-class-header section-card-header">
             <h3>Abilities</h3>
-            <button class="collapse-button" id="abilitiesCollapseBtn" onclick="toggleCollapse('abilities')" title="Collapse/Expand">&#9650;</button>
+            <button class="collapse-button" id="abilitiesCollapseBtn" onclick="toggleCollapse('abilities')"
+              title="Collapse/Expand">&#9650;</button>
           </div>
           <div class="spell-slots-container">
             <div id="abilitiesGrid" class="abilities-grid">
@@ -237,13 +244,17 @@
           <div class="spellcasting-class-header section-card-header section-card-header-between">
             <div class="section-card-title-group">
               <h3>Skills</h3>
-              <button class="collapse-button" id="skillsCollapseBtn" onclick="toggleCollapse('skills')" title="Collapse/Expand">&#9650;</button>
+              <button class="collapse-button" id="skillsCollapseBtn" onclick="toggleCollapse('skills')"
+                title="Collapse/Expand">&#9650;</button>
             </div>
             <div class="skills-controls-group">
               <div class="skills-mode-toggle" id="skillsModeToggle" role="group" aria-label="Skill visibility filter">
-                <button type="button" class="skills-mode-btn" data-skill-mode="active" title="Show trained skills or skills with bonus > 0">Active</button>
-                <button type="button" class="skills-mode-btn" data-skill-mode="trained" title="Show only skills with ranks > 0">Trained</button>
-                <button type="button" class="skills-mode-btn" data-skill-mode="all" title="Show all regular and character skills">All</button>
+                <button type="button" class="skills-mode-btn" data-skill-mode="active"
+                  title="Show trained skills or skills with bonus > 0">Active</button>
+                <button type="button" class="skills-mode-btn" data-skill-mode="trained"
+                  title="Show only skills with ranks > 0">Trained</button>
+                <button type="button" class="skills-mode-btn" data-skill-mode="all"
+                  title="Show all regular and character skills">All</button>
               </div>
               <input type="text" id="skillsFilterInput" class="skills-filter-input" placeholder="Filter skills..." />
             </div>
@@ -272,6 +283,7 @@
                 <div class="inventory-header">
                   <div class="header-left">
                     <h3>Battle Gear</h3>
+                    <span id="battleGearWeightSummary" class="inventory-weight-summary"></span>
                     <div class="filter-container">
                       <button class="filter-button" id="battleGearFilterBtn"
                         onclick="toggleFilterDropdown('battleGear')" title="Filter items">🔽</button>
@@ -296,6 +308,7 @@
                 <div class="inventory-header">
                   <div class="header-left">
                     <h3>Possessions</h3>
+                    <span id="possessionsWeightSummary" class="inventory-weight-summary"></span>
                     <div class="filter-container">
                       <button class="filter-button" id="possessionsFilterBtn"
                         onclick="toggleFilterDropdown('possessions')" title="Filter items">🔽</button>

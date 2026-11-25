@@ -12,6 +12,7 @@ export function populateInventory() {
   populateInventoryList(battleGearList, characterRep.battleGear, 'battleGear');
   populateInventoryList(possessionsList, characterRep.possessions, 'possessions');
   populateBodySlots(characterRep.battleGear);
+  renderInventoryWeightSummaries(characterRep);
 
   // Update filter button appearances based on current filters
   updateFilterButtonAppearance('battleGear', currentFilters.battleGear);
@@ -97,6 +98,8 @@ export function createInventoryItem(item, index, listType) {
   }
 
   const amountText = item.amount > 1 ? `x ${item.amount}` : '';
+  const totalItemWeight = Number(((Number(item.weight) || 0) * (Number(item.amount) || 1)).toFixed(2));
+  const weightLabel = item.isWeightKnown === false ? '? lb' : `${totalItemWeight} lb`;
 
   const actionIcon = listType === 'battleGear' ? '🎒' : '⚔';
   const actionTitle = listType === 'battleGear' ? 'Move to Possessions' : 'Move to Battle Gear';
@@ -109,11 +112,54 @@ export function createInventoryItem(item, index, listType) {
 
   itemElement.innerHTML = `
     <label>${nameText}</label>
-    <span style="text-align: right; margin-left: auto;">${amountText}</span>
+    <span style="text-align: right; margin-left: auto;">${amountText} <span class="inventory-item-weight" style="color: #888; font-size: 0.85em;">(${weightLabel})</span></span>
     ${buttonsHtml}
   `;
 
   return itemElement;
+}
+
+export function renderInventoryWeightSummaries(rep: any = characterRep): {
+  battleGearHtml: string;
+  possessionsHtml: string;
+} {
+  const enc = rep?.encumbrance;
+  const battleGearItems = Array.isArray(rep?.battleGear) ? rep.battleGear : [];
+  const possessionsItems = Array.isArray(rep?.possessions) ? rep.possessions : [];
+
+  const battleWeight = enc
+    ? enc.totalWeight
+    : Number(
+      battleGearItems.reduce((sum: number, i: any) => sum + (Number(i.weight) || 0) * (Number(i.amount) || 1), 0).toFixed(2)
+    );
+  const possessionsWeight = Number(
+    possessionsItems.reduce((sum: number, i: any) => sum + (Number(i.weight) || 0) * (Number(i.amount) || 1), 0).toFixed(2)
+  );
+
+  let battleGearHtml = `(${battleWeight} lb)`;
+  if (enc) {
+    const loadColors: Record<string, string> = {
+      Light: '#28a745',
+      Medium: '#d39e00',
+      Heavy: '#fd7e14',
+      Overloaded: '#dc3545'
+    };
+    const color = loadColors[enc.loadCategory] || '#666';
+    const prefix = enc.loadCategory === 'Overloaded' ? '⚠️ ' : '';
+    const title = `Light ≤ ${enc.lightLoadMax} lb | Medium ≤ ${enc.mediumLoadMax} lb | Heavy ≤ ${enc.heavyLoadMax} lb`;
+    battleGearHtml = `<span style="font-size: 0.9em; font-weight: normal; margin-left: 6px;" title="${title}">${battleWeight} / ${enc.heavyLoadMax} lb <strong style="color: ${color};">[${prefix}${enc.loadCategory}]</strong></span>`;
+  }
+
+  const possessionsHtml = `<span style="font-size: 0.9em; font-weight: normal; margin-left: 6px; color: #666;">(${possessionsWeight} lb)</span>`;
+
+  if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
+    const bgSummaryEl = document.getElementById('battleGearWeightSummary');
+    if (bgSummaryEl) bgSummaryEl.innerHTML = battleGearHtml;
+    const posSummaryEl = document.getElementById('possessionsWeightSummary');
+    if (posSummaryEl) posSummaryEl.innerHTML = possessionsHtml;
+  }
+
+  return { battleGearHtml, possessionsHtml };
 }
 
 // Inventory management functions

@@ -132,6 +132,26 @@ export function onCharacterRepresentation(response) {
     addTooltip('speedValue', characterRep.speed.string);
   }
 
+  //render encumbrance / load
+  const loadEl = document.getElementById('loadValue');
+  if (loadEl && characterRep.encumbrance) {
+    const enc = characterRep.encumbrance;
+    const prefix = enc.loadCategory === 'Overloaded' ? '⚠️ ' : '';
+    const loadColor = enc.loadCategory === 'Overloaded'
+      ? ' style="color: #dc3545; font-weight: bold;"'
+      : '';
+    loadEl.innerHTML = `<span${loadColor}>${prefix}${enc.loadCategory} (${enc.totalWeight}/${enc.heavyLoadMax} lb)</span>`;
+    const penaltyParts: string[] = [];
+    if (enc.maxDexCap !== null) penaltyParts.push(`Max Dex +${enc.maxDexCap}`);
+    if (enc.acpPenalty < 0) penaltyParts.push(`ACP ${enc.acpPenalty}`);
+    if (enc.reducesSpeed) penaltyParts.push('Speed reduced');
+    const penaltyInfo = penaltyParts.length > 0 ? ` | Penalties: ${penaltyParts.join(', ')}` : ' | No load penalties';
+    addTooltip(
+      'loadValue',
+      `${enc.totalWeight} lb carried (Light ≤ ${enc.lightLoadMax} lb | Medium ≤ ${enc.mediumLoadMax} lb | Heavy ≤ ${enc.heavyLoadMax} lb)${penaltyInfo}`
+    );
+  }
+
   UpdateValueAndTooltip('acValue', characterRep.ac);
   if (characterRep.ac && characterRep.ac.touch) {
     UpdateValueAndTooltip('touchAcValue', characterRep.ac.touch);
