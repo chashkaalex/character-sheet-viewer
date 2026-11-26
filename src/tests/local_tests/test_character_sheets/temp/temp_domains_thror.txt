@@ -23,6 +23,7 @@ Action Points: 1.
 Statuses:
 
 Protective Ward: 1 rounds/1 rounds
+Protective Ward (Used 1/1): 1 rounds/-1 rounds
 Feats:
 Combat Casting, 
 Combat Reflexes, 

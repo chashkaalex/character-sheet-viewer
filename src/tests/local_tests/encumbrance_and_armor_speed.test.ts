@@ -60,6 +60,10 @@ describe('Step 2.2: Mandatory Item Weights, Unique Item Weight Inference, Armor 
     const dagger = new Item('Mithral Dagger', 1, '');
     expect(dagger.weight).toBe(0.5);
 
+    const frostWaraxe = new Item('Frost Waraxe +1', 1, '');
+    expect(frostWaraxe.weight).toBe(8);
+    expect(frostWaraxe.isWeightKnown).toBe(true);
+
     // Explicit weight in description still overrides inferred weight
     const customPlate = new Armor('Black Dragoncraft Full Plate +2', 1, '40 lb');
     expect(customPlate.weight).toBe(40);

@@ -46,6 +46,7 @@ const globalRegistry: Record<string, any> = {
     cure: Dashboard.cure,
     refreshCharacterData: Dashboard.refreshCharacterData,
     onTimePassed: Dashboard.onTimePassed,
+    onLongRest: Dashboard.onLongRest,
     onWeaponChange: Dashboard.onWeaponChange,
     onOffHandChange: Dashboard.onOffHandChange,
     onFullAttackToggle: Dashboard.onFullAttackToggle,

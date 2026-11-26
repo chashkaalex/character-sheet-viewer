@@ -62,6 +62,27 @@ export function onTimePassed() {
   }
 }
 
+/**
+ * Handles the Long Rest button click: replenishes all spell slots, daily class/feat resources, and daily items.
+ */
+export function onLongRest() {
+  if (!characterRep || !characterRep.docId) return;
+
+  const eightHoursInRounds = convertToRounds(8, 'hours');
+  google.script.run
+    .withSuccessHandler((rep: any) => {
+      if (characterRep?.docId) {
+        advanceRound(characterRep.docId, eightHoursInRounds);
+      }
+      onCharacterRepresentation(rep);
+    })
+    .withFailureHandler(function (error) {
+      console.error('Error performing Long Rest:', error);
+      alert('Error performing Long Rest: ' + error.message);
+    })
+    .OnLongRest(characterRep.docId);
+}
+
 export function showPartyModal() {
   if (!characterRep || !characterRep.partyName) return;
 

@@ -261,9 +261,6 @@ export const FeatEffects: Record<string, EffectData[]> = {
   'Extra Turning': [
     {
       status: 'Extra Turning',
-      property: 'TurnRebukes',
-      modifierType: 'Generic',
-      value: 4,
       description: 'You can use your ability to turn or rebuke creatures four more times per day [13]. This feat can be gained multiple times [14].'
     }
   ],

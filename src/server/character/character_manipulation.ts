@@ -9,7 +9,7 @@ declare let require: any;
 
 import { ClassesData } from '../classes_data/classes_general_data';
 import { SpellsData } from './spells';
-import { ActionsData, NumberAction } from './actions/actions_effects';
+import { ActionsData, getActionDailyPoolState, NumberAction } from './actions/actions_effects';
 import { GetScriptProperty } from '../services/gdoc_utilities';
 import { sanitizeDbLink } from './parser_utils';
 import { CharacterSession } from './character_session';
@@ -378,6 +378,11 @@ export function OnUseAction(docId: string, actionName: string, rawTargets?: stri
     return new CharacterError(`Action '${actionName}' is already active`);
   }
 
+  const dailyPool = getActionDailyPoolState(character, actionName, action);
+  if (!action.onUse && dailyPool && dailyPool.usesRemaining <= 0) {
+    return new CharacterError(`No daily uses remaining for '${actionName}' (${dailyPool.maxUses}/${dailyPool.maxUses} used)`);
+  }
+
   let resolvedStatusName = action.statusName;
   let hookMutationMessage: string | undefined;
   if (action.onUse) {
@@ -437,11 +442,66 @@ export function OnUseAction(docId: string, actionName: string, rawTargets?: stri
   const remoteTargets = targets.filter(t => !selfNames.includes(t));
   pushStatusToRemoteTargets(character, remoteTargets, resolvedStatusName, duration);
 
+  // Record daily use counter status for daily-limited actions whose primary status is not already a permanent (Used...) marker
+  if (!action.onUse && dailyPool && !resolvedStatusName.includes('(Used')) {
+    if (dailyPool.activeCounterStatusName) {
+      _removeStatusFromCharacter(docId, dailyPool.activeCounterStatusName, true);
+    }
+    const nextUsed = dailyPool.usedCount + 1;
+    _addStatusToCharacter(docId, `${actionName} (Used ${nextUsed}/${dailyPool.maxUses})`, -1);
+  }
+
   const finalRep = GetCharacterRepByDocId(docId);
   if (!(finalRep instanceof CharacterError) && hookMutationMessage) {
     finalRep.mutationMessage = hookMutationMessage;
   }
   return finalRep;
+}
+
+export const LONG_REST_ROUNDS = 8 * 600; // 8 hours = 4800 rounds
+
+/**
+ * Performs a Long Rest for a character:
+ * 1. Removes all daily-usage tracking statuses (e.g. "(Used)" / "(Used X/Y)").
+ * 2. Advances time by 8 hours (4800 rounds) via OnRoundsElapsed, expiring timed buffs/statuses.
+ * 3. Replenishes all prepared and spontaneous spell slots (including Bardic Music 'songs') across all caster classes.
+ */
+export function OnLongRest(docId: string): CharacterRep | CharacterError {
+  const character = GetCharacterByDocId(docId);
+  if (character instanceof CharacterError) {
+    return character;
+  }
+
+  // 1. Remove all daily-use tracking statuses (any status ending with "(Used)" or "(Used X/Y)")
+  const dailyUsedPattern = /\(Used(?:\s+\d+\/\d+)?\)$/;
+  const statusesToClear = (character.statuses || [])
+    .map(s => s.name)
+    .filter(name => dailyUsedPattern.test(name));
+
+  for (const statusName of statusesToClear) {
+    _removeStatusFromCharacter(docId, statusName, true);
+  }
+
+  // 2. Wrap "Passed 8 hours" (4800 rounds) to expire timed statuses
+  const elapsedRes = OnRoundsElapsed(docId, LONG_REST_ROUNDS);
+  if (elapsedRes instanceof CharacterError) {
+    return elapsedRes;
+  }
+
+  // 3. Replenish spell slots for every spellcasting class on the character
+  if (character.spellCasting && character.spellCasting.classSpellCastingData) {
+    for (const [className] of character.spellCasting.classSpellCastingData.entries()) {
+      const classData = ClassesData.get(className);
+      if (classData?.spellCastingData && typeof classData.spellCastingData.ReplenishSpellSlots === 'function') {
+        const res = classData.spellCastingData.ReplenishSpellSlots(docId, adapter);
+        if (!res.success) {
+          return new CharacterError(`Failed to replenish spell slots for ${className}: ${res.error}`);
+        }
+      }
+    }
+  }
+
+  return GetCharacterRepByDocId(docId);
 }
 
 /**

@@ -1,7 +1,7 @@
 import { ICharacter } from './icharacter';
 import { AbilityNames } from './properties/abilities/ability_types';
 import { CharacterClass } from './properties/race_and_classes';
-import { ActionCategory, ActionCategoryDefinition, ActionCostType, ActionsData, getRegisteredActionCategories, NumberAction } from './actions/actions_effects';
+import { ActionCategory, ActionCategoryDefinition, ActionCostType, ActionsData, getActionDailyPoolState, getRegisteredActionCategories, NumberAction } from './actions/actions_effects';
 import { calculateTwf, TwfData } from './gear/weapons/twf';
 import { calculateNormalFullAttack, calculateTwfFullAttack } from './gear/weapons/full_attack';
 import { BuildWeaponDamageVariants } from './gear/weapons/weapon_extra_damage';
@@ -187,6 +187,14 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
       if (action) {
         const isNumberAction = action instanceof NumberAction;
         const cat: ActionCategory = action.category || 'general';
+        const dailyPool = getActionDailyPoolState(character, actionName, action);
+        const dailyMeta = dailyPool
+          ? {
+            maxUses: dailyPool.maxUses,
+            usedCount: dailyPool.usedCount,
+            usesRemaining: dailyPool.usesRemaining
+          }
+          : {};
         const extraMeta = action.getExtraMetadata ? action.getExtraMetadata(character) : {};
         actionsMetadata[actionName] = {
           name: actionName,
@@ -199,6 +207,7 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
           actionType: action.actionType || 'standard',
           target: action.target,
           modifier: action.getModifier ? (action.getModifier(character) ?? undefined) : undefined,
+          ...dailyMeta,
           ...extraMeta
         };
         if (!categorizedActions[cat]) {

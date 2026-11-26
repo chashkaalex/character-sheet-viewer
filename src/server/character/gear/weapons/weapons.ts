@@ -94,6 +94,7 @@ WeaponsData.set('Sai', { range: 'Melee', encumbrance: 'Light', damage: '1d4', cr
 WeaponsData.set('Siangham', { range: 'Melee', encumbrance: 'Light', damage: '1d6', critical: 'x2', weight: 1 });
 WeaponsData.set('Bastard Sword', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d10', critical: '19-20/x2', weight: 6 });
 WeaponsData.set('Dwarven Waraxe', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d10', critical: 'x3', weight: 8 });
+WeaponsData.set('Waraxe', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d10', critical: 'x3', weight: 8 });
 WeaponsData.set('Thinblade', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '18-20/x2', weight: 3 });
 WeaponsData.set('Elven Thinblade', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d8', critical: '18-20/x2', weight: 3 });
 WeaponsData.set('Whip', { range: 'Melee', encumbrance: 'One-Handed', damage: '1d3', critical: 'x2', weight: 2 });

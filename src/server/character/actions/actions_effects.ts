@@ -86,6 +86,7 @@ export interface ActionData {
   onUse?: ActionOnUseHook;
   getModifier?: (character: ICharacter) => ActionModifierInfo | null;
   getExtraMetadata?: (character: ICharacter) => Record<string, any>;
+  maxDailyUsesResolver?: (character: ICharacter) => number;
 }
 
 export class NumberAction implements ActionData {
@@ -176,6 +177,14 @@ export const ActionsData: Record<string, ActionData> = {
     category: 'feat',
     actionType: 'free',
     calculateDuration: (_character) => 1,
+    maxDailyUsesResolver: (character: ICharacter) => {
+      const monkLevels = character.GetClassLevel('Monk') + character.GetClassLevel('Sacred Fist');
+      const otherLevels = Math.max(0, (character.HD || 0) - monkLevels);
+      const hasMonksBelt = (character.battleGear || []).some(
+        i => i.name === 'Monks Chain Belt' && i.isEquipped !== false
+      );
+      return Math.max(1, monkLevels + Math.floor(otherLevels / 4) + (hasMonksBelt ? 1 : 0));
+    },
     getModifier: (character: ICharacter) => {
       if (!character.HasPropertyInitialized('Stunning Fist')) return null;
       const prop = character.GetNamedProperty('Stunning Fist');
@@ -192,6 +201,8 @@ export const ActionsData: Record<string, ActionData> = {
     statusName: 'Defensive Stance',
     category: 'class',
     actionType: 'free',
+    maxDailyUsesResolver: (character: ICharacter) =>
+      Math.max(1, Math.ceil((character.GetClassLevel('Dwarven Defender') || 1) / 2)),
     calculateDuration: (character) => {
       const conAbility = character.abilities.Con;
       return conAbility ? (3 + conAbility.modifier) : 10;
@@ -209,13 +220,19 @@ export const ActionsData: Record<string, ActionData> = {
     statusName: 'Turn Undead',
     category: 'class',
     actionType: 'standard',
-    calculateDuration: (_character) => 1
+    calculateDuration: (_character) => 1,
+    maxDailyUsesResolver: (character: ICharacter) => {
+      const chaMod = character.abilities?.Cha?.modifier || 0;
+      const extraTurningCount = (character.feats || []).filter(f => f.some(e => e.status === 'Extra Turning')).length;
+      return Math.max(1, 3 + chaMod + extraTurningCount * 4);
+    }
   },
   'Feat of Strength': {
     statusName: 'Feat of Strength',
     category: 'class',
     actionType: 'free',
     calculateDuration: (_character) => 1,
+    maxDailyUsesResolver: (_character) => 1,
     effects: [
       {
         status: 'Feat of Strength',
@@ -235,6 +252,7 @@ export const ActionsData: Record<string, ActionData> = {
     actionType: 'standard',
     target: 'OneCreature',
     calculateDuration: (_character) => 1,
+    maxDailyUsesResolver: (_character) => 1,
     effects: [
       {
         status: 'Protective Ward',
@@ -273,6 +291,7 @@ export const ActionsData: Record<string, ActionData> = {
     category: 'item',
     actionType: 'standard',
     calculateDuration: (_character) => 10,
+    maxDailyUsesResolver: (_character) => 1,
     effects: [
       {
         status: 'Use Thror\'s Holy Symbol',
@@ -317,7 +336,8 @@ export const ActionsData: Record<string, ActionData> = {
     statusName: 'Invisible',
     category: 'item',
     actionType: 'standard',
-    calculateDuration: (_character) => 7
+    calculateDuration: (_character) => 7,
+    maxDailyUsesResolver: (_character) => 1
   },
   'Chameleon Power (Hide +10)': {
     statusName: 'Chameleon Power',
@@ -333,6 +353,7 @@ export const ActionsData: Record<string, ActionData> = {
     category: 'item',
     actionType: 'swift',
     calculateDuration: (_character) => -1,
+    maxDailyUsesResolver: (_character) => 1,
     healFormula: '4d8+7'
   },
   'Cure Serious Wounds (Hair Shirt of Suffering)': {
@@ -340,6 +361,7 @@ export const ActionsData: Record<string, ActionData> = {
     category: 'item',
     actionType: 'standard',
     calculateDuration: (_character) => -1,
+    maxDailyUsesResolver: (_character) => 1,
     healFormula: '3d8+9'
   },
   'Fireball (Goggles of the Golden Sun)': {
@@ -446,6 +468,7 @@ export const ActionsData: Record<string, ActionData> = {
     category: 'class',
     actionType: 'free',
     calculateDuration: (_character) => 1,
+    maxDailyUsesResolver: (character: ICharacter) => (character.GetClassLevel('Crusader') >= 18 ? 2 : 1),
     effects: [
       {
         status: 'Smite',
@@ -677,6 +700,50 @@ export const ActionsData: Record<string, ActionData> = {
     calculateDuration: (_character) => 600
   }
 };
+
+function escapeRegexText(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export function getActionDailyPoolState(
+  character: ICharacter,
+  actionName: string,
+  action: ActionData
+): {
+  maxUses: number;
+  usedCount: number;
+  usesRemaining: number;
+  activeCounterStatusName: string | null;
+} | null {
+  if (!action.maxDailyUsesResolver) return null;
+  const maxUses = Math.max(1, action.maxDailyUsesResolver(character));
+  let usedCount = 0;
+  let activeCounterStatusName: string | null = null;
+
+  const escapedAction = escapeRegexText(actionName);
+  const counterRegex = new RegExp(`^${escapedAction}\\s+\\(Used(?:\\s+(\\d+)\\/(\\d+))?\\)$`);
+
+  for (const st of character.statuses || []) {
+    const m = st.name.match(counterRegex);
+    if (m) {
+      usedCount = m[1] ? parseInt(m[1], 10) : 1;
+      activeCounterStatusName = st.name;
+      break;
+    }
+    if (st.name === action.statusName && action.statusName.endsWith('(Used)')) {
+      usedCount = 1;
+      activeCounterStatusName = st.name;
+      break;
+    }
+  }
+
+  return {
+    maxUses,
+    usedCount,
+    usesRemaining: Math.max(0, maxUses - usedCount),
+    activeCounterStatusName
+  };
+}
 
 export function getGogglesFireballMetadata(character: ICharacter): {
   usedCount: number;
