@@ -9,6 +9,7 @@ import { sanitizeDbLink } from './parser_utils';
 import { GetScriptProperty } from '../services/gdoc_utilities';
 import { APP_VERSION } from './version';
 import { EncumbranceState } from './properties/encumbrance';
+import { GetEffects, StatusesEffects } from './general_effects';
 
 /**
  * Character representation for the client.
@@ -168,9 +169,18 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
     );
   }
 
-  // Add statuses
+  // Add statuses (including any resolved description for client hover tooltips)
   if (character.statuses) {
-    characterObject.statuses = character.statuses;
+    characterObject.statuses = character.statuses.map(st => {
+      const effects = GetEffects(StatusesEffects, st.name) || [];
+      const descriptions = effects
+        .map((e: any) => e.description)
+        .filter((d: any): d is string => typeof d === 'string' && d.trim().length > 0);
+      return {
+        ...st,
+        description: descriptions.length > 0 ? descriptions.join(' ') : undefined
+      };
+    });
   }
 
   // Add actions

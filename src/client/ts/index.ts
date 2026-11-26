@@ -38,6 +38,8 @@ const globalRegistry: Record<string, any> = {
     AddStatus: Dashboard.AddStatus,
     RemoveStatus: Dashboard.RemoveStatus,
     ClearAllStatuses: Dashboard.ClearAllStatuses,
+    onConditionPresetSelected: Dashboard.onConditionPresetSelected,
+    onTacticalPresetSelected: Dashboard.onTacticalPresetSelected,
     inflict: Dashboard.inflict,
     showInflictModal: Dashboard.showInflictModal,
     closeInflictModal: Dashboard.closeInflictModal,

@@ -204,7 +204,49 @@
           <div class="stat-group">
             <div class="stat-group-header">
               <h3>Statuses</h3>
-              <button id="clearAllStatusesButton" class="passed-button" onclick="ClearAllStatuses()">Clear All</button>
+              <div class="statuses-header-actions">
+                <select id="conditionSelect" class="status-preset-select" onchange="onConditionPresetSelected(this)">
+                  <option value="">+ Condition...</option>
+                  <optgroup label="Fear">
+                    <option value="Shaken">Shaken (-2 atk/saves/skills)</option>
+                    <option value="Frightened">Frightened (-2, must flee)</option>
+                    <option value="Panicked">Panicked (-2, drop &amp; flee)</option>
+                    <option value="Cowering">Cowering (-2 AC, no Dex/actions)</option>
+                  </optgroup>
+                  <optgroup label="Fatigue &amp; Health">
+                    <option value="Fatigued">Fatigued (-2 Str/Dex)</option>
+                    <option value="Exhausted">Exhausted (-6 Str/Dex, 1/2 spd)</option>
+                    <option value="Sickened">Sickened (-2 atk/dmg/saves/skills)</option>
+                    <option value="Nauseated">Nauseated (move action only)</option>
+                  </optgroup>
+                  <optgroup label="Senses">
+                    <option value="Dazzled">Dazzled (-1 atk/Search/Spot)</option>
+                    <option value="Blinded">Blinded (-2 AC, no Dex, -4 Str/Dex skills)</option>
+                    <option value="Deafened">Deafened (-4 Init, 20% verbal fail)</option>
+                    <option value="Invisible">Invisible (+2 atk, 50% miss)</option>
+                  </optgroup>
+                  <optgroup label="Movement &amp; Control">
+                    <option value="Prone">Prone (-4 melee atk, +4/-4 AC)</option>
+                    <option value="Entangled">Entangled (-2 atk, -4 Dex, 1/2 spd)</option>
+                    <option value="Grappling">Grappling (-2 atk, no Dex to AC)</option>
+                    <option value="Squeezing">Squeezing (-4 atk, -4 AC, 1/2 spd)</option>
+                    <option value="Stunned">Stunned (-2 AC, no Dex/actions)</option>
+                    <option value="Paralyzed">Paralyzed (0 Str/Dex, helpless)</option>
+                    <option value="Helpless">Helpless (0 Dex, -4 AC vs melee)</option>
+                  </optgroup>
+                </select>
+                <select id="tacticalSelect" class="status-preset-select" onchange="onTacticalPresetSelected(this)">
+                  <option value="">+ Tactical...</option>
+                  <option value="Flanking">Flanking (+2 melee atk)</option>
+                  <option value="Higher Ground">Higher Ground (+1 melee atk)</option>
+                  <option value="Cover">Cover (+4 AC, +2 Ref)</option>
+                  <option value="Soft Cover">Soft Cover (+4 AC vs ranged)</option>
+                  <option value="Improved Cover">Improved Cover (+8 AC, +4 Ref, +10 Hide)</option>
+                  <option value="Concealment">Concealment (20% miss chance)</option>
+                  <option value="Total Concealment">Total Concealment (50% miss chance)</option>
+                </select>
+                <button id="clearAllStatusesButton" class="passed-button" onclick="ClearAllStatuses()">Clear All</button>
+              </div>
             </div>
             <div id="statusesList">
               <div id="emptyStatus" class="status-item">
@@ -217,6 +259,7 @@
                     <option value="rounds">Rounds</option>
                     <option value="minutes">Minutes</option>
                     <option value="hours">Hours</option>
+                    <option value="endless">Endless</option>
                   </select>
                 </span>
                 <button class="status-confirm-btn" style="display:none;" onclick="AddStatus(this)">✔</button>

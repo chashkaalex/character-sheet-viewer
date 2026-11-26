@@ -101,7 +101,20 @@ export function UpdateHp(
  * Adds a status to the character (internal, does not produce a character representation)
  */
 function _addStatusToCharacter(docId: string, statusName: string, duration: number, elapsed: number = 1): void {
-  // Remove any conflicting/cured statuses (e.g. Remove Fear removes Shaken/Frightened/Panicked)
+  const normalizedStatus = statusName.trim().toLowerCase();
+
+  // Special D&D 3.5 rule: Lesser Restoration downgrades Exhausted to Fatigued (or removes Fatigued if not Exhausted)
+  if (normalizedStatus === 'lesser restoration') {
+    const currentChar = GetCharacterByDocId(docId);
+    if (!(currentChar instanceof CharacterError) && currentChar.HasStatus('Exhausted')) {
+      _removeStatusFromCharacter(docId, 'Exhausted', true);
+      _removeStatusFromCharacter(docId, 'Fatigued', true);
+      AddStatusLine(docId, 'Fatigued: 1 rounds/-1 rounds');
+      return;
+    }
+  }
+
+  // Remove any conflicting/cured statuses (e.g. Remove Fear removes Shaken/Frightened/Panicked, Heal removes conditions)
   getStatusesRemovedBy(statusName).forEach(targetStatus => {
     _removeStatusFromCharacter(docId, targetStatus, true);
   });

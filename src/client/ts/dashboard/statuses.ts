@@ -12,26 +12,65 @@ export function convertToRounds(duration, unit) {
       return duration * 10; // 1 minute = 10 rounds (6 seconds per round)
     case 'hours':
       return duration * 600; // 1 hour = 60 minutes = 600 rounds
+    case 'endless':
+      return -1;
     default:
       return duration; // Default to rounds if unknown unit
   }
 }
 
-export function NewStatus() {
-  console.log('NewStatus for ' + characterRep.name);
+export function NewStatus(prefillName: string = '') {
+  console.log('NewStatus for ' + (characterRep?.name || ''));
   const statusesList = document.getElementById('statusesList');
+  if (!statusesList) return;
+
+  // If an unconfirmed new status row already exists, reuse it and update its prefilled name
+  const existingUnconfirmed = Array.from(statusesList.querySelectorAll('.status-item:not(#emptyStatus)')).find(el => {
+    const confirmBtn = el.querySelector('.status-confirm-btn') as HTMLElement | null;
+    return confirmBtn && confirmBtn.style.display !== 'none';
+  });
+
+  if (existingUnconfirmed) {
+    const existingInput = existingUnconfirmed.querySelector('.status-name-input') as HTMLInputElement | null;
+    if (existingInput && prefillName) {
+      existingInput.value = prefillName;
+    }
+    return;
+  }
+
   const emptyStatus = document.getElementById('emptyStatus') as HTMLElement;
   const clone = emptyStatus.cloneNode(true) as HTMLElement;
   clone.id = ''; // Clear the ID to avoid duplicates
   statusesList.insertBefore(clone, emptyStatus);
 
-  (clone.querySelector('.status-name-input') as HTMLElement).style.display = 'inline-block';
+  const nameInput = clone.querySelector('.status-name-input') as HTMLInputElement;
+  nameInput.style.display = 'inline-block';
+  if (prefillName) {
+    nameInput.value = prefillName;
+  }
   (clone.querySelector('.timed-controls') as HTMLElement).style.display = 'inline-flex';
   (clone.querySelector('.status-confirm-btn') as HTMLElement).style.display = 'inline-block';
   (clone.querySelector('.status-remove-btn') as HTMLElement).style.display = 'inline-block'; // Show remove for cancelling
 
   // Disable add button to prevent multiple new statuses
-  (document.getElementById('addButton') as HTMLButtonElement).disabled = true;
+  const addBtn = document.getElementById('addButton') as HTMLButtonElement | null;
+  if (addBtn) {
+    addBtn.disabled = true;
+  }
+}
+
+export function onConditionPresetSelected(selectEl: HTMLSelectElement) {
+  if (!selectEl || !selectEl.value) return;
+  const selectedName = selectEl.value;
+  selectEl.value = '';
+  NewStatus(selectedName);
+}
+
+export function onTacticalPresetSelected(selectEl: HTMLSelectElement) {
+  if (!selectEl || !selectEl.value) return;
+  const selectedName = selectEl.value;
+  selectEl.value = '';
+  NewStatus(selectedName);
 }
 
 export function AddStatus(button) {

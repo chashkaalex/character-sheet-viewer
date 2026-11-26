@@ -267,7 +267,8 @@ export function renderServerStatuses(statuses) {
     const statusData = {
       name: status.name,
       duration: status.duration,
-      elapsed: status.elapsed
+      elapsed: status.elapsed,
+      description: status.description
     };
 
     createStatusDisplay(statusDiv, statusData);
@@ -319,6 +320,10 @@ export function createStatusDisplay(containerElement, statusData) {
   nameSpan.className = 'status-name-display';
   nameSpan.textContent = statusData.name;
   containerElement.appendChild(nameSpan);
+
+  if (statusData.description) {
+    addTooltip(nameSpan, statusData.description);
+  }
 
   // Create the duration display with readable format
   const durationSpan = document.createElement('span');
