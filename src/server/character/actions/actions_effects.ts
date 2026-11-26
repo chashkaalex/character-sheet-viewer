@@ -172,6 +172,14 @@ export const ActionsData: Record<string, ActionData> = {
     'Penalty value:',
     'feat'
   ),
+  'Power Attack': new NumberAction(
+    'Power Attack',
+    (_character) => 1,
+    (character) => character.bab.currentScore,
+    1,
+    'Attack penalty:',
+    'feat'
+  ),
   'Stunning Fist': {
     statusName: 'Stunning Fist',
     category: 'feat',

@@ -437,7 +437,15 @@ export const FeatEffects: Record<string, EffectData[]> = {
     { status: 'Point Blank Shot', property: 'Ranged Damage Rolls (within 30 ft.)', modifierType: 'Generic', value: 1 }
   ],
   'Power Attack': [
-    { status: 'Power Attack', description: 'On your action, you may choose to subtract a number (up to your base attack bonus) from all melee attack rolls and add the same number to all melee damage rolls. If attacking with a two-handed weapon, or a one-handed weapon in two hands, add twice the number to damage. Cannot add bonus to damage with a light weapon (except unarmed/natural attacks) [30].' }
+    {
+      status: 'Power Attack',
+      description: 'On your action, you may choose to subtract a number (up to your base attack bonus) from all melee attack rolls and add the same number to all melee damage rolls. If attacking with a two-handed weapon, or a one-handed weapon in two hands, add twice the number to damage. Cannot add bonus to damage with a light weapon (except unarmed/natural attacks) [30].',
+      callback: (character: ICharacter) => {
+        if (!character.actions.includes('Power Attack')) {
+          character.actions.push('Power Attack');
+        }
+      }
+    }
   ],
   'Precise Shot': [
     { status: 'Precise Shot', description: 'You can shoot or throw ranged weapons at an opponent engaged in melee without taking the standard -4 penalty on your attack roll [31].' }

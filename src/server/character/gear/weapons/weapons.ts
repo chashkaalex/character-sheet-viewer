@@ -302,12 +302,12 @@ export class Weapon {
       const splitDesc = description.split(/\)\s*\(/);
       if (splitDesc.length > 1) {
         const notes = splitDesc[0].trim();
-        if (!notes.match(/^[+\d]/) || notes.match(/^\+\d+\s*Str\b/i)) {
+        if (!notes.match(/^[+\d]/) || notes.match(/^\+\d+\s*Str\b/i) || notes.match(/^2h$/i)) {
           fullName = `${name} (${notes})`;
         }
       } else {
         // If there's no split (single parenthesis block in the original line)
-        if (!description.match(/^[+\d]/) && !description.includes(',')) {
+        if ((!description.match(/^[+\d]/) || description.match(/^2h$/i)) && !description.includes(',')) {
           fullName = `${name} (${description})`;
         }
       }
@@ -596,10 +596,10 @@ export function CreateWeapon(name: string, description: string, weight: number, 
     const splitDesc = description.split(/\)\s*\(/);
     if (splitDesc.length > 1) {
       const notes = splitDesc[0].trim();
-      if (!notes.match(/^[+\d]/) || notes.match(/^\+\d+\s*Str\b/i)) {
+      if (!notes.match(/^[+\d]/) || notes.match(/^\+\d+\s*Str\b/i) || notes.match(/^2h$/i)) {
         fullName = `${name} (${notes})`;
       }
-    } else if (!description.match(/^[+\d]/) && !description.includes(',')) {
+    } else if ((!description.match(/^[+\d]/) || description.match(/^2h$/i)) && !description.includes(',')) {
       fullName = `${name} (${description})`;
     }
   }

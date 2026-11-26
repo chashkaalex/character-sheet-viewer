@@ -1,7 +1,7 @@
 import { SaveNames } from './properties/saves';
 import { SkillsAbilities } from './properties/skills';
 import { AbilityNames } from './properties/abilities/ability_types';
-import type { EffectData } from './state/effects';
+import { StaticPropertyEffect, type EffectData } from './state/effects';
 import type { Status } from './state/state';
 import type { ICharacter } from './icharacter';
 import { registerConditions } from './state/conditions';
@@ -115,6 +115,39 @@ const DynamicStatusesEffects: Record<string, DynamicEffectGenerator> = {
     return [
       { status: statusName, property: 'attackBonus', modifierType: 'Generic', value: parsedValue },
       { status: statusName, property: 'ac', modifierType: 'Dodge', value: acBonus }
+    ];
+  },
+  'Power Attack': (parsedValue, statusName) => {
+    const penalty = Math.abs(parsedValue);
+    return [
+      { status: statusName, property: 'meleeAttackBonus', modifierType: 'Generic', value: -penalty },
+      {
+        status: statusName,
+        callback: (character: ICharacter) => {
+          character.addGearEffect(statusName, '', {
+            status: statusName,
+            callback: (_char: ICharacter, gearArgs: Record<string, unknown>) => {
+              const weapon = gearArgs['item'] as any;
+              if (!weapon || !('rangeType' in weapon) || weapon.rangeType !== 'Melee' || !weapon.featDamageBonus) {
+                return;
+              }
+              const isTwoHanded = weapon.encumbrance === 'Two-Handed' || Boolean(weapon.isTwoHandedWield);
+              const isOneHandedOrUnarmed = weapon.encumbrance === 'One-Handed' || weapon.baseName === 'Unarmed';
+              const dmgBonus = isTwoHanded ? penalty * 2 : (isOneHandedOrUnarmed ? penalty : 0);
+              if (dmgBonus > 0) {
+                weapon.featDamageBonus.applyEffect(
+                  new StaticPropertyEffect({
+                    status: statusName,
+                    property: 'featDamageBonus',
+                    modifierType: 'Generic',
+                    value: dmgBonus
+                  })
+                );
+              }
+            }
+          });
+        }
+      }
     ];
   }
 };

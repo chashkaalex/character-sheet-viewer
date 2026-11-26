@@ -558,7 +558,8 @@ export function OnUseNumberAction(docId: string, actionName: string, value: numb
   }
 
   const duration = action.calculateDuration(character);
-  const targetStatusName = actionName === 'Combat Expertise' ? `Combat Expertise -${value}` : `${action.statusName} ${value}`;
+  const usesNegativeSuffix = actionName === 'Combat Expertise' || actionName === 'Power Attack';
+  const targetStatusName = usesNegativeSuffix ? `${action.statusName} -${value}` : `${action.statusName} ${value}`;
 
   if (character.HasStatus(targetStatusName)) {
     return new CharacterError(`Action '${actionName}' with value ${value} is already active`);
