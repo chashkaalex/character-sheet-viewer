@@ -592,10 +592,52 @@ export const FeatEffects: Record<string, EffectData[]> = {
     { status: 'Song of the Heart', property: 'Inspire Heroics', modifierType: 'Generic', value: 1 }
   ],
   'Spell Focus': [
-    { status: 'Spell Focus', property: 'Save DCs (against specific school of magic)', modifierType: 'Generic', value: 1, description: 'Add +1 to the Difficulty Class for all saving throws against spells from the selected school of magic. This feat can be gained multiple times for different schools [39].' }
+    {
+      status: 'Spell Focus',
+      description: 'Add +1 to the Difficulty Class for all saving throws against spells from the selected school of magic. This feat can be gained multiple times for different schools [39].',
+      callback: (character: ICharacter, args: Record<string, unknown>) => {
+        const params = args['params'] as string[] | undefined;
+        const schoolParam = params?.[0]?.trim();
+        if (!schoolParam) return;
+        const propName = `spellFocus (${schoolParam})`;
+        const prop = character.GetModifiableProperty(propName);
+        if (!character.HasPropertyInitialized(propName)) {
+          character.registerProperty(propName, prop);
+        }
+        prop.applyEffect(
+          new StaticPropertyEffect({
+            status: `Spell Focus (${schoolParam})`,
+            property: propName,
+            modifierType: 'Generic',
+            value: 1
+          })
+        );
+      }
+    } as MutatingEffectData
   ],
   'Greater Spell Focus': [
-    { status: 'Greater Spell Focus', property: 'Save DCs (against specific school of magic)', modifierType: 'Generic', value: 1, description: 'Add +1 to the Difficulty Class for all saving throws against spells from the selected school of magic. This bonus stacks with Spell Focus [40]. This feat can be gained multiple times for different schools [40].' }
+    {
+      status: 'Greater Spell Focus',
+      description: 'Add +1 to the Difficulty Class for all saving throws against spells from the selected school of magic. This bonus stacks with Spell Focus [40]. This feat can be gained multiple times for different schools [40].',
+      callback: (character: ICharacter, args: Record<string, unknown>) => {
+        const params = args['params'] as string[] | undefined;
+        const schoolParam = params?.[0]?.trim();
+        if (!schoolParam) return;
+        const propName = `spellFocus (${schoolParam})`;
+        const prop = character.GetModifiableProperty(propName);
+        if (!character.HasPropertyInitialized(propName)) {
+          character.registerProperty(propName, prop);
+        }
+        prop.applyEffect(
+          new StaticPropertyEffect({
+            status: `Greater Spell Focus (${schoolParam})`,
+            property: propName,
+            modifierType: 'Generic',
+            value: 1
+          })
+        );
+      }
+    } as MutatingEffectData
   ],
   'Spell Mastery': [
     { status: 'Spell Mastery', description: 'You can prepare some spells without a spellbook [41].' }

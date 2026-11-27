@@ -9,7 +9,15 @@ export function getCurrentSlotData(): SpellSlotData | null {
   return currentSlotData;
 }
 
-export function getSpellInfo(className: string, spellName: string): { range: string | null; target: string | null; requiresWeaponSelection?: boolean } {
+export function getSpellInfo(className: string, spellName: string): {
+  range: string | null;
+  target: string | null;
+  requiresWeaponSelection?: boolean;
+  school?: string | null;
+  savingThrow?: string | null;
+  saveDc?: number | null;
+  saveDcString?: string | null;
+} {
   if (!characterRep || !characterRep.spellCasting || !characterRep.spellCasting.classSpellCastingData) {
     return { range: null, target: null, requiresWeaponSelection: false };
   }
@@ -22,11 +30,15 @@ export function getSpellInfo(className: string, spellName: string): { range: str
   if (casterClassData.preparedSpells) {
     for (const lvl of Object.keys(casterClassData.preparedSpells)) {
       const spellEntry = casterClassData.preparedSpells[lvl]?.find((s: any) => s.spell === spellName);
-      if (spellEntry && (spellEntry.range || spellEntry.target)) {
+      if (spellEntry && (spellEntry.range || spellEntry.target || spellEntry.saveDc)) {
         return {
           range: spellEntry.range || null,
           target: spellEntry.target || null,
-          requiresWeaponSelection: Boolean(spellEntry.requiresWeaponSelection)
+          requiresWeaponSelection: Boolean(spellEntry.requiresWeaponSelection),
+          school: spellEntry.school || null,
+          savingThrow: spellEntry.savingThrow || null,
+          saveDc: typeof spellEntry.saveDc === 'number' ? spellEntry.saveDc : null,
+          saveDcString: spellEntry.saveDcString || null
         };
       }
     }
@@ -36,11 +48,15 @@ export function getSpellInfo(className: string, spellName: string): { range: str
   if (casterClassData.knownSpells) {
     for (const lvl of Object.keys(casterClassData.knownSpells)) {
       const spellEntry = casterClassData.knownSpells[lvl]?.find((s: any) => (typeof s === 'string' ? s : s.spellName) === spellName);
-      if (spellEntry && (spellEntry.range || spellEntry.target)) {
+      if (spellEntry && (spellEntry.range || spellEntry.target || spellEntry.saveDc)) {
         return {
           range: spellEntry.range || null,
           target: spellEntry.target || null,
-          requiresWeaponSelection: Boolean(spellEntry.requiresWeaponSelection)
+          requiresWeaponSelection: Boolean(spellEntry.requiresWeaponSelection),
+          school: spellEntry.school || null,
+          savingThrow: spellEntry.savingThrow || null,
+          saveDc: typeof spellEntry.saveDc === 'number' ? spellEntry.saveDc : null,
+          saveDcString: spellEntry.saveDcString || null
         };
       }
     }
@@ -186,6 +202,10 @@ export function showSpellPopup(targetElement, uiSlotData) {
     uiSlotData.range = spellInfo.range;
     uiSlotData.target = spellInfo.target;
     uiSlotData.requiresWeaponSelection = spellInfo.requiresWeaponSelection;
+    uiSlotData.school = spellInfo.school;
+    uiSlotData.savingThrow = spellInfo.savingThrow;
+    uiSlotData.saveDc = spellInfo.saveDc;
+    uiSlotData.saveDcString = spellInfo.saveDcString;
     slotData.spellName = uiSlotData.spell;
     slotData.isValid = uiSlotData.isValid;
     slotData.range = spellInfo.range;
@@ -413,6 +433,9 @@ export function createCastMenu(slotData) {
   const castButtonDisabled = (isUsed || !isValid || !targetInitiallyValid) ? 'disabled' : '';
   const castButtonClass = (isUsed || !isValid || !targetInitiallyValid) ? 'spell-button cast disabled' : 'spell-button cast';
   const slotLineHtml = slotData.preparation === 'Spontaneous' ? '' : `<br><strong>Slot:</strong> ${slotData.slot}`;
+  const saveDcLineHtml = (typeof slotData.saveDc === 'number')
+    ? `<br><strong>Save DC:</strong> <span title="${(slotData.saveDcString || '').replace(/"/g, '&quot;')}">${slotData.saveDc}${slotData.savingThrow ? ` (${slotData.savingThrow})` : ''}</span>`
+    : '';
 
   return `
         <h3>Cast Spell</h3>
@@ -422,6 +445,7 @@ export function createCastMenu(slotData) {
             ${slotLineHtml}
             <br><strong>Range:</strong> ${range}
             <br><strong>Target:</strong> ${target}
+            ${saveDcLineHtml}
             ${statusText}
         </div>
 

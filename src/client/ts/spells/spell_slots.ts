@@ -1,5 +1,5 @@
 import { characterRep } from '../state';
-import { onCharacterRepresentation } from '../character_script';
+import { onCharacterRepresentation, addTooltip } from '../character_script';
 import { SpellSlotData } from '../../../server/character/common_types';
 import { showSpellPopup, hideSpellPopup } from './spell_popup';
 import { renderGeneralActionsUI, showNumberActionPopup, showMovePopup, hideMovePopup } from './general_actions';
@@ -119,6 +119,15 @@ export function renderSpellsUI() {
         `;
 
     container.appendChild(classDiv);
+
+    if (typeof classDiv.querySelectorAll === 'function') {
+      classDiv.querySelectorAll('.action-slot-mod[data-save-dc-tooltip]').forEach((modEl: Element) => {
+        const dcTooltip = (modEl as HTMLElement).getAttribute('data-save-dc-tooltip');
+        if (dcTooltip) {
+          addTooltip(modEl, dcTooltip);
+        }
+      });
+    }
   });
 }
 
@@ -191,9 +200,14 @@ export function renderSpellSlots(
         const cardsHtml = sortedSpells.map((sp, idx) => {
           const spellName = typeof sp === 'string' ? sp : (sp.spellName || '');
           const isValid = typeof sp === 'string' ? true : (sp.isValid !== false);
+          const saveDc = typeof sp === 'object' && sp !== null ? sp.saveDc : null;
+          const saveDcString = typeof sp === 'object' && sp !== null ? (sp.saveDcString || '') : '';
+          const dcHtml = (typeof saveDc === 'number')
+            ? ` <span class="action-slot-mod" data-save-dc-tooltip="${saveDcString.replace(/"/g, '&quot;')}" title="${saveDcString.replace(/"/g, '&quot;')}">DC ${saveDc}</span>`
+            : '';
           const usedClass = noSlotsLeft ? 'used' : '';
           const invalidClass = !isValid ? 'invalid' : '';
-          return `<div class="spell-slot filled ${usedClass} ${invalidClass}" data-level="${level}" data-slot="${idx}" data-spell="${spellName}" data-used="${noSlotsLeft}" data-valid="${isValid}" data-class="${className}" data-preparation="Spontaneous" title="${spellName}">${spellName}</div>`;
+          return `<div class="spell-slot filled ${usedClass} ${invalidClass}" data-level="${level}" data-slot="${idx}" data-spell="${spellName}" data-used="${noSlotsLeft}" data-valid="${isValid}" data-class="${className}" data-preparation="Spontaneous" title="${spellName}">${spellName}${dcHtml}</div>`;
         }).join('');
 
         renderedLevels.push({
@@ -220,6 +234,8 @@ export function renderSpellSlots(
           let spellName = '';
           let isUsed = false;
           let isValid = true;
+          let saveDc: number | null = null;
+          let saveDcString = '';
           if (spellData) {
             if (typeof spellData === 'string') {
               spellName = spellData;
@@ -228,6 +244,10 @@ export function renderSpellSlots(
               isUsed = spellData.used || false;
               if (spellData.isValid === false) {
                 isValid = false;
+              }
+              if (typeof spellData.saveDc === 'number') {
+                saveDc = spellData.saveDc;
+                saveDcString = spellData.saveDcString || '';
               }
             }
           }
@@ -240,7 +260,10 @@ export function renderSpellSlots(
           const invalidClass = (!isEmpty && !isSpontaneousEmpty && !isValid) ? 'invalid' : '';
           const slotClass = (isEmpty || isSpontaneousEmpty) ? 'empty' : 'filled';
           const usedClass = isUsed ? 'used' : '';
-          const displayText = (isEmpty || isSpontaneousEmpty) ? '' : spellName;
+          const dcHtml = (!isEmpty && !isSpontaneousEmpty && saveDc !== null)
+            ? ` <span class="action-slot-mod" data-save-dc-tooltip="${saveDcString.replace(/"/g, '&quot;')}" title="${saveDcString.replace(/"/g, '&quot;')}">DC ${saveDc}</span>`
+            : '';
+          const displayText = (isEmpty || isSpontaneousEmpty) ? '' : `${spellName}${dcHtml}`;
           return `<div class="spell-slot ${slotClass} ${usedClass} ${invalidClass}" data-level="${level}" data-slot="${index}" data-spell="${spellName}" data-used="${isUsed}" data-valid="${isValid}" data-class="${className}" data-preparation="${preparation}" title="${spellName || 'Empty slot'}">${displayText}</div>`;
         }).join('');
 
@@ -253,6 +276,8 @@ export function renderSpellSlots(
             let domainSpellName = '';
             let domainIsUsed = false;
             let domainIsValid = true;
+            let domainSaveDc: number | null = null;
+            let domainSaveDcString = '';
             if (domainSpellData) {
               if (typeof domainSpellData === 'string') {
                 domainSpellName = domainSpellData;
@@ -262,12 +287,19 @@ export function renderSpellSlots(
                 if (domainSpellData.isValid === false) {
                   domainIsValid = false;
                 }
+                if (typeof domainSpellData.saveDc === 'number') {
+                  domainSaveDc = domainSpellData.saveDc;
+                  domainSaveDcString = domainSpellData.saveDcString || '';
+                }
               }
             }
             const domainInvalidClass = (!isEmpty && !domainIsValid) ? 'invalid' : '';
             const domainSlotClass = isEmpty ? 'empty' : 'filled';
             const domainUsedClass = domainIsUsed ? 'used' : '';
-            const domainDisplayText = isEmpty ? '' : domainSpellName;
+            const domainDcHtml = (!isEmpty && domainSaveDc !== null)
+              ? ` <span class="action-slot-mod" data-save-dc-tooltip="${domainSaveDcString.replace(/"/g, '&quot;')}" title="${domainSaveDcString.replace(/"/g, '&quot;')}">DC ${domainSaveDc}</span>`
+              : '';
+            const domainDisplayText = isEmpty ? '' : `${domainSpellName}${domainDcHtml}`;
             domainHtml += `
               <div class="spell-slot-separator"></div>
               <div class="spell-slot domain-slot ${domainSlotClass} ${domainUsedClass} ${domainInvalidClass}" data-level="${level}" data-slot="${d}" data-spell="${domainSpellName}" data-used="${domainIsUsed}" data-valid="${domainIsValid}" data-class="${className}" data-preparation="${preparation}" title="${domainSpellName || 'Empty domain slot'}">${domainDisplayText}</div>

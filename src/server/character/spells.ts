@@ -26,13 +26,104 @@ export enum SpellTarget {
 
 export type SpellRange = 'Personal' | 'Touch' | 'Close' | 'Medium' | 'Long' | 'Unlimited' | string;
 
+export type SpellSchool =
+  | 'Abjuration'
+  | 'Conjuration'
+  | 'Divination'
+  | 'Enchantment'
+  | 'Evocation'
+  | 'Illusion'
+  | 'Necromancy'
+  | 'Transmutation'
+  | 'Universal';
+
+export type DurationFormula =
+  | '1 round'
+  | '1 round/level'
+  | '1 min'
+  | '1 min/level'
+  | '10 min'
+  | '10 min/level'
+  | '1 hour/level'
+  | '24 hours'
+  | 'instantaneous'
+  | 'concentration'
+  | 'permanent'
+  | number;
+
 export interface SpellData {
-  calculateDuration: CalculateDurationFunction;
+  calculateDuration?: CalculateDurationFunction;
+  durationFormula?: DurationFormula;
+  school?: SpellSchool;
+  savingThrow?: string;
+  sr?: boolean;
   effects?: EffectData[];
   statusName?: string;
   range: SpellRange;
   target: SpellTarget;
   requiresWeaponSelection?: boolean;
+}
+
+export function resolveSpellDuration(
+  spellData: Pick<SpellData, 'durationFormula' | 'calculateDuration' | 'school'>,
+  spellCasterClassData: SpellCasterClassData,
+  character?: Readonly<ICharacter> | null
+): number {
+  const baseCl = Math.max(1, spellCasterClassData?.level?.currentScore || 1);
+  let schoolMod = 0;
+  if (character && spellData.school) {
+    const schoolPropName = `casterLevelSchool (${spellData.school})`;
+    if (character.HasPropertyInitialized(schoolPropName)) {
+      schoolMod = character.GetModifiableProperty(schoolPropName).currentScore;
+    }
+  } else if (character && !spellData.school) {
+    const universalPropName = 'casterLevelSchool (Universal)';
+    if (character.HasPropertyInitialized(universalPropName)) {
+      schoolMod = character.GetModifiableProperty(universalPropName).currentScore;
+    }
+  }
+  const cl = Math.max(1, baseCl + schoolMod);
+  const effectiveCasterData: SpellCasterClassData = (schoolMod !== 0 && spellCasterClassData)
+    ? Object.assign(Object.create(Object.getPrototypeOf(spellCasterClassData)), spellCasterClassData, {
+      level: Object.assign(Object.create(Object.getPrototypeOf(spellCasterClassData.level)), spellCasterClassData.level, {
+        score: spellCasterClassData.level.score,
+        currentScore: cl
+      })
+    })
+    : spellCasterClassData;
+
+  if (spellData.durationFormula !== undefined) {
+    const f = spellData.durationFormula;
+    if (typeof f === 'number') return f;
+    switch (f) {
+      case '1 round':
+      case 'instantaneous':
+      case 'concentration':
+        return 1;
+      case '1 round/level':
+        return cl * ROUNDS;
+      case '1 min':
+        return 1 * ROUNDS_PER_MINUTE;
+      case '1 min/level':
+        return cl * ROUNDS_PER_MINUTE;
+      case '10 min':
+        return 10 * ROUNDS_PER_MINUTE;
+      case '10 min/level':
+        return cl * 10 * ROUNDS_PER_MINUTE;
+      case '1 hour/level':
+        return cl * 60 * ROUNDS_PER_MINUTE;
+      case '24 hours':
+        return 24 * 60 * ROUNDS_PER_MINUTE;
+      case 'permanent':
+        return -1;
+      default:
+        break;
+    }
+  }
+  if (typeof spellData.calculateDuration === 'function') {
+    return spellData.calculateDuration(effectiveCasterData);
+  }
+  return cl * ROUNDS_PER_MINUTE;
 }
 
 const SpellsData: Record<string, SpellData> = {
@@ -124,7 +215,11 @@ const SpellsData: Record<string, SpellData> = {
   'Doom': {
     range: 'Medium',
     target: SpellTarget.OneCreature,
+    school: 'Necromancy',
+    savingThrow: 'Will negates',
+    sr: true,
     statusName: 'Shaken',
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -330,6 +425,10 @@ const SpellsData: Record<string, SpellData> = {
   'Suggestion': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 hour/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE * 60; // 1 hr/level
     }
@@ -365,6 +464,10 @@ const SpellsData: Record<string, SpellData> = {
   'Ghost Sound': {
     range: 'Close',
     target: SpellTarget.Area,
+    school: 'Illusion',
+    savingThrow: 'Will disbelief',
+    sr: false,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -393,6 +496,10 @@ const SpellsData: Record<string, SpellData> = {
   'Grease': {
     range: 'Close',
     target: SpellTarget.Area,
+    school: 'Conjuration',
+    savingThrow: 'Reflex negates',
+    sr: false,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -400,6 +507,10 @@ const SpellsData: Record<string, SpellData> = {
   'Hideous Laughter': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -407,6 +518,10 @@ const SpellsData: Record<string, SpellData> = {
   'Silent Image': {
     range: 'Long',
     target: SpellTarget.Area,
+    school: 'Illusion',
+    savingThrow: 'Will disbelief',
+    sr: false,
+    durationFormula: 'concentration',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -431,6 +546,10 @@ const SpellsData: Record<string, SpellData> = {
   'Command': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 round',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -438,6 +557,10 @@ const SpellsData: Record<string, SpellData> = {
   'Glitterdust': {
     range: 'Medium',
     target: SpellTarget.Area,
+    school: 'Conjuration',
+    savingThrow: 'Will negates (blinding only)',
+    sr: false,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -445,6 +568,10 @@ const SpellsData: Record<string, SpellData> = {
   'Cure Moderate Wounds': {
     range: 'Touch',
     target: SpellTarget.OneCreature,
+    school: 'Conjuration',
+    savingThrow: 'Will half (harmless)',
+    sr: true,
+    durationFormula: 'instantaneous',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -452,6 +579,10 @@ const SpellsData: Record<string, SpellData> = {
   'Tongues': {
     range: 'Touch',
     target: SpellTarget.OneCreature,
+    school: 'Divination',
+    savingThrow: 'Will negates (harmless)',
+    sr: false,
+    durationFormula: '10 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
@@ -459,6 +590,10 @@ const SpellsData: Record<string, SpellData> = {
   'Zone of Truth': {
     range: 'Close',
     target: SpellTarget.Area,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -466,6 +601,10 @@ const SpellsData: Record<string, SpellData> = {
   'Cure Serious Wounds': {
     range: 'Touch',
     target: SpellTarget.OneCreature,
+    school: 'Conjuration',
+    savingThrow: 'Will half (harmless)',
+    sr: true,
+    durationFormula: 'instantaneous',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -473,6 +612,10 @@ const SpellsData: Record<string, SpellData> = {
   'Glibness': {
     range: 'Personal',
     target: SpellTarget.Self,
+    school: 'Transmutation',
+    savingThrow: 'None',
+    sr: false,
+    durationFormula: '10 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
@@ -480,6 +623,10 @@ const SpellsData: Record<string, SpellData> = {
   'Hesitate': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -523,6 +670,10 @@ const SpellsData: Record<string, SpellData> = {
   'Daze': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 round',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -530,6 +681,10 @@ const SpellsData: Record<string, SpellData> = {
   'Open/Close': {
     range: 'Close',
     target: SpellTarget.Object,
+    school: 'Transmutation',
+    savingThrow: 'Will negates (object)',
+    sr: true,
+    durationFormula: 'instantaneous',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -537,6 +692,10 @@ const SpellsData: Record<string, SpellData> = {
   'Read Magic': {
     range: 'Personal',
     target: SpellTarget.Self,
+    school: 'Divination',
+    savingThrow: 'None',
+    sr: false,
+    durationFormula: '10 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
@@ -544,6 +703,10 @@ const SpellsData: Record<string, SpellData> = {
   'Charm Person': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 hour/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 60 * ROUNDS_PER_MINUTE;
     }
@@ -551,6 +714,10 @@ const SpellsData: Record<string, SpellData> = {
   'Color Spray': {
     range: '15 ft.',
     target: SpellTarget.Area,
+    school: 'Illusion',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: 'instantaneous',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -572,9 +739,11 @@ const SpellsData: Record<string, SpellData> = {
   'Disguise Self': {
     range: 'Personal',
     target: SpellTarget.Self,
+    school: 'Illusion',
     effects: [
       { status: 'Disguise Self', property: 'Disguise', modifierType: 'Generic', value: 10 }
     ],
+    durationFormula: '10 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
@@ -582,6 +751,9 @@ const SpellsData: Record<string, SpellData> = {
   'Hypnotism': {
     range: 'Close',
     target: SpellTarget.MultipleCreatures,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
     calculateDuration: function (_spellCasting) {
       return 2 * ROUNDS_PER_MINUTE;
     }
@@ -589,6 +761,10 @@ const SpellsData: Record<string, SpellData> = {
   'Obscuring Mist': {
     range: '20 ft.',
     target: SpellTarget.Area,
+    school: 'Conjuration',
+    savingThrow: 'None',
+    sr: false,
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -596,6 +772,10 @@ const SpellsData: Record<string, SpellData> = {
   'Rouse': {
     range: 'Close',
     target: SpellTarget.Area,
+    school: 'Enchantment',
+    savingThrow: 'None',
+    sr: false,
+    durationFormula: 'instantaneous',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -603,6 +783,10 @@ const SpellsData: Record<string, SpellData> = {
   'Sleep': {
     range: 'Medium',
     target: SpellTarget.Area,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -610,6 +794,10 @@ const SpellsData: Record<string, SpellData> = {
   'Undetectable Alignment': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Abjuration',
+    savingThrow: 'Will negates (object)',
+    sr: true,
+    durationFormula: '24 hours',
     calculateDuration: function (_spellCasting) {
       return 24 * 60 * ROUNDS_PER_MINUTE;
     }
@@ -617,6 +805,10 @@ const SpellsData: Record<string, SpellData> = {
   'Whelm': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: 'instantaneous',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -624,7 +816,9 @@ const SpellsData: Record<string, SpellData> = {
   'Invisibility, Swift': {
     range: 'Personal',
     target: SpellTarget.Self,
+    school: 'Illusion',
     statusName: 'Invisible',
+    durationFormula: '1 round',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -632,6 +826,8 @@ const SpellsData: Record<string, SpellData> = {
   'Instant Diversion': {
     range: 'Personal',
     target: SpellTarget.Self,
+    school: 'Illusion',
+    durationFormula: '1 round',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -639,7 +835,11 @@ const SpellsData: Record<string, SpellData> = {
   'Blinding Color Surge': {
     range: 'Medium',
     target: SpellTarget.OneCreature,
+    school: 'Illusion',
+    savingThrow: 'Will negates',
+    sr: true,
     statusName: 'Invisible',
+    durationFormula: '1 round',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -647,6 +847,10 @@ const SpellsData: Record<string, SpellData> = {
   'Blur': {
     range: 'Touch',
     target: SpellTarget.OneCreature,
+    school: 'Illusion',
+    savingThrow: 'Will negates (harmless)',
+    sr: true,
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -654,6 +858,10 @@ const SpellsData: Record<string, SpellData> = {
   'Daze Monster': {
     range: 'Medium',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 round',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -661,6 +869,10 @@ const SpellsData: Record<string, SpellData> = {
   'Detect Thoughts': {
     range: '60 ft.',
     target: SpellTarget.Area,
+    school: 'Divination',
+    savingThrow: 'Will negates',
+    sr: false,
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -668,6 +880,10 @@ const SpellsData: Record<string, SpellData> = {
   'Fog Cloud': {
     range: 'Medium',
     target: SpellTarget.Area,
+    school: 'Conjuration',
+    savingThrow: 'None',
+    sr: false,
+    durationFormula: '10 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
@@ -675,6 +891,9 @@ const SpellsData: Record<string, SpellData> = {
   'Hypnotic Pattern': {
     range: 'Medium',
     target: SpellTarget.Area,
+    school: 'Illusion',
+    savingThrow: 'Will negates',
+    sr: true,
     calculateDuration: function (_spellCasting) {
       return 2;
     }
@@ -682,7 +901,9 @@ const SpellsData: Record<string, SpellData> = {
   'Invisibility': {
     range: 'Touch',
     target: SpellTarget.OneCreature,
+    school: 'Illusion',
     statusName: 'Invisible',
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -690,6 +911,8 @@ const SpellsData: Record<string, SpellData> = {
   'Knock': {
     range: 'Medium',
     target: SpellTarget.Object,
+    school: 'Transmutation',
+    durationFormula: 'instantaneous',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -697,6 +920,9 @@ const SpellsData: Record<string, SpellData> = {
   'Minor Image': {
     range: 'Long',
     target: SpellTarget.Area,
+    school: 'Illusion',
+    savingThrow: 'Will disbelief',
+    sr: false,
     calculateDuration: function (_spellCasting) {
       return 2;
     }
@@ -704,6 +930,8 @@ const SpellsData: Record<string, SpellData> = {
   'Mirror Image': {
     range: 'Personal',
     target: SpellTarget.Self,
+    school: 'Illusion',
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -711,6 +939,10 @@ const SpellsData: Record<string, SpellData> = {
   'Misdirection': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Illusion',
+    savingThrow: 'None',
+    sr: false,
+    durationFormula: '1 hour/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 60 * ROUNDS_PER_MINUTE;
     }
@@ -718,6 +950,8 @@ const SpellsData: Record<string, SpellData> = {
   'See Invisibility': {
     range: 'Personal',
     target: SpellTarget.Self,
+    school: 'Divination',
+    durationFormula: '10 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
@@ -725,6 +959,10 @@ const SpellsData: Record<string, SpellData> = {
   'Silence': {
     range: 'Long',
     target: SpellTarget.Area,
+    school: 'Illusion',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -742,6 +980,10 @@ const SpellsData: Record<string, SpellData> = {
   'Stay the Hand': {
     range: 'Medium',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 round',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -749,6 +991,10 @@ const SpellsData: Record<string, SpellData> = {
   'Touch of Idiocy': {
     range: 'Touch',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'None',
+    sr: true,
+    durationFormula: '10 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
@@ -756,6 +1002,10 @@ const SpellsData: Record<string, SpellData> = {
   'Vertigo': {
     range: 'Medium',
     target: SpellTarget.OneCreature,
+    school: 'Illusion',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -763,6 +1013,10 @@ const SpellsData: Record<string, SpellData> = {
   'Whelming Blast': {
     range: '30 ft.',
     target: SpellTarget.Area,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: 'instantaneous',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -795,6 +1049,10 @@ const SpellsData: Record<string, SpellData> = {
   'Deep Slumber': {
     range: 'Close',
     target: SpellTarget.Area,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -802,6 +1060,10 @@ const SpellsData: Record<string, SpellData> = {
   'Dispel Magic': {
     range: 'Medium',
     target: SpellTarget.OneCreature,
+    school: 'Abjuration',
+    savingThrow: 'None',
+    sr: false,
+    durationFormula: 'instantaneous',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -809,6 +1071,10 @@ const SpellsData: Record<string, SpellData> = {
   'Displacement': {
     range: 'Touch',
     target: SpellTarget.OneCreature,
+    school: 'Illusion',
+    savingThrow: 'Will negates (harmless)',
+    sr: true,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -816,6 +1082,10 @@ const SpellsData: Record<string, SpellData> = {
   'Halt': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Transmutation',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 round',
     calculateDuration: function (_spellCasting) {
       return 1;
     }
@@ -823,6 +1093,10 @@ const SpellsData: Record<string, SpellData> = {
   'Hold Person': {
     range: 'Medium',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -830,6 +1104,10 @@ const SpellsData: Record<string, SpellData> = {
   'Inevitable Defeat': {
     range: 'Touch',
     target: SpellTarget.OneCreature,
+    school: 'Enchantment',
+    savingThrow: 'Will partial',
+    sr: true,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -837,7 +1115,9 @@ const SpellsData: Record<string, SpellData> = {
   'Invisibility Sphere': {
     range: 'Touch',
     target: SpellTarget.Area,
+    school: 'Illusion',
     statusName: 'Invisible',
+    durationFormula: '1 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS_PER_MINUTE;
     }
@@ -845,6 +1125,8 @@ const SpellsData: Record<string, SpellData> = {
   'Legion of Sentinels': {
     range: 'Close',
     target: SpellTarget.Area,
+    school: 'Illusion',
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -852,6 +1134,9 @@ const SpellsData: Record<string, SpellData> = {
   'Major Image': {
     range: 'Long',
     target: SpellTarget.Area,
+    school: 'Illusion',
+    savingThrow: 'Will disbelief',
+    sr: false,
     calculateDuration: function (_spellCasting) {
       return 3;
     }
@@ -859,6 +1144,8 @@ const SpellsData: Record<string, SpellData> = {
   'Nondetection': {
     range: 'Touch',
     target: SpellTarget.OneCreature,
+    school: 'Abjuration',
+    durationFormula: '1 hour/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 60 * ROUNDS_PER_MINUTE;
     }
@@ -866,6 +1153,10 @@ const SpellsData: Record<string, SpellData> = {
   'Slow': {
     range: 'Close',
     target: SpellTarget.MultipleCreatures,
+    school: 'Transmutation',
+    savingThrow: 'Will negates',
+    sr: true,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -873,6 +1164,10 @@ const SpellsData: Record<string, SpellData> = {
   'Vertigo Field': {
     range: 'Medium',
     target: SpellTarget.Area,
+    school: 'Illusion',
+    savingThrow: 'Fortitude partial',
+    sr: true,
+    durationFormula: '1 round/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * ROUNDS;
     }
@@ -880,6 +1175,8 @@ const SpellsData: Record<string, SpellData> = {
   'Zone of Silence': {
     range: 'Personal',
     target: SpellTarget.Self,
+    school: 'Illusion',
+    durationFormula: '1 hour/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 60 * ROUNDS_PER_MINUTE;
     }
@@ -923,7 +1220,11 @@ const SpellsData: Record<string, SpellData> = {
   'Keen Edge': {
     range: 'Close',
     target: SpellTarget.OneCreature,
+    school: 'Transmutation',
+    savingThrow: 'Will negates (harmless)',
+    sr: true,
     requiresWeaponSelection: true,
+    durationFormula: '10 min/level',
     calculateDuration: function (spellCasterClassData) {
       return spellCasterClassData.level.currentScore * 10 * ROUNDS_PER_MINUTE;
     }
@@ -931,6 +1232,10 @@ const SpellsData: Record<string, SpellData> = {
   'Fireball': {
     range: 'Long',
     target: SpellTarget.Area,
+    school: 'Evocation',
+    savingThrow: 'Reflex half',
+    sr: true,
+    durationFormula: 'instantaneous',
     calculateDuration: function (_spellCasterClassData) {
       return 1;
     }
@@ -951,6 +1256,68 @@ export function GetSpellRange(spellName: string): SpellRange | null {
 
 export function GetSpellRequiresWeaponSelection(spellName: string): boolean {
   return Boolean(SpellsData[spellName]?.requiresWeaponSelection);
+}
+
+export function GetSpellSchool(spellName: string): SpellSchool | null {
+  return SpellsData[spellName]?.school || null;
+}
+
+export function GetSpellSavingThrow(spellName: string): string | null {
+  return SpellsData[spellName]?.savingThrow || null;
+}
+
+export function isOffensiveSavingThrow(savingThrow?: string | null): boolean {
+  if (!savingThrow) return false;
+  const lower = savingThrow.trim().toLowerCase();
+  if (!lower || lower === 'none' || lower.includes('harmless')) {
+    return false;
+  }
+  return true;
+}
+
+export function calculateSpellSaveDc(
+  character: Readonly<ICharacter> | null | undefined,
+  casterClassData: SpellCasterClassData,
+  spellLevel: number,
+  spellName: string
+): { saveDc: number | null; saveDcString: string | null } {
+  if (!spellName) return { saveDc: null, saveDcString: null };
+  const spellData = SpellsData[spellName];
+  if (!spellData || !isOffensiveSavingThrow(spellData.savingThrow)) {
+    return { saveDc: null, saveDcString: null };
+  }
+
+  const levelNum = Math.max(0, isNaN(spellLevel) ? 0 : spellLevel);
+  const abilityMod = casterClassData.ability ? casterClassData.ability.modifier : 0;
+  const abilityName = casterClassData.ability ? casterClassData.ability.name : 'Ability';
+
+  let focusBonus = 0;
+  let focusEffectsStr = '';
+  if (character && spellData.school) {
+    const focusPropName = `spellFocus (${spellData.school})`;
+    if (character.HasPropertyInitialized(focusPropName)) {
+      const focusProp = character.GetModifiableProperty(focusPropName);
+      focusBonus += focusProp.currentScore;
+      if (focusProp.EffectsString) {
+        focusEffectsStr += (focusEffectsStr ? ' ' : '') + focusProp.EffectsString;
+      }
+    }
+  }
+
+  if (character && character.HasPropertyInitialized('spellDcBonus')) {
+    const globalProp = character.GetModifiableProperty('spellDcBonus');
+    focusBonus += globalProp.currentScore;
+    if (globalProp.EffectsString) {
+      focusEffectsStr += (focusEffectsStr ? ' ' : '') + globalProp.EffectsString;
+    }
+  }
+
+  const totalDc = 10 + levelNum + abilityMod + focusBonus;
+  const abilitySign = abilityMod >= 0 ? '+' : '';
+  const focusPart = focusEffectsStr ? ` ${focusEffectsStr}` : '';
+  const saveDcString = `DC ${totalDc} (${spellData.savingThrow}): 10 base +${levelNum} spell level ${abilitySign}${abilityMod} ${abilityName} modifier${focusPart}`.trim();
+
+  return { saveDc: totalDc, saveDcString };
 }
 
 // Register effects
@@ -993,9 +1360,14 @@ class SpellCasterClassData {
 
 class SpellCasting {
   public classSpellCastingData: Map<string, SpellCasterClassData>;
+  private characterRef: Readonly<ICharacter> | null = null;
 
   constructor() {
     this.classSpellCastingData = new Map();
+  }
+
+  public refreshSpellMetadata(character: Readonly<ICharacter>): void {
+    this.characterRef = character;
   }
 
   public isActive(): boolean {
@@ -1012,6 +1384,22 @@ class SpellCasting {
       throw new Error(`Could not find class data for ${className} when trying to get its caster level.`);
     }
     return data.level;
+  }
+
+  public GetEffectiveCasterLevel(
+    className: string,
+    school?: SpellSchool | string | null,
+    character?: Readonly<ICharacter> | null
+  ): number {
+    const baseCl = this.GetCasterLevel(className).currentScore;
+    const charRef = character || this.characterRef;
+    if (!charRef) return baseCl;
+    const targetSchool = school || 'Universal';
+    const propName = `casterLevelSchool (${targetSchool})`;
+    if (charRef.HasPropertyInitialized(propName)) {
+      return Math.max(1, baseCl + charRef.GetModifiableProperty(propName).currentScore);
+    }
+    return baseCl;
   }
 
   public AddSpellCasterClass(className: string, level: number, ability: Ability, config?: SpellCastingData): void {
@@ -1044,34 +1432,62 @@ class SpellCasting {
           domains: casterClassData.domains,
           spellSlots: casterClassData.spellSlots,
           knownSpells: Object.fromEntries(
-            Object.entries(casterClassData.knownSpells).map(([level, spells]) => [
-              level,
-              spells.map((s: any) => {
-                const name = typeof s === 'string' ? s : s.spellName;
-                const isValid = typeof s === 'string' ? true : s.isValid !== false;
-                return {
-                  spellName: name,
-                  isValid: isValid,
-                  range: name ? GetSpellRange(name) : null,
-                  target: name ? GetSpellTarget(name) : null,
-                  requiresWeaponSelection: name ? GetSpellRequiresWeaponSelection(name) : false
-                };
-              })
-            ])
+            Object.entries(casterClassData.knownSpells).map(([level, spells]) => {
+              const levelNum = parseInt(level, 10) || 0;
+              return [
+                level,
+                spells.map((s: any) => {
+                  const name = typeof s === 'string' ? s : s.spellName;
+                  const isValid = typeof s === 'string' ? true : s.isValid !== false;
+                  const school = name ? GetSpellSchool(name) : null;
+                  const casterLevel = this.GetEffectiveCasterLevel(className, school, this.characterRef);
+                  const { saveDc, saveDcString } = name
+                    ? calculateSpellSaveDc(this.characterRef, casterClassData, levelNum, name)
+                    : { saveDc: null, saveDcString: null };
+                  return {
+                    spellName: name,
+                    isValid: isValid,
+                    range: name ? GetSpellRange(name) : null,
+                    target: name ? GetSpellTarget(name) : null,
+                    school,
+                    casterLevel,
+                    savingThrow: name ? GetSpellSavingThrow(name) : null,
+                    saveDc,
+                    saveDcString,
+                    requiresWeaponSelection: name ? GetSpellRequiresWeaponSelection(name) : false
+                  };
+                })
+              ];
+            })
           ),
           preparedSpells: Object.fromEntries(
-            Object.entries(casterClassData.preparedSpells).map(([level, spells]) => [
-              level,
-              spells.map(({ spellName, isUsed, isEmpty, isValid }) => ({
-                spell: spellName,
-                used: isUsed,
-                isEmpty,
-                isValid,
-                range: spellName ? GetSpellRange(spellName) : null,
-                target: spellName ? GetSpellTarget(spellName) : null,
-                requiresWeaponSelection: spellName ? GetSpellRequiresWeaponSelection(spellName) : false
-              }))
-            ])
+            Object.entries(casterClassData.preparedSpells).map(([level, spells]) => {
+              const levelNum = parseInt(level, 10) || 0;
+              return [
+                level,
+                spells.map(({ spellName, isUsed, isEmpty, isValid }) => {
+                  const school = spellName ? GetSpellSchool(spellName) : null;
+                  const casterLevel = this.GetEffectiveCasterLevel(className, school, this.characterRef);
+                  const { saveDc, saveDcString } = spellName
+                    ? calculateSpellSaveDc(this.characterRef, casterClassData, levelNum, spellName)
+                    : { saveDc: null, saveDcString: null };
+                  return {
+                    spell: spellName,
+                    used: isUsed,
+                    isEmpty,
+                    isValid,
+                    range: spellName ? GetSpellRange(spellName) : null,
+                    target: spellName ? GetSpellTarget(spellName) : null,
+                    school,
+                    casterLevel,
+                    savingThrow: spellName ? GetSpellSavingThrow(spellName) : null,
+                    saveDc,
+                    saveDcString,
+                    requiresWeaponSelection: spellName ? GetSpellRequiresWeaponSelection(spellName) : false
+                  };
+                })
+              ];
+            })
           ),
           preparation: ClassesData.get(className)?.spellCastingData?.preparation || 'Prepared'
         }))
@@ -1079,6 +1495,7 @@ class SpellCasting {
   }
 
   public updateSpellsData(character: ICharacter): void {
+    this.characterRef = character;
     this.classSpellCastingData.forEach((casterClassData, casterClassName) => {
       const classData = ClassesData.get(casterClassName);
       if (!classData || !classData.spellCastingData) return;
@@ -1200,7 +1617,7 @@ export function ExtractAndValidateSpell(
     candidateSpells = correctSpells.map(spell => {
       const normalizedSpell = normalizeQuotes(spell).toLowerCase();
       const dbKey = Object.keys(SpellsData).find(key => normalizeQuotes(key).toLowerCase() === normalizedSpell);
-      return dbKey || '';
+      return dbKey || spell;
     }).filter(key => key !== '');
   } else {
     // Spontaneous caster: candidates are all implemented database spells

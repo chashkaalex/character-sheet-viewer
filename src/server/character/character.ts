@@ -375,6 +375,11 @@ export class Character implements ICharacter, IPropertyRegistry {
             // Resolve any remaining pending effects
             this.ResolveAllRemainingPendingEffects();
 
+            // Re-sync spell casting metadata (e.g. Save DCs that depend on Spell Focus feats or item/status ability buffs)
+            if (this.spellCasting.isActive()) {
+                this.spellCasting.refreshSpellMetadata(this);
+            }
+
             // Apply dynamic Constitution modifier delta (from statuses/ability damage/buffs after sheet base) to Max HP
             if (this.abilities.Con && this.HD > 0) {
                 const baseConMod = Math.floor((this.abilities.Con.score - 10) / 2);

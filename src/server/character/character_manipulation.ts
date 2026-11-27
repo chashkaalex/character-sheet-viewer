@@ -8,7 +8,7 @@ import { adapter } from './adapter_selector';
 declare let require: any;
 
 import { ClassesData } from '../classes_data/classes_general_data';
-import { SpellsData } from './spells';
+import { resolveSpellDuration, SpellsData, SpellTarget } from './spells';
 import { ActionsData, getActionDailyPoolState, NumberAction } from './actions/actions_effects';
 import { GetScriptProperty } from '../services/gdoc_utilities';
 import { sanitizeDbLink } from './parser_utils';
@@ -393,10 +393,12 @@ export function OnCastSpell(docId: string, slotData: SpellSlotData): CharacterRe
     return character;
   }
 
-  const spellObject = SpellsData[slotData.spellName];
-  if (!spellObject) {
-    return new CharacterError('Spell description was not found');
-  }
+  const spellObject = SpellsData[slotData.spellName] || {
+    range: 'Close',
+    target: SpellTarget.OneCreature,
+    durationFormula: '1 min/level' as const,
+    calculateDuration: (casterData: any) => (casterData?.level?.currentScore || 1) * 10
+  };
 
   const targets = (slotData.targets && slotData.targets.length > 0) ? slotData.targets : ['Self'];
   const selfNames = ['Self', character.name, character.partyNickname].filter(Boolean) as string[];
@@ -416,7 +418,7 @@ export function OnCastSpell(docId: string, slotData: SpellSlotData): CharacterRe
     }
   }
 
-  const duration = spellObject.calculateDuration(spellCasterClassData);
+  const duration = resolveSpellDuration(spellObject, spellCasterClassData, character);
 
   const classAndLevelSpells = spellCasterClassData.preparedSpells[slotData.spellLevel];
   if (!classAndLevelSpells || classAndLevelSpells.length === 0) {
