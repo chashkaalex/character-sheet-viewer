@@ -1106,10 +1106,42 @@
 
     .stat-group-header .passed-button {
         color: var(--primary-color);
+        height: 34px;
+        padding: 4px 10px;
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
     }
 
     .stat-group-header .passed-button:hover {
         color: white;
+    }
+
+    .statuses-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .weapon-row select,
+    .special-attack-row select,
+    .time-unit-select,
+    .status-unit-select,
+    .status-preset-select {
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 1em;
+        color: var(--text-color);
+        background-color: var(--background-secondary);
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+    .status-preset-select {
+        height: 34px;
+        padding: 4px 10px;
     }
 
     .twf-toggle-row {
@@ -1370,13 +1402,16 @@
     }
 
     .time-unit-select {
-        padding: 8px 12px;
+        padding: 4px 10px;
+        height: 32px;
         border: 1px solid var(--border-color);
         border-radius: 4px;
         font-family: inherit;
         font-size: 1em;
-        background-color: white;
+        color: var(--text-color);
+        background-color: var(--background-secondary);
         cursor: pointer;
+        box-sizing: border-box;
     }
 
     meter {
@@ -1565,7 +1600,10 @@
         border: 1px solid var(--border-color);
         border-radius: 4px;
         font-family: inherit;
-        background-color: white;
+        font-size: 1em;
+        color: var(--text-color);
+        background-color: var(--background-secondary);
+        cursor: pointer;
     }
 
     .special-attack-bonus {

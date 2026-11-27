@@ -1,3 +1,4 @@
+
 import * as fs from 'fs';
 import * as path from 'path';
 import { Character } from '../../server/character/character';
@@ -239,5 +240,11 @@ describe('Phase 4, Step 4.2: Complete D&D 3.5 Core Conditions Matrix, Tactical S
     expect(convertToRounds(1, 'endless')).toBe(-1);
     expect(typeof onConditionPresetSelected).toBe('function');
     expect(typeof onTacticalPresetSelected).toBe('function');
+
+    // stylesheet.css unifies dashboard dropdowns with .weapon-row select and matches .status-preset-select height to .stat-group-header .passed-button
+    const cssPath = path.join(__dirname, '../../client/style/stylesheet.css');
+    const css = fs.readFileSync(cssPath, 'utf-8');
+    expect(css).toContain('.status-preset-select');
+    expect(css).toContain('.statuses-header-actions');
   });
 });
