@@ -85,6 +85,8 @@
             <meter id="hpMeter" value="0" min="0" max="0"></meter>
             <div class="hp-numbers">
               <span id="hpCurrent">-</span>/<span id="hpMax">-</span>
+              <span id="hpTempBadge" class="hp-temp-badge" style="display: none;"></span>
+              <span id="hpNonlethalBadge" class="hp-nonlethal-badge" style="display: none;"></span>
             </div>
             <button class="hpbutton" onclick="cure()">Cure</button>
             <button class="hpbutton" onclick="inflict()">Inflict</button>
@@ -218,6 +220,10 @@
                     <option value="Exhausted">Exhausted (-6 Str/Dex, 1/2 spd)</option>
                     <option value="Sickened">Sickened (-2 atk/dmg/saves/skills)</option>
                     <option value="Nauseated">Nauseated (move action only)</option>
+                    <option value="Disabled">Disabled (0 HP, single action)</option>
+                    <option value="Staggered">Staggered (nonlethal == HP)</option>
+                    <option value="Dying">Dying (-1 to -9 HP, unconscious)</option>
+                    <option value="Unconscious">Unconscious (helpless)</option>
                   </optgroup>
                   <optgroup label="Senses">
                     <option value="Dazzled">Dazzled (-1 atk/Search/Spot)</option>
@@ -448,6 +454,10 @@
           <div class="damage-input-row">
             <label for="damageSonic">Sonic:</label>
             <input type="number" id="damageSonic" class="damage-number-input" min="0" step="1" placeholder="0">
+          </div>
+          <div class="damage-input-row">
+            <label for="damageNonlethal">Nonlethal:</label>
+            <input type="number" id="damageNonlethal" class="damage-number-input" min="0" step="1" placeholder="0">
           </div>
         </div>
       </div>

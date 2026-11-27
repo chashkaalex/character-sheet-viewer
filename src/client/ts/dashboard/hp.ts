@@ -31,7 +31,7 @@ export function showInflictModal() {
   const physicalInput = document.getElementById('damagePhysical') as HTMLInputElement;
   if (physicalInput) physicalInput.value = '';
 
-  const energyIds = ['damageAcid', 'damageCold', 'damageElectricity', 'damageFire', 'damageSonic'];
+  const energyIds = ['damageAcid', 'damageCold', 'damageElectricity', 'damageFire', 'damageSonic', 'damageNonlethal'];
   energyIds.forEach(id => {
     const el = document.getElementById(id) as HTMLInputElement;
     if (el) el.value = '';
@@ -84,7 +84,8 @@ export function submitInflictDamage() {
     { id: 'damageCold', key: 'cold', label: 'Cold' },
     { id: 'damageElectricity', key: 'electricity', label: 'Electricity' },
     { id: 'damageFire', key: 'fire', label: 'Fire' },
-    { id: 'damageSonic', key: 'sonic', label: 'Sonic' }
+    { id: 'damageSonic', key: 'sonic', label: 'Sonic' },
+    { id: 'damageNonlethal', key: 'nonlethal', label: 'Nonlethal' }
   ];
 
   const parseField = (input: HTMLInputElement | null): { valid: boolean; value: number } => {

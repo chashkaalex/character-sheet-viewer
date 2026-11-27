@@ -41,9 +41,12 @@ export interface ICharacter {
     acp: ModifiableProperty;
     specialAttacks: Record<string, ModifiableProperty>;
     resistances: string;
+    dr: ModifiableProperty;
+    sr: ModifiableProperty;
     hp: { current: number; max: number };
     HD: number;
     temporaryHp: number;
+    nonlethalDamage: number;
     damageBonus: ModifiableProperty;
     meleeDamageBonus: ModifiableProperty;
     rangedDamageBonus: ModifiableProperty;

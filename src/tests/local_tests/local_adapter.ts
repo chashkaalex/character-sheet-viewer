@@ -65,8 +65,8 @@ export class LocalAdapter extends DocumentAdapter {
 
         for (let i = 0; i < lines.length; i++) {
             if (lines[i].includes('Hp:')) {
-                // E.g., "Hp: 10/24" or "BAb: +9; Hp: 74/74" -> Replace the first number after "Hp:"
-                lines[i] = lines[i].replace(/(Hp:\s*)\d+/, `$1${newHp}`);
+                // E.g., "Hp: 10/24", "Hp: -3/24", or "BAb: +9; Hp: 74/74" -> Replace the first number after "Hp:"
+                lines[i] = lines[i].replace(/(Hp:\s*)-?\d+/, `$1${newHp}`);
                 break;
             }
         }

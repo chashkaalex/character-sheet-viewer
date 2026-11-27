@@ -92,9 +92,12 @@ export class Character implements ICharacter, IPropertyRegistry {
     public acp: ModifiableProperty;
     public specialAttacks: Record<string, ModifiableProperty> = {};
     public resistances: string = '';
+    public dr: ModifiableProperty;
+    public sr: ModifiableProperty;
     public hp: { current: number; max: number };
     public HD: number = 0;
     public temporaryHp: number = 0;
+    public nonlethalDamage: number = 0;
     public damageBonus: ModifiableProperty;
     public meleeDamageBonus: ModifiableProperty;
     public rangedDamageBonus: ModifiableProperty;
@@ -250,6 +253,8 @@ export class Character implements ICharacter, IPropertyRegistry {
             this.meleeAttackBonus = new ModifiableProperty(0, 'meleeAttackBonus');
             this.rangedAttackBonus = new ModifiableProperty(0, 'rangedAttackBonus');
             this.acp = new ModifiableProperty(0, 'acp');
+            this.dr = new ModifiableProperty(0, 'dr');
+            this.sr = new ModifiableProperty(0, 'sr');
             this.hp = { current: 0, max: 0 };
             this.damageBonus = new ModifiableProperty(0, 'damageBonus');
             this.meleeDamageBonus = new ModifiableProperty(0, 'meleeDamageBonus');
@@ -277,9 +282,23 @@ export class Character implements ICharacter, IPropertyRegistry {
                 this.partyName = partyLines[0].trim();
             }
 
-            // Parsing Resistances
+            // Parsing Resistances, DR, and SR
             if (this.resistanceLine) {
                 this.resistances = this.resistanceLine.split(':')[1].trim();
+                const drMatch = this.resistances.match(/\bDR\s+(\d+)\s*\/\s*([^\s,;]+)/i);
+                if (drMatch) {
+                    const drVal = parseInt(drMatch[1], 10);
+                    if (!isNaN(drVal) && drVal > 0) {
+                        this.dr.applyPermanentEffect(drVal);
+                    }
+                }
+                const srMatch = this.resistances.match(/\b(?:SR|Spell\s+Resistance)\s+(\d+)\b/i);
+                if (srMatch) {
+                    const srVal = parseInt(srMatch[1], 10);
+                    if (!isNaN(srVal) && srVal > 0) {
+                        this.sr.applyPermanentEffect(srVal);
+                    }
+                }
             }
 
             // Saves
@@ -355,6 +374,19 @@ export class Character implements ICharacter, IPropertyRegistry {
 
             // Resolve any remaining pending effects
             this.ResolveAllRemainingPendingEffects();
+
+            // Apply dynamic Constitution modifier delta (from statuses/ability damage/buffs after sheet base) to Max HP
+            if (this.abilities.Con && this.HD > 0) {
+                const baseConMod = Math.floor((this.abilities.Con.score - 10) / 2);
+                const currentConMod = this.abilities.Con.modifier;
+                const conModDelta = currentConMod - baseConMod;
+                if (conModDelta !== 0) {
+                    this.hp.max += conModDelta * this.HD;
+                    if (this.hp.current > this.hp.max) {
+                        this.hp.current = this.hp.max;
+                    }
+                }
+            }
 
             // Calculate carrying capacity, total carried weight, and apply D&D 3.5 encumbrance penalties
             ApplyEncumbranceEffects(this);
@@ -480,19 +512,26 @@ export class Character implements ICharacter, IPropertyRegistry {
     }
 
     public InflictDamage(amount: number, energyDamage?: Record<string, number>): number {
-        let totalDamage = Math.max(0, Math.floor(Number(amount) || 0));
+        const rawPhysical = Math.max(0, Math.floor(Number(amount) || 0));
+        const drReduction = this.dr ? Math.max(0, this.dr.currentScore) : 0;
+        let totalDamage = rawPhysical > 0 ? Math.max(0, rawPhysical - drReduction) : 0;
+
         if (energyDamage && typeof energyDamage === 'object') {
             Object.entries(energyDamage).forEach(([type, rawVal]) => {
                 const val = Math.max(0, Math.floor(Number(rawVal) || 0));
-                if (val > 0) {
-                    const resistance = this.getEnergyResistance(type);
-                    totalDamage += Math.max(0, val - resistance);
+                if (val <= 0) return;
+                if (type.trim().toLowerCase() === 'nonlethal') {
+                    const effectiveNl = Math.max(0, val - drReduction);
+                    this.nonlethalDamage += effectiveNl;
+                    return;
                 }
+                const resistance = this.getEnergyResistance(type);
+                totalDamage += Math.max(0, val - resistance);
             });
         }
 
         let remainingDamage = totalDamage;
-        if (this.temporaryHp > 0) {
+        if (this.temporaryHp > 0 && remainingDamage > 0) {
             if (this.temporaryHp >= remainingDamage) {
                 this.temporaryHp -= remainingDamage;
                 return totalDamage;
@@ -501,12 +540,18 @@ export class Character implements ICharacter, IPropertyRegistry {
                 this.temporaryHp = 0;
             }
         }
-        this.hp.current = Math.max(0, this.hp.current - remainingDamage);
+        if (remainingDamage > 0) {
+            this.hp.current = Math.max(-10, this.hp.current - remainingDamage);
+        }
         return totalDamage;
     }
 
     public CureDamage(amount: number): void {
-        this.hp.current = Math.min(this.hp.max, this.hp.current + amount);
+        const healAmount = Math.max(0, Math.floor(Number(amount) || 0));
+        this.hp.current = Math.min(this.hp.max, this.hp.current + healAmount);
+        if (this.nonlethalDamage > 0 && healAmount > 0) {
+            this.nonlethalDamage = Math.max(0, this.nonlethalDamage - healAmount);
+        }
     }
 
     public OnRoundsElapsed(amount: number): Status[] {

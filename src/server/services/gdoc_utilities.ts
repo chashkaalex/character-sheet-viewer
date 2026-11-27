@@ -127,8 +127,8 @@ export function UpdateProperty(docId: string, propertyName: string, newValue: st
             // Get the substring after the property name
             const afterProperty = targetLine.substring(propertyStartIndex + propertyName.length);
 
-            // Find the first number after the property name
-            const numberMatch = afterProperty.match(/(\d+)/);
+            // Find the first number (including optional negative sign) after the property name
+            const numberMatch = afterProperty.match(/(-?\d+)/);
             if (!numberMatch) {
                 return {
                     success: false,
@@ -572,8 +572,8 @@ export function DecrementPropertyWithUpdateProperty(docId: string, propertyName:
             const propertyStartIndex = text.indexOf(propertyName);
             const afterProperty = text.substring(propertyStartIndex + propertyName.length);
 
-            // Find the first number after the property name
-            const numberMatch = afterProperty.match(/(\d+)/);
+            // Find the first number (including optional negative sign) after the property name
+            const numberMatch = afterProperty.match(/(-?\d+)/);
             if (!numberMatch) {
                 return {
                     success: false,

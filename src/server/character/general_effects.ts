@@ -1,10 +1,42 @@
 import { SaveNames } from './properties/saves';
 import { SkillsAbilities } from './properties/skills';
-import { AbilityNames } from './properties/abilities/ability_types';
+import { AbilityName, AbilityNames } from './properties/abilities/ability_types';
 import { StaticPropertyEffect, type EffectData } from './state/effects';
-import type { Status } from './state/state';
 import type { ICharacter } from './icharacter';
 import { registerConditions } from './state/conditions';
+
+function resolveAbilityName(rawText: string): AbilityName | null {
+  const normalized = rawText.trim().toLowerCase();
+  const map: Record<string, AbilityName> = {
+    str: 'Str',
+    strength: 'Str',
+    dex: 'Dex',
+    dexterity: 'Dex',
+    con: 'Con',
+    constitution: 'Con',
+    int: 'Int',
+    intelligence: 'Int',
+    wis: 'Wis',
+    wisdom: 'Wis',
+    cha: 'Cha',
+    char: 'Cha',
+    charisma: 'Cha'
+  };
+  return map[normalized] || null;
+}
+
+function buildAbilityDamageEffects(abilityName: AbilityName, rawDamageAmount: number, statusName: string): EffectData[] {
+  const dmg = Math.abs(rawDamageAmount);
+  return [
+    {
+      status: statusName,
+      description: `${abilityName} Damage ${dmg}: Reduces effective ${abilityName} score by ${dmg} (every 2 points of ability damage applies a -1 penalty to ${abilityName}-based rolls and statistics).`,
+      property: abilityName,
+      modifierType: 'Generic',
+      value: -dmg
+    }
+  ];
+}
 
 export type DynamicEffectGenerator = (parsedValue: number, statusName: string) => EffectData[];
 export type ParameterizedEffectGenerator = (parameterText: string, statusName: string) => EffectData[];
@@ -149,6 +181,93 @@ const DynamicStatusesEffects: Record<string, DynamicEffectGenerator> = {
         }
       }
     ];
+  },
+  'Temp HP': (parsedValue, statusName) => {
+    const tempVal = Math.max(0, parsedValue);
+    return [
+      {
+        status: statusName,
+        description: `Grants ${tempVal} temporary hit points (absorbs incoming damage before current HP).`,
+        callback: (character: ICharacter) => {
+          character.temporaryHp += tempVal;
+        }
+      }
+    ];
+  },
+  'Temporary HP': (parsedValue, statusName) => {
+    const tempVal = Math.max(0, parsedValue);
+    return [
+      {
+        status: statusName,
+        description: `Grants ${tempVal} temporary hit points (absorbs incoming damage before current HP).`,
+        callback: (character: ICharacter) => {
+          character.temporaryHp += tempVal;
+        }
+      }
+    ];
+  },
+  'Nonlethal': (parsedValue, statusName) => {
+    const nlVal = Math.max(0, parsedValue);
+    return [
+      {
+        status: statusName,
+        description: `${nlVal} points of nonlethal damage (Staggered when nonlethal == current HP; Unconscious when nonlethal > current HP).`,
+        callback: (character: ICharacter) => {
+          character.nonlethalDamage += nlVal;
+        }
+      }
+    ];
+  },
+  'Nonlethal Damage': (parsedValue, statusName) => {
+    const nlVal = Math.max(0, parsedValue);
+    return [
+      {
+        status: statusName,
+        description: `${nlVal} points of nonlethal damage (Staggered when nonlethal == current HP; Unconscious when nonlethal > current HP).`,
+        callback: (character: ICharacter) => {
+          character.nonlethalDamage += nlVal;
+        }
+      }
+    ];
+  },
+  'Negative Level': (parsedValue, statusName) => {
+    const count = Math.abs(parsedValue);
+    const effects: EffectData[] = [
+      {
+        status: statusName,
+        description: `${count} Negative Level${count !== 1 ? 's' : ''}: -${count} penalty on attack rolls, saving throws, skill checks, ability checks, and effective level (caster level); -${count * 5} max hit points.`
+      },
+      { status: statusName, property: 'attackBonus', modifierType: 'Generic', value: -count }
+    ];
+    SaveNames.forEach(saveName => {
+      effects.push({ status: statusName, property: saveName, modifierType: 'Generic', value: -count });
+    });
+    Object.keys(SkillsAbilities).forEach(skillName => {
+      effects.push({ status: statusName, property: skillName, modifierType: 'Generic', value: -count });
+    });
+    effects.push({
+      status: statusName,
+      callback: (character: ICharacter) => {
+        character.hp.max -= count * 5;
+        if (character.hp.current > character.hp.max) {
+          character.hp.current = character.hp.max;
+        }
+        character.spellCasting?.classSpellCastingData?.forEach(casterData => {
+          casterData.level.applyEffect(
+            new StaticPropertyEffect({
+              status: statusName,
+              property: `casterLevel ${casterData.className}`,
+              modifierType: 'Generic',
+              value: -count
+            })
+          );
+        });
+      }
+    });
+    return effects;
+  },
+  'Negative Levels': (parsedValue, statusName) => {
+    return DynamicStatusesEffects['Negative Level'](parsedValue, statusName);
   }
 };
 
@@ -185,13 +304,31 @@ export function GetEffects(container: Record<string, any>, identifier: string): 
     // 1. Try dynamic numeric extraction (e.g., getting +3 out of "Inspire Courage +3")
     const dynamicMatch = identifier.match(/^(.+?)\s+([+-]?\d+)$/);
     if (dynamicMatch) {
-      const baseName = dynamicMatch[1];
+      const baseName = dynamicMatch[1].trim();
       const numericValue = parseInt(dynamicMatch[2], 10);
 
       const dynamicEffectGenerator = DynamicStatusesEffects[baseName];
       if (dynamicEffectGenerator) {
         const generatedEffects = dynamicEffectGenerator(numericValue, identifier);
         return generatedEffects.map((effect: any) => ({ ...effect }));
+      }
+
+      // 1b. Check "<Ability> Damage N" (e.g., "Str Damage 4" or "Con Damage -2")
+      const abilityDmgDirectMatch = baseName.match(/^([a-zA-Z]+)\s+Damage$/i);
+      if (abilityDmgDirectMatch) {
+        const abilityName = resolveAbilityName(abilityDmgDirectMatch[1]);
+        if (abilityName) {
+          return buildAbilityDamageEffects(abilityName, numericValue, identifier);
+        }
+      }
+
+      // 1c. Check "Ability Damage (<Ability>) N" (e.g., "Ability Damage (Con) 4")
+      const abilityDmgParenMatch = baseName.match(/^Ability\s+Damage\s*\(([^)]+)\)$/i);
+      if (abilityDmgParenMatch) {
+        const abilityName = resolveAbilityName(abilityDmgParenMatch[1]);
+        if (abilityName) {
+          return buildAbilityDamageEffects(abilityName, numericValue, identifier);
+        }
       }
     }
 

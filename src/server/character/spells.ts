@@ -58,6 +58,22 @@ const SpellsData: Record<string, SpellData> = {
       return 1 * ROUNDS_PER_MINUTE;
     }
   },
+  'Virtue': {
+    range: 'Touch',
+    target: SpellTarget.OneCreature,
+    effects: [
+      {
+        status: 'Virtue',
+        description: 'Subject gains 1 temporary hit point.',
+        callback: (character: ICharacter) => {
+          character.temporaryHp += 1;
+        }
+      }
+    ],
+    calculateDuration: function (_spellCasting) {
+      return 1 * ROUNDS_PER_MINUTE;
+    }
+  },
   'Detect Magic': {
     range: '60 ft.',
     target: SpellTarget.Area,

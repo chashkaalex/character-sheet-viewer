@@ -79,6 +79,17 @@ export function UpdateHp(
     return character;
   }
 
+  const prevTempHp = character.temporaryHp;
+  const prevNonlethal = character.nonlethalDamage;
+
+  // Capture existing Temp HP status metadata (including named temp-HP spell statuses like "Virtue")
+  const tempStatusRegex = /^(?:(Temp\s+HP|Temporary\s+HP)\s+[+-]?\d+|Virtue)$/i;
+  const existingTempStatuses = (character.statuses || []).filter(s => tempStatusRegex.test(s.name));
+  const primaryTempStatus = existingTempStatuses[0];
+
+  const nonlethalStatusRegex = /^(Nonlethal(?:\s+Damage)?)\s+[+-]?\d+$/i;
+  const existingNonlethalStatuses = (character.statuses || []).filter(s => nonlethalStatusRegex.test(s.name));
+
   let effectiveAmount = amount;
   if (actionType === 'inflict') {
     effectiveAmount = character.InflictDamage(amount, energyDamage);
@@ -93,7 +104,57 @@ export function UpdateHp(
   };
   character.manipulationCallbacks.UpdateHp.forEach(cb => cb(character, effectiveAmount, actionType, helpers));
 
+  // Persist lethal current HP on the GDoc Hp line
   adapter.UpdateHp(docId, character.hp.current);
+
+  // Sync status-driven Temp HP if it changed
+  if (character.temporaryHp !== prevTempHp) {
+    existingTempStatuses.forEach(st => _removeStatusFromCharacter(docId, st.name, true));
+    if (character.temporaryHp > 0) {
+      const duration = primaryTempStatus ? primaryTempStatus.duration : -1;
+      const elapsed = primaryTempStatus ? primaryTempStatus.elapsed : 1;
+      _addStatusToCharacter(docId, `Temp HP ${character.temporaryHp}`, duration, elapsed);
+    }
+  }
+
+  // Sync status-driven Nonlethal Damage if it changed
+  if (character.nonlethalDamage !== prevNonlethal) {
+    existingNonlethalStatuses.forEach(st => _removeStatusFromCharacter(docId, st.name, true));
+    if (character.nonlethalDamage > 0) {
+      _addStatusToCharacter(docId, `Nonlethal ${character.nonlethalDamage}`, -1, 1);
+    }
+  }
+
+  // Evaluate D&D 3.5 Lethal & Nonlethal HP threshold conditions (PHB pp. 145–146)
+  const curHp = character.hp.current;
+  const curNl = character.nonlethalDamage;
+  const hasDiehard = character.HasFeat('Diehard');
+
+  if (curHp <= -10) {
+    _addStatusToCharacter(docId, 'Dead', -1);
+  } else if (curHp < 0) {
+    // -1 to -9 HP: Dying, or Disabled if character has Diehard feat
+    _addStatusToCharacter(docId, hasDiehard ? 'Disabled' : 'Dying', -1);
+  } else if (curHp === 0) {
+    _addStatusToCharacter(docId, 'Disabled', -1);
+  } else {
+    // curHp > 0: clear Disabled and Dying if present
+    _removeStatusFromCharacter(docId, 'Disabled', true);
+    _removeStatusFromCharacter(docId, 'Dying', true);
+  }
+
+  // Evaluate Nonlethal threshold conditions when character is alive (curHp > 0)
+  if (curHp > 0) {
+    if (curNl > 0 && curNl > curHp) {
+      _addStatusToCharacter(docId, 'Unconscious', -1);
+    } else if (curNl > 0 && curNl === curHp) {
+      _addStatusToCharacter(docId, 'Staggered', -1);
+    } else {
+      _removeStatusFromCharacter(docId, 'Staggered', true);
+      _removeStatusFromCharacter(docId, 'Unconscious', true);
+    }
+  }
+
   return GetCharacterRepByDocId(docId);
 }
 
@@ -182,12 +243,66 @@ export function OnRoundsElapsed(docId: string, amount: number): CharacterRep | C
   }
 
   if (character.statuses && character.statuses.length > 0) {
+    const ROUNDS_PER_HOUR = 600;
+    const nonlethalRegex = /^(Nonlethal(?:\s+Damage)?)\s+([+-]?\d+)$/i;
     const statusesToKeep = character.OnRoundsElapsed(amount);
+
+    let updatedNonlethalValue: number | null = null;
+    const processedStatuses: Array<{ name: string; elapsed: number; duration: number }> = [];
+
+    statusesToKeep.forEach((status: any) => {
+      const nlMatch = status.name.match(nonlethalRegex);
+      if (nlMatch) {
+        const currentNl = Math.max(0, parseInt(nlMatch[2], 10));
+        // Elapsed starts at 1 when added; full hours elapsed = floor((elapsed - 1) / 600)
+        const netRoundsElapsed = Math.max(0, status.elapsed - 1);
+        const fullHours = Math.floor(netRoundsElapsed / ROUNDS_PER_HOUR);
+        if (fullHours > 0) {
+          const healPerHour = Math.max(1, character.HD || 1);
+          const remainingNl = Math.max(0, currentNl - fullHours * healPerHour);
+          const remainderRounds = (netRoundsElapsed % ROUNDS_PER_HOUR) + 1;
+          updatedNonlethalValue = (updatedNonlethalValue ?? 0) + remainingNl;
+          if (remainingNl > 0) {
+            processedStatuses.push({
+              name: `Nonlethal ${remainingNl}`,
+              elapsed: remainderRounds,
+              duration: status.duration
+            });
+          }
+          return;
+        }
+        updatedNonlethalValue = (updatedNonlethalValue ?? 0) + currentNl;
+      }
+      processedStatuses.push(status);
+    });
+
+    // If nonlethal damage was reduced by hourly recovery, re-evaluate Staggered / Unconscious conditions
+    const finalStatuses = processedStatuses.filter(st => {
+      if (updatedNonlethalValue !== null && character.hp.current > 0) {
+        if (st.name === 'Unconscious' && updatedNonlethalValue <= character.hp.current) {
+          return false;
+        }
+        if (st.name === 'Staggered' && updatedNonlethalValue !== character.hp.current) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    if (
+      updatedNonlethalValue !== null &&
+      character.hp.current > 0 &&
+      updatedNonlethalValue === character.hp.current &&
+      !finalStatuses.some(s => s.name === 'Staggered')
+    ) {
+      finalStatuses.push({ name: 'Staggered', elapsed: 1, duration: -1 });
+    }
+
     // remove all the statuses in one pass
     adapter.RemoveAllStatuses(docId);
 
     // add the statuses that are still active back
-    statusesToKeep.forEach((status: any) => {
+    finalStatuses.forEach((status: any) => {
       AddStatusLine(docId, `${status.name}: ${status.elapsed} rounds/${status.duration} rounds`);
     });
   }

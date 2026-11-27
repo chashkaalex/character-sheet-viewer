@@ -523,6 +523,7 @@ export const ActionsData: Record<string, ActionData> = {
       { status: 'Roots of the Mountain Stance', property: 'Overrun', modifierType: 'Generic', value: 10 },
       { status: 'Roots of the Mountain Stance', property: 'Trip', modifierType: 'Generic', value: 10 },
       { status: 'Roots of the Mountain Stance', property: 'Tumble', modifierType: 'Generic', value: 10 },
+      { status: 'Roots of the Mountain Stance', property: 'dr', modifierType: 'Generic', value: 2 },
       {
         status: 'Roots of the Mountain Stance',
         description: 'Gain DR 2/- and +10 bonus on checks against bull rush, overrun, trip, and tumble. Ends immediately if you move more than 5 feet.'

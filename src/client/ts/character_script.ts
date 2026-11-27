@@ -112,8 +112,32 @@ export function onCharacterRepresentation(response) {
   document.getElementById('hpCurrent').innerHTML = String(characterRep.hp.current);
   document.getElementById('hpMax').innerHTML = String(characterRep.hp.max);
   const hpMeter = document.getElementById('hpMeter') as HTMLMeterElement;
-  hpMeter.value = characterRep.hp.current;
+  hpMeter.value = Math.max(0, characterRep.hp.current);
   hpMeter.max = characterRep.hp.max;
+
+  const hpTempBadge = document.getElementById('hpTempBadge');
+  if (hpTempBadge) {
+    const tempHp = characterRep.temporaryHp ?? 0;
+    if (tempHp > 0) {
+      hpTempBadge.textContent = `+${tempHp} temp`;
+      hpTempBadge.style.display = 'inline-block';
+    } else {
+      hpTempBadge.textContent = '';
+      hpTempBadge.style.display = 'none';
+    }
+  }
+
+  const hpNonlethalBadge = document.getElementById('hpNonlethalBadge');
+  if (hpNonlethalBadge) {
+    const nonlethal = characterRep.nonlethalDamage ?? 0;
+    if (nonlethal > 0) {
+      hpNonlethalBadge.textContent = `(${nonlethal} nonlethal)`;
+      hpNonlethalBadge.style.display = 'inline-block';
+    } else {
+      hpNonlethalBadge.textContent = '';
+      hpNonlethalBadge.style.display = 'none';
+    }
+  }
 
 
   //render saves

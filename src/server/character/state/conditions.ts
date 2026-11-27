@@ -24,7 +24,12 @@ export const CoreConditions = [
   'Cowering',
   'Paralyzed',
   'Helpless',
-  'Squeezing'
+  'Squeezing',
+  'Disabled',
+  'Dying',
+  'Dead',
+  'Staggered',
+  'Unconscious'
 ] as const;
 
 export const TacticalCombatStatuses = [
@@ -49,6 +54,11 @@ const STATUSES_REMOVED_BY_STATUS: Record<string, readonly string[]> = {
   'panicked': ['Shaken', 'Frightened'],
   'exhausted': ['Fatigued'],
   'fatigued': ['Exhausted'],
+  'disabled': ['Dying', 'Dead'],
+  'dying': ['Disabled', 'Dead'],
+  'dead': ['Disabled', 'Dying', 'Staggered', 'Unconscious'],
+  'staggered': ['Unconscious'],
+  'unconscious': ['Staggered'],
   'lesser restoration': ['Fatigued'],
   'heal': [
     'Blinded',
@@ -299,6 +309,57 @@ export function registerConditions(statusesEffects: Record<string, EffectData[]>
 
   statusesEffects['Paralyzed'] = createParalyzedEffects('Paralyzed');
   statusesEffects['Helpless'] = createParalyzedEffects('Helpless');
+
+  // 6b. Health & Nonlethal Threshold Conditions (Disabled, Dying, Dead, Staggered, Unconscious)
+  statusesEffects['Disabled'] = [
+    {
+      status: 'Disabled',
+      description: 'At 0 hit points (or negative HP with Diehard). You are conscious and can take only a single move or standard action each turn (not both, nor full-round actions). Performing any standard action (or strenuous move) deals 1 point of damage after the action completes, dropping you to -1 HP and dying unless the action healed you.'
+    }
+  ];
+
+  statusesEffects['Dying'] = [
+    {
+      status: 'Dying',
+      description: 'Near death (-1 to -9 hit points). Unconscious, helpless (effective Dex 0, loses Dex bonus to AC, melee attackers gain +4 attack), and can take no actions. At the end of each turn, roll d% (10% chance to become stable; otherwise lose 1 HP). Dies at -10 HP.'
+    },
+    {
+      status: 'Dying',
+      property: 'Dex',
+      modifierType: 'Generic',
+      valueResolver: (character: Readonly<ICharacter>) => -(character.abilities?.Dex?.currentScore ?? 0)
+    },
+    createLosesDexToAcCallback('Dying')
+  ];
+
+  statusesEffects['Dead'] = [
+    {
+      status: 'Dead',
+      description: 'Reduced to -10 hit points or lower (or Constitution reduced to 0). The character\'s soul leaves their body and they cannot act or benefit from normal healing without resurrection magic.'
+    },
+    createLosesDexToAcCallback('Dead')
+  ];
+
+  statusesEffects['Staggered'] = [
+    {
+      status: 'Staggered',
+      description: 'Nonlethal damage exactly equals current hit points. You can only take a single move or standard action each turn (not both, nor can you take full-round actions).'
+    }
+  ];
+
+  statusesEffects['Unconscious'] = [
+    {
+      status: 'Unconscious',
+      description: 'Knocked out and helpless (nonlethal damage exceeds current hit points, or reduced below 0 HP). Effective Dexterity drops to 0 (-5 modifier), loses Dexterity bonus to AC, and melee attackers gain a +4 bonus.'
+    },
+    {
+      status: 'Unconscious',
+      property: 'Dex',
+      modifierType: 'Generic',
+      valueResolver: (character: Readonly<ICharacter>) => -(character.abilities?.Dex?.currentScore ?? 0)
+    },
+    createLosesDexToAcCallback('Unconscious')
+  ];
 
   // 7. Tactical Combat Modifiers (Cover, Concealment, Flanking, Higher Ground)
   statusesEffects['Cover'] = [

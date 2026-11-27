@@ -33,6 +33,10 @@ export interface CharacterRep {
   attacksOfOpportunity: any;
   acp: any;
   hp: { current: number; max: number };
+  temporaryHp?: number;
+  nonlethalDamage?: number;
+  dr?: any;
+  sr?: any;
   ac: any;
   speed: any;
   encumbrance?: EncumbranceState | null;
@@ -121,6 +125,10 @@ export function getCharacterRep(character: ICharacter): CharacterRep {
     attacksOfOpportunity: character.attacksOfOpportunity?.state ?? null,
     acp: character.acp?.state ?? null,
     hp: { current: character.hp.current, max: character.hp.max },
+    temporaryHp: character.temporaryHp ?? 0,
+    nonlethalDamage: character.nonlethalDamage ?? 0,
+    dr: character.dr?.state ?? null,
+    sr: character.sr?.state ?? null,
     ac: character.ac?.state ?? null,
     speed: character.speed?.state ?? null,
     encumbrance: character.encumbrance ?? null,

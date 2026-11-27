@@ -1052,6 +1052,28 @@
         text-align: center;
     }
 
+    .hp-temp-badge {
+        margin-left: 6px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background-color: rgba(31, 122, 61, 0.14);
+        border: 1px solid #1f7a3d;
+        color: #1f7a3d !important;
+        font-size: 0.85em;
+        white-space: nowrap;
+    }
+
+    .hp-nonlethal-badge {
+        margin-left: 6px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background-color: rgba(181, 43, 39, 0.12);
+        border: 1px solid #b52b27;
+        color: #b52b27 !important;
+        font-size: 0.85em;
+        white-space: nowrap;
+    }
+
     .hpbutton {
         background-color: var(--header-bg);
         color: var(--header-text);
