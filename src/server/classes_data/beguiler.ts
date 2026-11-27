@@ -45,6 +45,17 @@ export const Beguiler: ClassData = createClassData({
   ],
 
   acAbilityName: 'Dex',
+  classAbilities: [
+    'Armored Mage',
+    'Trapfinding',
+    'Cloaked Casting',
+    'Surprise Casting',
+    'Advanced Learning',
+    'Silent Spell',
+    'Still Spell',
+    'Weapon Proficiency',
+    'Armor Proficiency'
+  ],
 
   levelTable: [
     /*level: 0*/ { bab: 0, Fort: 0, Ref: 0, Will: 0 },

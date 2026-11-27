@@ -339,6 +339,17 @@ export const Cleric: ClassData = createClassData({
     'Spellcraft'
   ],
   acAbilityName: 'Dex',
+  classAbilities: [
+    'Aura',
+    'Domains',
+    'Domain Powers',
+    'Spontaneous Casting',
+    'Turn Undead',
+    'Rebuke Undead',
+    'Weapon Proficiency',
+    'Armor Proficiency',
+    'Shield Proficiency'
+  ],
   levelTable: [
     /*level: 0*/ { bab: 0, Fort: 0, Ref: 0, Will: 0 },
     /*level: 1*/ { bab: 0, Fort: 2, Ref: 0, Will: 2 },

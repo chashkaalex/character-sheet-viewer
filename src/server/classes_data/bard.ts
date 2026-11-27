@@ -63,6 +63,22 @@ export const Bard: ClassData = createClassData({
     /*level: 20*/{ bab: 15, Fort: 6, Ref: 12, Will: 12 }
   ],
   acAbilityName: 'Dex',
+  classAbilities: [
+    'Bardic Knowledge',
+    'Bardic Music',
+    'Countersong',
+    'Fascinate',
+    'Inspire Courage',
+    'Inspire Competence',
+    'Suggestion',
+    'Inspire Greatness',
+    'Song of Freedom',
+    'Inspire Heroics',
+    'Mass Suggestion',
+    'Weapon Proficiency',
+    'Armor Proficiency',
+    'Shield Proficiency'
+  ],
   spellCastingData: {
     casterClass: 'Bard',
     type: 'Arcane',

@@ -15,6 +15,13 @@ export const Fighter: ClassData = createClassData({
   ],
 
   acAbilityName: 'Dex',
+  classAbilities: [
+    'Bonus Feats',
+    'Weapon Proficiency',
+    'Armor Proficiency',
+    'Shield Proficiency',
+    'Tower Shield Proficiency'
+  ],
 
   levelTable: [
     /*level: 0*/ { bab: 0, Fort: 0, Ref: 0, Will: 0 },

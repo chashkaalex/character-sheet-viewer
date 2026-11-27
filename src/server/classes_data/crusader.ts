@@ -20,6 +20,20 @@ export const Crusader: ClassData = createClassData({
   ],
 
   acAbilityName: 'Dex',
+  classAbilities: [
+    'Furious Counterstrike',
+    'Steely Resolve',
+    'Indomitable Soul',
+    'Zealous Surge',
+    'Smite',
+    'Die Hard',
+    'Mettle',
+    'Immortal Fortitude',
+    'Weapon Proficiency',
+    'Armor Proficiency',
+    'Shield Proficiency',
+    'Maneuvers Known'
+  ],
 
   levelTable: [
     /*level: 0*/ { bab: 0, Fort: 0, Ref: 0, Will: 0 },

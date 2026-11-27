@@ -21,6 +21,7 @@ import { Skill, ParseSkills, SkillsAbilities } from './properties/skills';
 import { ParseStatuses } from './state/statuses_parser';
 import { ParseFeats } from './properties/feats/feats_parser';
 import { ParseFlaws } from './properties/flaws/flaws_parser';
+import { ParseSpecialAbilities } from './properties/special_abilities/special_abilities_parser';
 import { ParseWeapons } from './gear/weapons/weapons_parser';
 import { ParseItems } from './gear/items/items_parser';
 import { ParseRaceAndClasses, ApplyClassesEffects, ApplyRacesEffects, CharacterClass } from './properties/race_and_classes';
@@ -335,6 +336,9 @@ export class Character implements ICharacter, IPropertyRegistry {
 
             // Apply class effects
             ApplyClassesEffects(this);
+
+            // Parse non-class Special Abilities and Bonus Abilities
+            ParseSpecialAbilities(this);
 
             // Apply race effects
             ApplyRacesEffects(this);

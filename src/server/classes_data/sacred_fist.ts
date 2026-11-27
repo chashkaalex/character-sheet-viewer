@@ -16,6 +16,15 @@ export const SacredFist: ClassData = createClassData({
     'Tumble'
   ],
   acAbilityName: 'Wis',
+  classAbilities: [
+    'AC Bonus',
+    'Fast Movement',
+    'Unarmed Strike',
+    'Sacred Flames',
+    'Blindsense',
+    'Inner Armor',
+    'No Shadow'
+  ],
   spellCastingData: {
     casterClass: 'Cleric', //levels of Scared Fist are counted towards Cleric spell slots
     type: 'Divine',

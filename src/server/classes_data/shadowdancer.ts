@@ -26,6 +26,20 @@ export const Shadowdancer: ClassData = createClassData({
   ],
 
   acAbilityName: 'Dex',
+  classAbilities: [
+    'Hide in Plain Sight',
+    'Evasion',
+    'Darkvision',
+    'Uncanny Dodge',
+    'Improved Uncanny Dodge',
+    'Shadow Illusion',
+    'Summon Shadow',
+    'Shadow Jump',
+    'Defensive Roll',
+    'Slippery Mind',
+    'Weapon Proficiency',
+    'Armor Proficiency'
+  ],
 
   levelTable: [
     /*level: 0*/ { bab: 0, Fort: 0, Ref: 0, Will: 0 },

@@ -25,6 +25,29 @@ export const Monk: ClassData = createClassData({
     'Tumble'
   ],
   acAbilityName: 'Wis',
+  classAbilities: [
+    'AC Bonus',
+    'Evasion',
+    'Improved Evasion',
+    'Fast Movement',
+    'Flurry of Blows',
+    'Ki Strike',
+    'Purity of Body',
+    'Slow Fall',
+    'Still Mind',
+    'Unarmed Strike',
+    'Weapon Proficiency',
+    'Armor Proficiency',
+    'Wholeness of Body',
+    'Diamond Body',
+    'Abundant Step',
+    'Diamond Soul',
+    'Quivering Palm',
+    'Timeless Body',
+    'Tongue of the Sun and Moon',
+    'Empty Body',
+    'Perfect Self'
+  ],
 
   levelTable: [
     /*level: 0*/ { bab: 0, Fort: 0, Ref: 0, Will: 0 },

@@ -37,6 +37,13 @@ export const UnseenSeer: ClassData = createClassData({
   ],
 
   acAbilityName: 'Dex',
+  classAbilities: [
+    'Damage Bonus',
+    'Advanced Learning',
+    'Silent Spell',
+    'Divination Spell Power',
+    'Guarded Mind'
+  ],
 
   levelTable: [
     /*level: 0*/ { bab: 0, Fort: 0, Ref: 0, Will: 0 },
@@ -72,55 +79,6 @@ export const UnseenSeer: ClassData = createClassData({
           })
         );
       }
-    }
-
-    // Divination Spell Power (Complete Mage p. 81, or variant school e.g. "Illusion Spell Power (+1 CL to Illusion, -1 CL to other schools)")
-    if (level >= 3) {
-      const spellPowerTier = Math.floor(level / 3); // +1/-1 at 3rd, +2/-2 at 6th, +3/-3 at 9th
-      const specialLines = character.sectionLines?.['Special Abilities'] || [];
-      let targetSchool = 'Divination';
-      let bonusCl = spellPowerTier;
-      let penaltyCl = -spellPowerTier;
-
-      for (const rawLine of specialLines) {
-        const schoolMatch = rawLine.match(/\b(Abjuration|Conjuration|Divination|Enchantment|Evocation|Illusion|Necromancy|Transmutation)\s+Spell\s+Power\b/i);
-        if (schoolMatch) {
-          targetSchool = schoolMatch[1].charAt(0).toUpperCase() + schoolMatch[1].slice(1).toLowerCase();
-          const bonusMatch = rawLine.match(/\+(\d+)\s*CL\s+to\s+[A-Za-z]+/i);
-          const penaltyMatch = rawLine.match(/(-\d+)\s*CL\s+to\s+other\s+schools/i);
-          if (bonusMatch) bonusCl = parseInt(bonusMatch[1], 10);
-          if (penaltyMatch) penaltyCl = parseInt(penaltyMatch[1], 10);
-          break;
-        }
-      }
-
-      const statusLabel = `${targetSchool} Spell Power`;
-      const allSchools = [
-        'Abjuration',
-        'Conjuration',
-        'Divination',
-        'Enchantment',
-        'Evocation',
-        'Illusion',
-        'Necromancy',
-        'Transmutation',
-        'Universal'
-      ];
-      allSchools.forEach(school => {
-        const propName = `casterLevelSchool (${school})`;
-        const prop = character.GetModifiableProperty(propName);
-        if (!character.HasPropertyInitialized(propName)) {
-          character.registerProperty(propName, prop);
-        }
-        prop.applyEffect(
-          new StaticPropertyEffect({
-            status: statusLabel,
-            property: propName,
-            modifierType: 'Generic',
-            value: school === targetSchool ? bonusCl : penaltyCl
-          })
-        );
-      });
     }
   }
 });

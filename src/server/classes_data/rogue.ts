@@ -39,6 +39,17 @@ export const Rogue: ClassData = createClassData({
   ],
 
   acAbilityName: 'Dex',
+  classAbilities: [
+    'Sneak Attack',
+    'Trapfinding',
+    'Evasion',
+    'Trap Sense',
+    'Uncanny Dodge',
+    'Improved Uncanny Dodge',
+    'Special Abilities',
+    'Weapon Proficiency',
+    'Armor Proficiency'
+  ],
 
   levelTable: [
     /*level: 0*/ { bab: 0, Fort: 0, Ref: 0, Will: 0 },

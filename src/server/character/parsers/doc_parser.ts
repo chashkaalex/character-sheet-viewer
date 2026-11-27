@@ -48,7 +48,15 @@ export const MUST_HAVE_SECTION_NAMES = [
 export function IsSectionLine(line: string): boolean {
   const trimmed = line.trim();
   return SECTION_NAMES.some(name => {
-    return trimmed.startsWith(name) || (trimmed.match(/^\d+:\s*/) && trimmed.includes(name + ':'));
+    if (trimmed.match(/^\d+:\s*/) && trimmed.includes(name + ':')) {
+      return true;
+    }
+    if (!trimmed.startsWith(name)) {
+      return false;
+    }
+    const afterName = trimmed.substring(name.length).trim();
+    // A section header is either the exact section name, followed by ':', or "Domains (...)"
+    return afterName === '' || afterName.startsWith(':') || (name === 'Domains' && afterName.startsWith('('));
   });
 }
 
@@ -146,6 +154,15 @@ export function ParseDocLines(lines: string[]): ParseDocResult {
         const trimmed = line.trim();
         return trimmed.startsWith(name) || (trimmed.match(/^\d+:\s*/) && trimmed.includes(name + ':'));
       }) || null;
+
+      // Special case: Inside 'Special Abilities', "Domains (Protection, Strength)," is a class feature line
+      // unless 'Domains' hasn't been initialized yet (in which case copy the line to 'Domains' AND stay in 'Special Abilities')
+      if (currentSection === 'Domains' && line.trim().includes('(') && sectionLines['Special Abilities'] && !sectionLines['Possessions']) {
+        sectionLines['Domains'] = [line];
+        sectionLines['Special Abilities'].push(line);
+        currentSection = 'Special Abilities';
+        continue;
+      }
 
       if (currentSection) {
         sectionLines[currentSection] = [];

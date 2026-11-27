@@ -10,6 +10,11 @@ import {
   resolveSpellDuration,
   SpellsData
 } from '../../server/character/spells';
+import {
+  extractSpecialAbilityBaseName,
+  isClassDerivedSpecialAbility,
+  SpecialAbilitiesEffects
+} from '../../server/character/properties/special_abilities/special_abilities_effects';
 import { renderSpellSlots } from '../../client/ts/spells/spell_slots';
 
 const TEMP_SPELL_DC_FILE = path.join(__dirname, 'test_character_sheets', 'spell_save_dc_temp.txt');
@@ -254,5 +259,40 @@ describe('Phase 5, Step 5.1: Declarative SRD Spell Metadata, Auto-Calculated Sav
     const hasteStatus = afterHaste.statuses.find((s: any) => s.name === 'Haste');
     expect(hasteStatus).toBeDefined();
     expect(hasteStatus.duration).toBe(9);
+  });
+
+  test('5. ParseSpecialAbilities & ParseBonusAbilities distinguish class-derived summary lines (e.g. Thror AC Bonus (+3)) from non-class special abilities (e.g. Illusion Spell Power) and apply them outside class files', () => {
+    // 1. Illusion Spell Power is registered in SpecialAbilitiesEffects (not hardcoded in unseen_seer.ts)
+    expect(SpecialAbilitiesEffects['Illusion Spell Power']).toBeDefined();
+    const unseenSeerPath = path.join(__dirname, '../../server/classes_data/unseen_seer.ts');
+    const unseenSeerSource = fs.readFileSync(unseenSeerPath, 'utf-8');
+    expect(unseenSeerSource).not.toContain('casterLevelSchool');
+
+    // 2. Base-name extraction & class-derived check:
+    // On Thror (Monk 6 / Cleric 3 / Sacred Fist 3), "AC Bonus (+3)," -> base name "AC Bonus", recognized as class-derived from Monk/Sacred Fist
+    expect(extractSpecialAbilityBaseName('AC Bonus (+3),')).toBe('AC Bonus');
+    expect(extractSpecialAbilityBaseName('Steely Resolve 15,')).toBe('Steely Resolve');
+    const throrPath = path.join(__dirname, 'test_character_sheets', 'thror_test.txt');
+    const rawThrorLines = fs.readFileSync(throrPath, 'utf-8').split(/\r?\n/).filter(l => l.trim() !== '');
+    const thror = new Character(rawThrorLines, throrPath);
+    thror.ParseCharacter();
+    expect(isClassDerivedSpecialAbility(thror, 'AC Bonus')).toBe(true);
+    expect(isClassDerivedSpecialAbility(thror, 'Fast Movement')).toBe(true);
+    expect(isClassDerivedSpecialAbility(thror, 'Turn undead')).toBe(true);
+    // "Martial School" is NOT a standard Monk/Cleric/Sacred Fist class ability, so it is parsed via SpecialAbilitiesEffects
+    expect(isClassDerivedSpecialAbility(thror, 'Martial School')).toBe(false);
+    expect(thror.Special.list.some(p => p.status === 'Martial School')).toBe(true);
+
+    // 3. On a Cleric (who is NOT an Unseen Seer) with "Illusion Spell Power (+1 CL to Illusion, -1 CL to other schools)" in Special Abilities,
+    // ParseSpecialAbilities still applies +1 CL to Illusion and -1 CL to other schools!
+    const customLines = buildSpellDcTestSheet();
+    const specialIdx = customLines.indexOf('Special Abilities:');
+    customLines.splice(specialIdx + 1, 0, 'Illusion Spell Power (+1 CL to Illusion, -1 CL to other schools),');
+    fs.writeFileSync(TEMP_SPELL_DC_FILE, customLines.join('\n'), 'utf-8');
+
+    const clericWithIllusionPower = GetCharacterByDocId(TEMP_SPELL_DC_FILE) as Character;
+    expect(clericWithIllusionPower.HasClass('Unseen Seer')).toBe(false);
+    expect(clericWithIllusionPower.spellCasting.GetEffectiveCasterLevel('Cleric', 'Illusion', clericWithIllusionPower)).toBe(6); // 5 + 1
+    expect(clericWithIllusionPower.spellCasting.GetEffectiveCasterLevel('Cleric', 'Enchantment', clericWithIllusionPower)).toBe(4); // 5 - 1
   });
 });

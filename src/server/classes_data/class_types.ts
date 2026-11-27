@@ -57,6 +57,11 @@ export interface ClassData {
     spellCastingData?: SpellCastingData;
     domainsData?: Record<string, { spells: string[]; action?: string }>;
     /**
+     * Standard class features granted by this class (used to distinguish class-derived summary lines
+     * in 'Special Abilities' from non-class / variant / campaign special abilities).
+     */
+    classAbilities?: string[];
+    /**
      * Optional hook to add class-specific properties to a character during initialization
      */
     AddSpecialProps?: (character: ICharacter) => void;
