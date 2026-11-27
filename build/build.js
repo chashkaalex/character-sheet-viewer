@@ -76,6 +76,7 @@ const GAS_ENTRY_FUNCTIONS = [
     'OnPrepareSpell',
     'OnCastSpell',
     'OnReplenishClassSpellSlots',
+    'OnLongRest',
     'OnUseAction',
     'OnMoveAction',
     'OnUseNumberAction',
