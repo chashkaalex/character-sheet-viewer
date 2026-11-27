@@ -393,7 +393,7 @@ export function renderRoundActionsUI(docId: string): void {
   const currentInitEl = document.getElementById('currentInit');
   if (currentInitEl) {
     if (state.inCombat) {
-      currentInitEl.textContent = state.currentInitiative !== null ? String(state.currentInitiative) : 'In Combat';
+      currentInitEl.textContent = state.currentInitiative !== null ? String(state.currentInitiative) : '-';
       currentInitEl.classList.add('in-combat');
       currentInitEl.title = 'Click to edit initiative or end combat';
     } else {

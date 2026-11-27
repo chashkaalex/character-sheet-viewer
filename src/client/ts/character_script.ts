@@ -148,6 +148,11 @@ export function onCharacterRepresentation(response) {
   }
   //render initiative and AC
   UpdateValueAndTooltip('initBonus', characterRep.initBonus);
+  const initBonusSignEl = document.getElementById('initBonusSign');
+  if (initBonusSignEl && characterRep.initBonus !== undefined && characterRep.initBonus !== null) {
+    const bonusVal = Number(characterRep.initBonus.bonus ?? characterRep.initBonus.currentScore ?? 0);
+    initBonusSignEl.textContent = bonusVal >= 0 ? '+' : '';
+  }
   renderRoundActionsUI(characterRep.docId);
 
   //render speed

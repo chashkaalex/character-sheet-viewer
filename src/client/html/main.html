@@ -136,13 +136,9 @@
                   <span id="loadValue">-</span>
                 </div>
                 <div class="combat-item">
-                  <label>Init Bonus:</label>
-                  <span id="initBonus">-</span>
-                </div>
-                <div class="combat-item">
-                  <label>Current Init:</label>
-                  <span id="currentInit" onclick="onCurrentInitClick()" style="cursor: pointer;"
-                    title="Roll Initiative or click to enter/edit Combat">-</span>
+                  <label>Init:</label>
+                  <span class="init-combined-value">(<span id="initBonusSign">+</span><span id="initBonus">-</span>)<span id="currentInit" onclick="onCurrentInitClick()" style="cursor: pointer;"
+                    title="Roll Initiative or click to enter/edit Combat">-</span></span>
                 </div>
               </div>
               <div class="weapon-section">
@@ -198,7 +194,7 @@
                 title="Long Rest: Replenish all spell slots, daily abilities, and daily item uses">Long Rest</button>
             </div>
             <div class="party-controls" id="partyControlsContainer">
-              <button id="partyButton" class="passed-button" style="display: none;"
+              <button id="partyButton" class="hpbutton" style="display: none;"
                 onclick="showPartyModal()">Party</button>
             </div>
           </div>
@@ -409,6 +405,7 @@
       <span class="close" onclick="closePartyModal()"
         style="color:#aaa; float:right; font-size:28px; font-weight:bold; cursor:pointer;">&times;</span>
       <h2 id="partyModalTitle">Party Name</h2>
+      <div id="partyModalRolzLink" style="display:none; margin-top:8px; font-size:14px;"></div>
       <ul id="partyModalList" style="list-style-type:none; padding:0; margin-top:15px; font-size:16px;">
         <!-- Members injected here -->
       </ul>

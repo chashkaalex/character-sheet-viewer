@@ -20,6 +20,11 @@ export function refreshCharacterData() {
 
   if (characterRep.initBonus) {
     UpdateValueAndTooltip('initBonus', characterRep.initBonus);
+    const initBonusSignEl = document.getElementById('initBonusSign');
+    if (initBonusSignEl) {
+      const bonusVal = Number(characterRep.initBonus.bonus ?? characterRep.initBonus.currentScore ?? 0);
+      initBonusSignEl.textContent = bonusVal >= 0 ? '+' : '';
+    }
   }
   if (characterRep.ac) {
     UpdateValueAndTooltip('acValue', characterRep.ac);
@@ -93,6 +98,18 @@ export function showPartyModal() {
     titleEl.innerHTML = `<a href="https://docs.google.com/document/d/${characterRep.partiesDocId}/edit" target="_blank" style="color: inherit; text-decoration: underline;">${characterRep.partyName}</a>`;
   } else {
     titleEl.innerText = characterRep.partyName;
+  }
+
+  const rolzLinkEl = document.getElementById('partyModalRolzLink');
+  if (rolzLinkEl) {
+    if (characterRep.rolzRoomId) {
+      const roomUrl = `https://rolz.org/dr?room=${encodeURIComponent(characterRep.rolzRoomId)}`;
+      rolzLinkEl.innerHTML = `🎲 Rolz Room: <a href="${roomUrl}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-weight: 600;">${characterRep.rolzRoomId}</a>`;
+      rolzLinkEl.style.display = 'block';
+    } else {
+      rolzLinkEl.innerHTML = '';
+      rolzLinkEl.style.display = 'none';
+    }
   }
 
   const list = document.getElementById('partyModalList');
